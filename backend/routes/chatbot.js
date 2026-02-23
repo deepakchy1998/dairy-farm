@@ -12,134 +12,190 @@ import FeedRecord from '../models/FeedRecord.js';
 const router = Router();
 router.use(auth, checkSubscription);
 
-// Keyword maps (English + Hindi)
-const TOPICS = {
-  milk: ['milk', 'dudh', 'doodh', 'yield', 'production', 'litre', 'liter', 'morning', 'evening'],
-  cattle: ['cattle', 'cow', 'gaay', 'gai', 'bull', 'calf', 'heifer', 'animal', 'janwar', 'pashu', 'tag'],
-  health: ['health', 'vaccine', 'vaccination', 'treatment', 'sick', 'bimar', 'doctor', 'vet', 'medicine', 'dawai', 'checkup', 'deworming'],
-  breeding: ['breeding', 'pregnant', 'delivery', 'insemination', 'calf', 'bachha', 'garbh'],
-  expense: ['expense', 'kharcha', 'cost', 'spending', 'lागत'],
-  revenue: ['revenue', 'income', 'aay', 'kamai', 'sale', 'bikri', 'profit', 'munafa'],
-  feed: ['feed', 'chara', 'fodder', 'khana', 'dana'],
-  hello: ['hello', 'hi', 'hey', 'namaste', 'namaskar', 'hlo'],
-  help: ['help', 'madad', 'sahayata', 'kya kar sakte', 'what can you'],
-};
+// Gather farm data context for Gemini
+async function getFarmContext(farmId) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const weekFromNow = new Date(); weekFromNow.setDate(weekFromNow.getDate() + 14);
 
-function detectTopic(msg) {
-  const lower = msg.toLowerCase();
-  for (const [topic, keywords] of Object.entries(TOPICS)) {
-    if (keywords.some(k => lower.includes(k))) return topic;
+  const [
+    totalCattle,
+    cattleByCategory,
+    todayMilk,
+    monthMilk,
+    topCattle,
+    upcomingHealth,
+    monthExpenses,
+    monthRevenue,
+    activeBreeding,
+    monthFeed,
+    recentCattle,
+  ] = await Promise.all([
+    Cattle.countDocuments({ farmId, status: 'active' }),
+    Cattle.aggregate([{ $match: { farmId, status: 'active' } }, { $group: { _id: '$category', count: { $sum: 1 } } }]),
+    MilkRecord.aggregate([{ $match: { farmId, date: { $gte: today, $lt: tomorrow } } }, { $group: { _id: null, total: { $sum: '$totalYield' }, morning: { $sum: '$morningYield' }, afternoon: { $sum: '$afternoonYield' }, evening: { $sum: '$eveningYield' }, count: { $sum: 1 } } }]),
+    MilkRecord.aggregate([{ $match: { farmId, date: { $gte: monthStart } } }, { $group: { _id: null, total: { $sum: '$totalYield' }, count: { $sum: 1 } } }]),
+    MilkRecord.aggregate([
+      { $match: { farmId, date: { $gte: monthStart } } },
+      { $group: { _id: '$cattleId', total: { $sum: '$totalYield' }, days: { $sum: 1 } } },
+      { $sort: { total: -1 } }, { $limit: 5 },
+      { $lookup: { from: 'cattles', localField: '_id', foreignField: '_id', as: 'cattle' } },
+      { $unwind: '$cattle' },
+    ]),
+    HealthRecord.find({ farmId, nextDueDate: { $gte: new Date(), $lte: weekFromNow } }).populate('cattleId', 'tagNumber breed').sort('nextDueDate').limit(10).lean(),
+    Expense.aggregate([{ $match: { farmId, date: { $gte: monthStart } } }, { $group: { _id: '$category', total: { $sum: '$amount' }, count: { $sum: 1 } } }, { $sort: { total: -1 } }]),
+    Revenue.aggregate([{ $match: { farmId, date: { $gte: monthStart } } }, { $group: { _id: '$category', total: { $sum: '$amount' }, count: { $sum: 1 } } }, { $sort: { total: -1 } }]),
+    BreedingRecord.find({ farmId, status: { $in: ['bred', 'confirmed'] } }).populate('cattleId', 'tagNumber breed').sort('expectedDelivery').limit(10).lean(),
+    FeedRecord.aggregate([{ $match: { farmId, date: { $gte: monthStart } } }, { $group: { _id: '$feedType', totalQty: { $sum: '$quantity' }, totalCost: { $sum: '$cost' } } }, { $sort: { totalCost: -1 } }]),
+    Cattle.find({ farmId, status: 'active' }).select('tagNumber breed category gender').sort('-createdAt').limit(20).lean(),
+  ]);
+
+  const todayData = todayMilk[0] || { total: 0, morning: 0, afternoon: 0, evening: 0, count: 0 };
+  const monthMilkData = monthMilk[0] || { total: 0, count: 0 };
+  const totalExpense = monthExpenses.reduce((s, e) => s + e.total, 0);
+  const totalRevenue = monthRevenue.reduce((s, r) => s + r.total, 0);
+  const totalFeedCost = monthFeed.reduce((s, f) => s + f.totalCost, 0);
+
+  return `
+=== FARM DATA (Real-time) ===
+Date: ${new Date().toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+
+📊 CATTLE SUMMARY:
+- Total Active: ${totalCattle}
+- By Category: ${cattleByCategory.map(c => `${c._id}: ${c.count}`).join(', ') || 'None'}
+- Recent Cattle: ${recentCattle.map(c => `Tag ${c.tagNumber} (${c.breed}, ${c.category})`).join('; ') || 'None'}
+
+🥛 MILK PRODUCTION:
+- Today: Total ${todayData.total.toFixed(1)}L (Morning: ${todayData.morning.toFixed(1)}L, Afternoon: ${todayData.afternoon.toFixed(1)}L, Evening: ${todayData.evening.toFixed(1)}L) — ${todayData.count} cattle recorded
+- This Month: ${monthMilkData.total.toFixed(1)}L total, ${monthMilkData.count} records
+- Top Producers (Month): ${topCattle.map((c, i) => `${i + 1}. Tag ${c.cattle.tagNumber} (${c.cattle.breed}) — ${c.total.toFixed(1)}L in ${c.days} days, avg ${(c.total / c.days).toFixed(1)}L/day`).join('; ') || 'No data'}
+
+💉 UPCOMING HEALTH/VACCINATIONS (Next 14 days):
+${upcomingHealth.length > 0 ? upcomingHealth.map(h => `- Tag ${h.cattleId?.tagNumber}: ${h.description} — Due: ${new Date(h.nextDueDate).toLocaleDateString('en-IN')}`).join('\n') : '- No upcoming vaccinations/treatments ✅'}
+
+🐣 ACTIVE BREEDING:
+${activeBreeding.length > 0 ? activeBreeding.map(b => `- Tag ${b.cattleId?.tagNumber}: ${b.status}, Method: ${b.method}${b.expectedDelivery ? `, Expected: ${new Date(b.expectedDelivery).toLocaleDateString('en-IN')}` : ''}`).join('\n') : '- No active breeding records'}
+
+💸 EXPENSES (This Month):
+- Total: ₹${totalExpense.toLocaleString('en-IN')}
+- By Category: ${monthExpenses.map(e => `${e._id}: ₹${e.total.toLocaleString('en-IN')} (${e.count} entries)`).join(', ') || 'None'}
+
+💰 REVENUE (This Month):
+- Total: ₹${totalRevenue.toLocaleString('en-IN')}
+- By Source: ${monthRevenue.map(r => `${r._id.replace('_', ' ')}: ₹${r.total.toLocaleString('en-IN')}`).join(', ') || 'None'}
+- Net Profit: ₹${(totalRevenue - totalExpense).toLocaleString('en-IN')} ${totalRevenue - totalExpense >= 0 ? '📈' : '📉'}
+
+🌾 FEED (This Month):
+- Total Cost: ₹${totalFeedCost.toLocaleString('en-IN')}
+- By Type: ${monthFeed.map(f => `${f._id}: ${f.totalQty}kg, ₹${f.totalCost.toLocaleString('en-IN')}`).join(', ') || 'None'}
+=== END FARM DATA ===
+`.trim();
+}
+
+// Call Gemini API
+async function askGemini(message, history, farmContext) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('Gemini API key not configured');
   }
-  return null;
+
+  const systemPrompt = `You are "DairyPro Assistant" 🐄 — a smart, friendly AI farm assistant for an Indian dairy farmer. 
+
+Your role:
+- Answer questions about the farmer's dairy farm using the REAL farm data provided below
+- Support both Hindi and English (respond in whichever language the farmer uses)
+- Give practical, actionable advice for dairy farming
+- Use Indian context (₹ currency, Indian breeds, local practices)
+- Be concise but thorough — use markdown formatting (bold, lists, tables)
+- If asked about data not available, say so honestly
+- For general dairy farming questions (not about their specific farm), use your knowledge
+
+${farmContext}
+
+Important: Always base your answers on the real farm data above when the question is about their farm. Be specific with numbers and tag numbers.`;
+
+  // Build messages for Gemini
+  const contents = [];
+
+  // Add conversation history
+  if (history && history.length > 0) {
+    for (const msg of history.slice(-10)) { // Last 10 messages for context
+      contents.push({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }],
+      });
+    }
+  }
+
+  // Add current message
+  contents.push({
+    role: 'user',
+    parts: [{ text: message }],
+  });
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1024,
+          topP: 0.9,
+        },
+        safetySettings: [
+          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+        ],
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const err = await response.text();
+    console.error('Gemini API error:', err);
+    throw new Error('Failed to get response from AI');
+  }
+
+  const data = await response.json();
+  const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!reply) throw new Error('Empty response from AI');
+  return reply;
 }
 
 router.post('/ask', async (req, res, next) => {
   try {
-    const { message } = req.body;
+    const { message, history } = req.body;
     if (!message) return res.status(400).json({ success: false, message: 'Message required' });
 
     const farmId = req.user.farmId;
-    const topic = detectTopic(message);
-    let reply = '';
 
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    // Gather real farm data
+    const farmContext = await getFarmContext(farmId);
 
-    if (topic === 'hello') {
-      reply = `Namaste! 🐄 I'm your DairyPro Farm Assistant. I can help you with:\n\n- 🥛 **Milk production** data\n- 🐄 **Cattle** information\n- 💉 **Health** records\n- 🐣 **Breeding** status\n- 💰 **Finance** (expense/revenue)\n- 🌾 **Feed** records\n\nAsk me anything about your farm! Hindi mein bhi puch sakte ho.`;
-    } else if (topic === 'help') {
-      reply = `Here's what you can ask me:\n\n- "Aaj ka dudh kitna hai?" — Today's milk\n- "Kitni gaay hain?" — Cattle count\n- "Vaccination due kab hai?" — Upcoming vaccinations\n- "Is mahine ka kharcha?" — Monthly expenses\n- "Revenue kitna hua?" — Revenue details\n- "Breeding status" — Pregnancy updates\n- "Feed cost?" — Feed expenses\n\nI understand both Hindi and English! 🇮🇳`;
-    } else if (topic === 'milk') {
-      const todayRecords = await MilkRecord.find({ farmId, date: { $gte: today } });
-      const todayTotal = todayRecords.reduce((s, r) => s + r.totalYield, 0);
-      const todayMorning = todayRecords.reduce((s, r) => s + (r.morningYield || 0), 0);
-      const todayEvening = todayRecords.reduce((s, r) => s + (r.eveningYield || 0), 0);
-
-      const monthRecords = await MilkRecord.find({ farmId, date: { $gte: monthStart } });
-      const monthTotal = monthRecords.reduce((s, r) => s + r.totalYield, 0);
-
-      const topCattle = await MilkRecord.aggregate([
-        { $match: { farmId, date: { $gte: monthStart } } },
-        { $group: { _id: '$cattleId', total: { $sum: '$totalYield' } } },
-        { $sort: { total: -1 } },
-        { $limit: 3 },
-        { $lookup: { from: 'cattles', localField: '_id', foreignField: '_id', as: 'cattle' } },
-        { $unwind: '$cattle' },
-      ]);
-
-      const topList = topCattle.map((c, i) => `${i + 1}. Tag ${c.cattle.tagNumber} (${c.cattle.breed}) — ${c.total.toFixed(1)}L`).join('\n');
-
-      reply = `🥛 **Milk Production Summary**\n\n**Today:**\n- Morning: ${todayMorning.toFixed(1)}L\n- Evening: ${todayEvening.toFixed(1)}L\n- Total: **${todayTotal.toFixed(1)}L** (${todayRecords.length} cattle recorded)\n\n**This Month:** ${monthTotal.toFixed(1)}L total\n\n🏆 **Top Producers (Month):**\n${topList || 'No data yet'}`;
-    } else if (topic === 'cattle') {
-      const totalActive = await Cattle.countDocuments({ farmId, status: 'active' });
-      const byCategory = await Cattle.aggregate([
-        { $match: { farmId, status: 'active' } },
-        { $group: { _id: '$category', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-      ]);
-      const catList = byCategory.map(c => `- ${c._id}: **${c.count}**`).join('\n');
-      reply = `🐄 **Cattle Summary**\n\nTotal Active: **${totalActive}**\n\n**By Category:**\n${catList || 'No cattle added yet'}`;
-    } else if (topic === 'health') {
-      const upcoming = await HealthRecord.find({
-        farmId, nextDueDate: { $gte: new Date(), $lte: new Date(Date.now() + 14 * 86400000) },
-      }).populate('cattleId', 'tagNumber').sort('nextDueDate').limit(5);
-
-      const monthHealth = await HealthRecord.countDocuments({ farmId, date: { $gte: monthStart } });
-
-      const upList = upcoming.map(u => `- Tag ${u.cattleId?.tagNumber}: ${u.description} — Due: ${u.nextDueDate.toLocaleDateString('en-IN')}`).join('\n');
-
-      reply = `💉 **Health Summary**\n\nRecords this month: **${monthHealth}**\n\n**Upcoming Due (14 days):**\n${upList || 'No upcoming vaccinations/treatments! ✅'}`;
-    } else if (topic === 'breeding') {
-      const active = await BreedingRecord.find({ farmId, status: { $in: ['bred', 'confirmed'] } })
-        .populate('cattleId', 'tagNumber breed').sort('expectedDelivery').limit(5);
-
-      const list = active.map(b => `- Tag ${b.cattleId?.tagNumber}: ${b.status} — Expected: ${b.expectedDelivery ? b.expectedDelivery.toLocaleDateString('en-IN') : 'N/A'}`).join('\n');
-
-      reply = `🐣 **Breeding Summary**\n\nActive pregnancies: **${active.length}**\n\n${list || 'No active breeding records'}`;
-    } else if (topic === 'expense') {
-      const monthExp = await Expense.aggregate([
-        { $match: { farmId, date: { $gte: monthStart } } },
-        { $group: { _id: '$category', total: { $sum: '$amount' } } },
-        { $sort: { total: -1 } },
-      ]);
-      const total = monthExp.reduce((s, e) => s + e.total, 0);
-      const list = monthExp.map(e => `- ${e._id}: ₹${e.total.toLocaleString('en-IN')}`).join('\n');
-
-      reply = `💸 **Expense Summary (This Month)**\n\nTotal: **₹${total.toLocaleString('en-IN')}**\n\n**By Category:**\n${list || 'No expenses recorded'}`;
-    } else if (topic === 'revenue') {
-      const monthRev = await Revenue.aggregate([
-        { $match: { farmId, date: { $gte: monthStart } } },
-        { $group: { _id: '$category', total: { $sum: '$amount' } } },
-        { $sort: { total: -1 } },
-      ]);
-      const totalRev = monthRev.reduce((s, r) => s + r.total, 0);
-
-      const monthExpTotal = await Expense.aggregate([
-        { $match: { farmId, date: { $gte: monthStart } } },
-        { $group: { _id: null, total: { $sum: '$amount' } } },
-      ]);
-      const expTotal = monthExpTotal[0]?.total || 0;
-      const profit = totalRev - expTotal;
-
-      const list = monthRev.map(r => `- ${r._id.replace('_', ' ')}: ₹${r.total.toLocaleString('en-IN')}`).join('\n');
-
-      reply = `💰 **Revenue Summary (This Month)**\n\nTotal Revenue: **₹${totalRev.toLocaleString('en-IN')}**\nTotal Expense: ₹${expTotal.toLocaleString('en-IN')}\nNet Profit: **₹${profit.toLocaleString('en-IN')}** ${profit >= 0 ? '📈' : '📉'}\n\n**By Source:**\n${list || 'No revenue recorded'}`;
-    } else if (topic === 'feed') {
-      const monthFeed = await FeedRecord.aggregate([
-        { $match: { farmId, date: { $gte: monthStart } } },
-        { $group: { _id: '$feedType', totalQty: { $sum: '$quantity' }, totalCost: { $sum: '$cost' } } },
-        { $sort: { totalCost: -1 } },
-      ]);
-      const totalCost = monthFeed.reduce((s, f) => s + f.totalCost, 0);
-      const list = monthFeed.map(f => `- ${f._id}: ${f.totalQty} kg — ₹${f.totalCost.toLocaleString('en-IN')}`).join('\n');
-
-      reply = `🌾 **Feed Summary (This Month)**\n\nTotal Cost: **₹${totalCost.toLocaleString('en-IN')}**\n\n**By Type:**\n${list || 'No feed records'}`;
-    } else {
-      reply = `I'm not sure what you're asking about. 🤔\n\nTry asking about:\n- 🥛 Milk — "aaj ka dudh kitna hai?"\n- 🐄 Cattle — "kitni gaay hain?"\n- 💉 Health — "vaccination due kab hai?"\n- 💰 Finance — "is mahine ka kharcha?"\n- 🐣 Breeding — "breeding status"\n- 🌾 Feed — "feed cost?"\n\nHindi mein bhi puch sakte ho!`;
-    }
+    // Call Gemini
+    const reply = await askGemini(message, history || [], farmContext);
 
     res.json({ success: true, data: { reply } });
-  } catch (err) { next(err); }
+  } catch (err) {
+    console.error('Chatbot error:', err.message);
+    // Fallback if Gemini fails
+    if (err.message.includes('API key') || err.message.includes('Failed') || err.message.includes('Empty')) {
+      return res.json({
+        success: true,
+        data: {
+          reply: `⚠️ AI assistant is temporarily unavailable. Error: ${err.message}\n\nPlease try again in a moment, or check if the Gemini API key is configured correctly.`,
+        },
+      });
+    }
+    next(err);
+  }
 });
 
 export default router;
