@@ -5,8 +5,22 @@ const paymentSchema = new mongoose.Schema({
   plan: { type: String, required: true },
   amount: { type: Number, required: true },
   upiTransactionId: { type: String, required: true },
-  status: { type: String, enum: ['pending', 'verified', 'rejected'], default: 'pending' },
+  screenshot: { type: String, default: '' }, // base64 image
+  status: { type: String, enum: ['pending', 'verified', 'rejected', 'expired'], default: 'pending' },
   verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  adminNote: { type: String, default: '' },
+  expiresAt: { type: Date }, // Auto-expire unverified payments after 48hrs
 }, { timestamps: true });
+
+// Prevent duplicate transaction IDs (only for non-rejected/expired)
+paymentSchema.index(
+  { upiTransactionId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: { $in: ['pending', 'verified'] } },
+  }
+);
+
+paymentSchema.index({ userId: 1, createdAt: -1 });
 
 export default mongoose.model('Payment', paymentSchema);

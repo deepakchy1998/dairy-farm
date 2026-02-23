@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { auth } from '../middleware/auth.js';
+import { checkSubscription } from '../middleware/subscription.js';
 import Activity from '../models/Activity.js';
 
 const router = Router();
-router.use(auth);
+router.use(auth, checkSubscription);
 
 router.get('/recent', async (req, res, next) => {
   try {

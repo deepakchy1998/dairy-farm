@@ -13,6 +13,7 @@ import { FaIndianRupeeSign } from 'react-icons/fa6';
 import { GiCow, GiMilkCarton } from 'react-icons/gi';
 import { formatDistanceToNow } from 'date-fns';
 import ChatBubble from './ChatBubble';
+import Paywall from './Paywall';
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: FiHome },
@@ -222,7 +223,7 @@ export default function Layout({ children }) {
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-6 dark:text-gray-100">
           <div className="page-enter">
-            {children}
+            <Paywall>{children}</Paywall>
           </div>
         </main>
       </div>

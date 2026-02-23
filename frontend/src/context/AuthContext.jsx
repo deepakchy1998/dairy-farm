@@ -1,11 +1,9 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import api from '../utils/api';
 
 const AuthContext = createContext();
-
 export const useAuth = () => useContext(AuthContext);
 
-// Token expiry check
 function isTokenValid(token) {
   if (!token) return false;
   try {
@@ -14,7 +12,6 @@ function isTokenValid(token) {
   } catch { return false; }
 }
 
-// Session storage keys
 const TOKEN_KEY = 'token';
 const USER_KEY = 'user';
 const REMEMBER_KEY = 'rememberMe';
@@ -23,18 +20,18 @@ const LOGIN_EMAIL_KEY = 'lastLoginEmail';
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [subscription, setSubscription] = useState(null); // { isActive, daysLeft, hasPendingPayment, ... }
+  const [subLoading, setSubLoading] = useState(true);
 
-  // Check and restore session on mount
+  // Restore session
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_KEY);
     const savedUser = localStorage.getItem(USER_KEY);
 
     if (token && isTokenValid(token)) {
-      // Try to use cached user first for instant load
       if (savedUser) {
         try { setUser(JSON.parse(savedUser)); } catch {}
       }
-      // Then verify with server
       api.get('/auth/me')
         .then(res => {
           const userData = res.data.data.user || res.data.data;
@@ -44,12 +41,35 @@ export function AuthProvider({ children }) {
         .catch(() => { clearSession(); })
         .finally(() => setLoading(false));
     } else {
-      if (token) clearSession(); // expired token cleanup
+      if (token) clearSession();
       setLoading(false);
+      setSubLoading(false);
     }
   }, []);
 
-  // Auto-refresh: check token every 5 min
+  // Fetch subscription status whenever user changes
+  useEffect(() => {
+    if (user) {
+      fetchSubscription();
+    } else {
+      setSubscription(null);
+      setSubLoading(false);
+    }
+  }, [user?._id]);
+
+  const fetchSubscription = async () => {
+    setSubLoading(true);
+    try {
+      const res = await api.get('/subscription/current');
+      setSubscription(res.data.data);
+    } catch {
+      setSubscription({ isActive: false, daysLeft: 0 });
+    } finally {
+      setSubLoading(false);
+    }
+  };
+
+  // Check token every 5 min
   useEffect(() => {
     const interval = setInterval(() => {
       const token = localStorage.getItem(TOKEN_KEY);
@@ -57,14 +77,17 @@ export function AuthProvider({ children }) {
         clearSession();
         window.location.href = '/login';
       }
+      // Also refresh subscription status
+      if (user) fetchSubscription();
     }, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   const clearSession = () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     setUser(null);
+    setSubscription(null);
   };
 
   const saveSession = (token, userData, rememberEmail) => {
@@ -95,20 +118,22 @@ export function AuthProvider({ children }) {
     const remember = localStorage.getItem(REMEMBER_KEY);
     const email = localStorage.getItem(LOGIN_EMAIL_KEY);
     clearSession();
-    // Keep remembered email
     if (remember) {
       localStorage.setItem(REMEMBER_KEY, 'true');
       localStorage.setItem(LOGIN_EMAIL_KEY, email);
     }
   };
 
-  // Helpers for remember me
   const getSavedEmail = () => localStorage.getItem(LOGIN_EMAIL_KEY) || '';
   const isRemembered = () => localStorage.getItem(REMEMBER_KEY) === 'true';
+
+  // Computed
+  const isSubscriptionActive = subscription?.isActive || subscription?.isAdmin || false;
 
   return (
     <AuthContext.Provider value={{
       user, setUser, login, register, logout, loading,
+      subscription, subLoading, isSubscriptionActive, fetchSubscription,
       getSavedEmail, isRemembered,
     }}>
       {children}

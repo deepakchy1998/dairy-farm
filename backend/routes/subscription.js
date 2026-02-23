@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { auth } from '../middleware/auth.js';
+import { subscriptionStatus } from '../middleware/subscription.js';
 import Subscription from '../models/Subscription.js';
+import Payment from '../models/Payment.js';
 import LandingContent from '../models/LandingContent.js';
 
 const router = Router();
 
-// Plans (public-ish, but auth needed for context)
+// Plans — public pricing info
 router.get('/plans', async (req, res, next) => {
   try {
     const content = await LandingContent.findOne();
@@ -17,20 +19,39 @@ router.get('/plans', async (req, res, next) => {
         quarterly: pricing.quarterly,
         halfyearly: pricing.halfyearly,
         yearly: pricing.yearly,
-        upiId: 'dairypro@upi',
+        upiId: content?.supportPhone ? `${content.supportPhone}@upi` : 'dairypro@upi',
         upiName: 'DairyPro',
       },
     });
   } catch (err) { next(err); }
 });
 
-// Current subscription
-router.get('/current', auth, async (req, res, next) => {
+// Full subscription status — used by frontend to decide paywall
+router.get('/current', auth, subscriptionStatus, async (req, res, next) => {
   try {
-    const subscription = await Subscription.findOne({ userId: req.user._id, isActive: true, endDate: { $gte: new Date() } }).sort('-endDate');
-    const isActive = !!subscription;
-    const daysLeft = subscription ? Math.ceil((new Date(subscription.endDate) - new Date()) / (1000 * 60 * 60 * 24)) : 0;
-    res.json({ success: true, data: { isActive, subscription, daysLeft } });
+    const subscription = req.subscription || null;
+    const isActive = req.subscriptionActive;
+    const daysLeft = req.daysLeft || 0;
+
+    // Check if there's a pending payment
+    const pendingPayment = await Payment.findOne({ userId: req.user._id, status: 'pending' });
+
+    // Get subscription history
+    const history = await Subscription.find({ userId: req.user._id })
+      .sort('-endDate').limit(5);
+
+    res.json({
+      success: true,
+      data: {
+        isActive,
+        subscription,
+        daysLeft,
+        hasPendingPayment: !!pendingPayment,
+        pendingPayment: pendingPayment || null,
+        isAdmin: req.user.role === 'admin',
+        history,
+      },
+    });
   } catch (err) { next(err); }
 });
 

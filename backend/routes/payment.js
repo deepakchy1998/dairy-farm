@@ -8,25 +8,64 @@ router.use(auth);
 
 const PLAN_PRICES = { monthly: 499, quarterly: 1299, halfyearly: 2499, yearly: 4499 };
 
-// Create payment
+// Create payment with screenshot proof
 router.post('/', async (req, res, next) => {
   try {
-    const { plan, upiTransactionId } = req.body;
-    if (!plan || !upiTransactionId) return res.status(400).json({ success: false, message: 'Plan and transaction ID required' });
-    
+    const { plan, upiTransactionId, screenshot } = req.body;
+    if (!plan || !upiTransactionId) {
+      return res.status(400).json({ success: false, message: 'Plan and UPI Transaction ID are required' });
+    }
+
+    // Validate plan exists and get admin-set price
     const content = await LandingContent.findOne();
     const amount = content?.pricing?.[plan] || PLAN_PRICES[plan];
-    if (!amount) return res.status(400).json({ success: false, message: 'Invalid plan' });
+    if (!amount) return res.status(400).json({ success: false, message: 'Invalid plan selected' });
 
-    const payment = await Payment.create({ userId: req.user._id, plan, amount, upiTransactionId });
-    res.status(201).json({ success: true, data: payment });
-  } catch (err) { next(err); }
+    // Check for duplicate transaction ID
+    const existing = await Payment.findOne({
+      upiTransactionId: upiTransactionId.trim(),
+      status: { $in: ['pending', 'verified'] },
+    });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'This UPI Transaction ID has already been used. Please enter a unique transaction ID.' });
+    }
+
+    // Check for pending payment — only one pending at a time
+    const pendingPayment = await Payment.findOne({ userId: req.user._id, status: 'pending' });
+    if (pendingPayment) {
+      return res.status(400).json({ success: false, message: 'You already have a pending payment. Please wait for admin verification or contact support.' });
+    }
+
+    // Auto-expire after 48 hours
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
+    const payment = await Payment.create({
+      userId: req.user._id,
+      plan,
+      amount,
+      upiTransactionId: upiTransactionId.trim(),
+      screenshot: screenshot || '',
+      expiresAt,
+    });
+
+    res.status(201).json({ success: true, data: payment, message: 'Payment submitted! Admin will verify within 24 hours.' });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ success: false, message: 'This UPI Transaction ID is already in use.' });
+    }
+    next(err);
+  }
 });
 
 // My payments
 router.get('/my', async (req, res, next) => {
   try {
-    const data = await Payment.find({ userId: req.user._id }).sort('-createdAt');
+    // Auto-expire old pending payments
+    await Payment.updateMany(
+      { userId: req.user._id, status: 'pending', expiresAt: { $lt: new Date() } },
+      { status: 'expired' }
+    );
+    const data = await Payment.find({ userId: req.user._id }).sort('-createdAt').limit(20);
     res.json({ success: true, data });
   } catch (err) { next(err); }
 });
