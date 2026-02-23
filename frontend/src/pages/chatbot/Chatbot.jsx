@@ -201,7 +201,7 @@ export default function Chatbot() {
 
       {/* Input */}
       <form onSubmit={e => { e.preventDefault(); send(input); }} className="mt-3 flex gap-2">
-        <input ref={inputRef} className="input flex-1 dark:bg-gray-800 dark:border-gray-700" value={input} onChange={e => setInput(e.target.value)}
+        <input ref={inputRef} className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm" value={input} onChange={e => setInput(e.target.value)}
           placeholder="Ask anything about your farm... (Hindi/English)" disabled={loading} />
         <button type="submit" disabled={loading || !input.trim()} className="btn-primary px-4 flex items-center gap-2">
           <FiSend size={18} />
