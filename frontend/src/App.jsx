@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
+import InstallPrompt from './components/InstallPrompt';
 
 // Lazy load all pages — only loaded when user navigates to them
 const Login = lazy(() => import('./pages/auth/Login'));
@@ -71,6 +72,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>
+        <InstallPrompt />
       </Router>
     </AuthProvider>
     </ThemeProvider>
