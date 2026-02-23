@@ -80,55 +80,6 @@ router.post('/reset-password', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Google OAuth
-router.post('/google', async (req, res, next) => {
-  try {
-    const { credential } = req.body;
-    if (!credential) return res.status(400).json({ success: false, message: 'Google credential required' });
-
-    // Verify Google token
-    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
-    if (!response.ok) return res.status(401).json({ success: false, message: 'Invalid Google credential' });
-
-    const payload = await response.json();
-    const { email, name, picture, sub: googleId } = payload;
-
-    if (!email) return res.status(400).json({ success: false, message: 'Email not provided by Google' });
-
-    // Find or create user
-    let user = await User.findOne({ email: email.toLowerCase() });
-
-    if (user) {
-      // Existing user — login
-      const token = signToken(user);
-      const userData = { _id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, farmId: user.farmId, createdAt: user.createdAt };
-      return res.json({ success: true, data: { token, user: userData } });
-    }
-
-    // New user — register with Google
-    const randomPassword = crypto.randomBytes(32).toString('hex');
-    user = await User.create({
-      name: name || email.split('@')[0],
-      email: email.toLowerCase(),
-      password: randomPassword,
-      phone: '',
-    });
-
-    const farm = await Farm.create({ name: `${user.name}'s Farm`, owner: user._id });
-    user.farmId = farm._id;
-    await user.save();
-
-    // 5-day free trial
-    const now = new Date();
-    const trialEnd = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
-    await Subscription.create({ userId: user._id, plan: 'trial', startDate: now, endDate: trialEnd });
-
-    const token = signToken(user);
-    const userData = { _id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, farmId: user.farmId, createdAt: user.createdAt };
-    res.status(201).json({ success: true, data: { token, user: userData } });
-  } catch (err) { next(err); }
-});
-
 // Get me
 router.get('/me', auth, (req, res) => {
   res.json({ success: true, data: req.user });

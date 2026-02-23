@@ -1,10 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { FiEye, FiEyeOff, FiUser, FiMail, FiLock, FiPhone, FiMapPin, FiHome, FiCheck } from 'react-icons/fi';
-
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 const INDIAN_STATES = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat',
@@ -25,41 +23,9 @@ export default function Register() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [step, setStep] = useState(1); // 2-step form
-  const { register, googleLogin } = useAuth();
+  const [step, setStep] = useState(1);
+  const { register } = useAuth();
   const navigate = useNavigate();
-  const googleBtnRef = useRef(null);
-
-  // Initialize Google Sign-In
-  useEffect(() => {
-    if (!GOOGLE_CLIENT_ID || !window.google?.accounts) return;
-    try {
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleResponse,
-      });
-      if (googleBtnRef.current) {
-        window.google.accounts.id.renderButton(googleBtnRef.current, {
-          theme: 'outline', size: 'large', width: '100%', text: 'signup_with', shape: 'rectangular',
-        });
-      }
-    } catch {}
-  }, []);
-
-  const handleGoogleResponse = async (response) => {
-    if (!response.credential) return;
-    setGoogleLoading(true);
-    try {
-      await googleLogin(response.credential);
-      toast.success('Account created! Welcome to DairyPro 🐄');
-      navigate('/dashboard');
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Google signup failed');
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
 
   // Auto-generate farm name from user name
   useEffect(() => {
@@ -83,7 +49,6 @@ export default function Register() {
   };
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
-
   const canProceed = form.name && form.email && form.password && form.password.length >= 6;
 
   return (
@@ -110,19 +75,6 @@ export default function Register() {
               Farm Details
             </div>
           </div>
-
-          {/* Google Sign-Up */}
-          {step === 1 && GOOGLE_CLIENT_ID && (
-            <>
-              <div ref={googleBtnRef} className="mb-4 flex justify-center" />
-              <div className="relative my-5">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200 dark:border-gray-700" /></div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-3 bg-white dark:bg-gray-800 text-gray-400">or register with email</span>
-                </div>
-              </div>
-            </>
-          )}
 
           <form onSubmit={handleSubmit} autoComplete="on">
             {/* Step 1: Account details */}
@@ -166,13 +118,11 @@ export default function Register() {
                       {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                     </button>
                   </div>
-                  {/* Password strength */}
                   {form.password && (
                     <div className="mt-2 space-y-1">
                       {PASSWORD_RULES.map((rule, i) => (
                         <div key={i} className={`flex items-center gap-2 text-xs ${rule.test(form.password) ? 'text-green-600' : 'text-gray-400'}`}>
-                          <FiCheck size={12} />
-                          {rule.label}
+                          <FiCheck size={12} /> {rule.label}
                         </div>
                       ))}
                     </div>
@@ -221,7 +171,7 @@ export default function Register() {
                 </div>
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setStep(1)} className="btn-secondary flex-1">← Back</button>
-                  <button type="submit" disabled={loading || googleLoading} className="btn-primary flex-1">
+                  <button type="submit" disabled={loading} className="btn-primary flex-1">
                     {loading ? 'Creating...' : '🚀 Start Free Trial'}
                   </button>
                 </div>

@@ -91,13 +91,6 @@ export function AuthProvider({ children }) {
     return res.data;
   };
 
-  const googleLogin = async (credential) => {
-    const res = await api.post('/auth/google', { credential });
-    const { token, user: userData } = res.data.data;
-    saveSession(token, userData, true);
-    return res.data;
-  };
-
   const logout = () => {
     const remember = localStorage.getItem(REMEMBER_KEY);
     const email = localStorage.getItem(LOGIN_EMAIL_KEY);
@@ -115,7 +108,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-      user, setUser, login, register, googleLogin, logout, loading,
+      user, setUser, login, register, logout, loading,
       getSavedEmail, isRemembered,
     }}>
       {children}
