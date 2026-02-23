@@ -1,6 +1,36 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+build/
+
+# Environment variables
 .env
+.env.local
+.env.production
+.env.development
+
+# Lock files
 package-lock.json
+
+# Logs
 *.log
+npm-debug.log*
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Coverage
+coverage/
+
+# Misc
+.cache/
+*.tgz
