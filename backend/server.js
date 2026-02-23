@@ -20,6 +20,7 @@ import paymentRoutes from './routes/payment.js';
 import adminRoutes from './routes/admin.js';
 import landingRoutes from './routes/landing.js';
 import chatbotRoutes from './routes/chatbot.js';
+import notificationRoutes from './routes/notifications.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -47,6 +48,7 @@ app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/api/health-check', (req, res) => res.json({ success: true, message: 'DairyPro API is running' }));
 

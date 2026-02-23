@@ -114,12 +114,19 @@ router.get('/dashboard', checkSubscription, async (req, res, next) => {
       expectedDelivery: { $gte: new Date(), $lte: monthFromNow },
     }).populate('cattleId', 'tagNumber breed').sort('expectedDelivery');
 
+    // Cost per liter calculation
+    const totalMilkPeriod = milkTrend.reduce((s, d) => s + d.total, 0);
+    const costPerLiter = totalMilkPeriod > 0 ? (totalExpense / totalMilkPeriod) : 0;
+    const revenuePerLiter = totalMilkPeriod > 0 ? (monthlyRevenue / totalMilkPeriod) : 0;
+    const profitPerLiter = revenuePerLiter - costPerLiter;
+
     res.json({
       success: true,
       data: {
-        totalCattle, todayMilk, monthlyRevenue, totalExpense: totalExpense, profit,
+        totalCattle, todayMilk, monthlyRevenue, totalExpense, profit,
         cattleByCategory, milkTrend, topCattle, expenseBreakdown,
         upcomingVaccinations, expectedDeliveries,
+        analytics: { costPerLiter, revenuePerLiter, profitPerLiter, totalMilkPeriod },
       },
     });
   } catch (err) { next(err); }

@@ -1,99 +1,169 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import api from '../../utils/api';
-import { FiSend, FiMessageSquare, FiUser, FiTrash2 } from 'react-icons/fi';
+import { FiSend, FiMessageSquare, FiUser, FiTrash2, FiCopy, FiCheck, FiZap, FiClock } from 'react-icons/fi';
 
-const SUGGESTIONS = ["Today's milk", 'How many cattle?', 'This month profit', 'Upcoming vaccinations', 'Farm dashboard', 'Help'];
+const QUICK_ACTIONS = [
+  { label: '🥛 Today\'s Milk', msg: 'Aaj ka dudh kitna hai? Give detailed breakdown' },
+  { label: '🐄 Cattle Status', msg: 'Give me complete cattle summary with all categories and breeds' },
+  { label: '💰 Profit & Loss', msg: 'Show this month profit loss with comparison to last month' },
+  { label: '💉 Health Alerts', msg: 'Any overdue or upcoming vaccinations? List all with dates' },
+  { label: '🐣 Breeding Status', msg: 'Show all active breeding records and expected deliveries' },
+  { label: '📊 Weekly Analysis', msg: 'Analyze my farm performance this week with trends and recommendations' },
+  { label: '🌾 Feed Cost', msg: 'Show feed expenses this month by type' },
+  { label: '💡 Improve Profit', msg: 'Analyze my farm data and give me 5 actionable tips to improve profitability' },
+  { label: '⚠️ Alerts', msg: '/alerts' },
+  { label: '🏆 Top Producers', msg: 'Which cattle are producing the most milk? Show rankings with daily averages' },
+  { label: '📉 Low Producers', msg: 'Which cattle have low milk yield? Should I check their health?' },
+  { label: '🔮 Predictions', msg: 'Based on current trends, predict my end-of-month milk production and revenue' },
+];
+
+const FOLLOW_UPS = {
+  milk: ['Compare with last week', 'Which cattle gave most today?', 'Show fat% analysis'],
+  cattle: ['Show milking cattle details', 'Any cattle need attention?', 'Breed-wise distribution'],
+  finance: ['How to reduce expenses?', 'Best revenue sources?', 'Cost per liter analysis'],
+  health: ['Schedule next vaccinations', 'Common diseases this season', 'Medicine cost analysis'],
+  default: ['Tell me more', 'Give recommendations', 'Compare with last month'],
+};
+
+function detectContext(lastReply) {
+  const lower = (lastReply || '').toLowerCase();
+  if (lower.includes('milk') || lower.includes('dudh') || lower.includes('yield')) return 'milk';
+  if (lower.includes('cattle') || lower.includes('gaay') || lower.includes('tag')) return 'cattle';
+  if (lower.includes('expense') || lower.includes('revenue') || lower.includes('profit') || lower.includes('₹')) return 'finance';
+  if (lower.includes('vaccine') || lower.includes('health') || lower.includes('treatment')) return 'health';
+  return 'default';
+}
 
 export default function Chatbot() {
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Hello! 🐄 I'm your **DairyPro** farm assistant. Ask me about milk, cattle, health, breeding, finances — in English or Hindi!" },
+    { role: 'assistant', content: "Namaste! 🐄 I'm your **DairyPro AI Assistant** — powered by Google Gemini.\n\nI have real-time access to all your farm data. Ask me anything in **Hindi** or **English**!\n\n**Quick commands:**\n- `/alerts` — Instant farm alerts\n- `/milk` — Today's milk summary\n\nOr tap a quick action below 👇", ts: Date.now() },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(null);
+  const [responseTime, setResponseTime] = useState(null);
   const endRef = useRef(null);
   const inputRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  const send = async (text) => {
+  const send = useCallback(async (text) => {
     if (!text.trim() || loading) return;
-    const userMsg = { role: 'user', content: text };
+    const userMsg = { role: 'user', content: text, ts: Date.now() };
     const allMsgs = [...messages, userMsg];
     setMessages(allMsgs);
     setInput('');
     setLoading(true);
+    setResponseTime(null);
+    const startTime = Date.now();
 
     try {
-      const history = allMsgs.slice(-6).map(m => ({ role: m.role, content: m.content }));
+      const history = allMsgs.slice(-8).map(m => ({ role: m.role, content: m.content }));
       const res = await api.post('/chatbot/ask', { message: text, history });
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      setResponseTime(elapsed);
       const { reply } = res.data.data;
-      setMessages(prev => [...prev, { role: 'assistant', content: reply || 'No response.' }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: reply || 'No response.', ts: Date.now() }]);
     } catch (err) {
-      const msg = err.response?.data?.message || 'Something went wrong.';
-      setMessages(prev => [...prev, { role: 'assistant', content: `❌ ${msg}` }]);
+      const msg = err.response?.data?.message || 'Something went wrong. Please try again.';
+      setMessages(prev => [...prev, { role: 'assistant', content: `❌ ${msg}`, ts: Date.now() }]);
     } finally {
       setLoading(false);
       inputRef.current?.focus();
     }
-  };
+  }, [messages, loading]);
 
   const clear = () => {
-    setMessages([{ role: 'assistant', content: 'Chat cleared! 🐄 Ask me anything.' }]);
+    setMessages([{ role: 'assistant', content: 'Chat cleared! 🐄 Fresh start — ask me anything about your farm.', ts: Date.now() }]);
+    setResponseTime(null);
   };
+
+  const copyMsg = (content, idx) => {
+    navigator.clipboard.writeText(content).then(() => {
+      setCopied(idx);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  };
+
+  const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant');
+  const context = detectContext(lastAssistantMsg?.content);
+  const followUps = FOLLOW_UPS[context] || FOLLOW_UPS.default;
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)]">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-emerald-100 rounded-xl">
-            <FiMessageSquare className="text-emerald-600" size={22} />
+          <div className="relative">
+            <div className="p-2.5 bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 rounded-xl">
+              <FiMessageSquare className="text-emerald-600 dark:text-emerald-400" size={22} />
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-800">🐄 Farm Assistant</h1>
-            <p className="text-xs text-gray-400">Real-time farm data • Hindi & English</p>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-white">🐄 DairyPro AI</h1>
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Gemini 2.5 Flash • Real-time farm data • Hindi & English
+              {responseTime && <span className="ml-2 text-emerald-500">⚡ {responseTime}s</span>}
+            </p>
           </div>
         </div>
-        <button onClick={clear} className="text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition" title="Clear chat">
-          <FiTrash2 size={18} />
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-400 dark:text-gray-500 hidden sm:block">{messages.length - 1} messages</span>
+          <button onClick={clear} className="text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition" title="Clear chat">
+            <FiTrash2 size={18} />
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 space-y-4">
         {messages.map((msg, i) => (
-          <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-            <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm ${msg.role === 'user' ? 'bg-blue-100' : 'bg-emerald-100'}`}>
-              {msg.role === 'user' ? <FiUser className="text-blue-600" size={15} /> : '🐄'}
+          <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''} group`}>
+            <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm ${msg.role === 'user' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30'}`}>
+              {msg.role === 'user' ? <FiUser className="text-blue-600 dark:text-blue-400" size={15} /> : '🐄'}
             </div>
-            {msg.role === 'user' ? (
-              <div className="max-w-[75%] px-4 py-2.5 rounded-2xl rounded-br-sm bg-blue-600 text-white text-sm whitespace-pre-wrap">{msg.content}</div>
-            ) : (
-              <div className="max-w-[80%] px-4 py-3 rounded-2xl rounded-bl-sm bg-gray-50 border border-gray-100 text-gray-800 text-sm leading-relaxed prose prose-sm prose-emerald max-w-none
-                [&_p]:my-1.5 [&_ul]:my-1.5 [&_ul]:pl-4 [&_ol]:my-1.5 [&_ol]:pl-4
-                [&_li]:text-sm [&_strong]:text-gray-900
-                [&_table]:my-2 [&_table]:w-full [&_table]:text-xs
-                [&_th]:bg-emerald-50 [&_th]:px-3 [&_th]:py-1.5 [&_th]:text-left [&_th]:border [&_th]:border-emerald-200
-                [&_td]:px-3 [&_td]:py-1.5 [&_td]:border [&_td]:border-gray-200
-              ">
-                <ReactMarkdown>{msg.content}</ReactMarkdown>
-              </div>
-            )}
+            <div className="relative max-w-[80%]">
+              {msg.role === 'user' ? (
+                <div className="px-4 py-2.5 rounded-2xl rounded-br-sm bg-blue-600 text-white text-sm whitespace-pre-wrap">{msg.content}</div>
+              ) : (
+                <div className="px-4 py-3 rounded-2xl rounded-bl-sm bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-200 text-sm leading-relaxed prose prose-sm prose-emerald dark:prose-invert max-w-none
+                  [&_p]:my-1.5 [&_ul]:my-1.5 [&_ul]:pl-4 [&_ol]:my-1.5 [&_ol]:pl-4
+                  [&_li]:text-sm [&_strong]:text-gray-900 dark:[&_strong]:text-white
+                  [&_table]:my-2 [&_table]:w-full [&_table]:text-xs
+                  [&_th]:bg-emerald-50 dark:[&_th]:bg-emerald-900/30 [&_th]:px-3 [&_th]:py-1.5 [&_th]:text-left [&_th]:border [&_th]:border-emerald-200 dark:[&_th]:border-emerald-800
+                  [&_td]:px-3 [&_td]:py-1.5 [&_td]:border [&_td]:border-gray-200 dark:[&_td]:border-gray-700
+                  [&_code]:bg-gray-100 dark:[&_code]:bg-gray-700 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs
+                ">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
+              )}
+              {/* Copy button */}
+              {msg.role === 'assistant' && i > 0 && (
+                <button
+                  onClick={() => copyMsg(msg.content, i)}
+                  className="absolute -bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600"
+                  title="Copy"
+                >
+                  {copied === i ? <FiCheck size={12} className="text-green-500" /> : <FiCopy size={12} />}
+                </button>
+              )}
+            </div>
           </div>
         ))}
 
         {loading && (
           <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-sm">🐄</div>
-            <div className="bg-gray-50 border border-gray-100 px-4 py-3 rounded-2xl rounded-bl-sm">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center text-sm">🐄</div>
+            <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 px-4 py-3 rounded-2xl rounded-bl-sm">
               <div className="flex items-center gap-2">
                 <div className="flex gap-1">
                   <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                   <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                   <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
-                <span className="text-xs text-gray-400">Thinking...</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">Analyzing farm data...</span>
               </div>
             </div>
           </div>
@@ -101,21 +171,39 @@ export default function Chatbot() {
         <div ref={endRef} />
       </div>
 
-      {/* Suggestions */}
-      <div className="flex flex-wrap gap-2 mt-3">
-        {SUGGESTIONS.map((s, i) => (
-          <button key={i} onClick={() => send(s)} disabled={loading}
-            className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full hover:bg-emerald-100 transition border border-emerald-200 disabled:opacity-40">
-            {s}
-          </button>
-        ))}
-      </div>
+      {/* Dynamic follow-up suggestions (after AI responds) */}
+      {messages.length > 1 && !loading && (
+        <div className="flex flex-wrap gap-2 mt-3">
+          <FiZap className="text-amber-500 mt-1" size={14} />
+          {followUps.map((s, i) => (
+            <button key={i} onClick={() => send(s)}
+              className="text-xs bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-full hover:bg-amber-100 dark:hover:bg-amber-900/30 transition border border-amber-200 dark:border-amber-800">
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Quick action grid (shown initially or when few messages) */}
+      {messages.length <= 3 && (
+        <div className="mt-3">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 font-medium uppercase tracking-wider">⚡ Quick Actions</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            {QUICK_ACTIONS.map((a, i) => (
+              <button key={i} onClick={() => send(a.msg)} disabled={loading}
+                className="text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2.5 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 transition border border-gray-200 dark:border-gray-700 text-left disabled:opacity-40 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-sm">
+                {a.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Input */}
       <form onSubmit={e => { e.preventDefault(); send(input); }} className="mt-3 flex gap-2">
-        <input ref={inputRef} className="input flex-1" value={input} onChange={e => setInput(e.target.value)}
-          placeholder="Ask anything about your farm..." disabled={loading} />
-        <button type="submit" disabled={loading || !input.trim()} className="btn-primary px-4">
+        <input ref={inputRef} className="input flex-1 dark:bg-gray-800 dark:border-gray-700" value={input} onChange={e => setInput(e.target.value)}
+          placeholder="Ask anything about your farm... (Hindi/English)" disabled={loading} />
+        <button type="submit" disabled={loading || !input.trim()} className="btn-primary px-4 flex items-center gap-2">
           <FiSend size={18} />
         </button>
       </form>

@@ -220,6 +220,25 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* Per-Liter Analytics */}
+      {stats.analytics && stats.analytics.totalMilkPeriod > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            { label: 'Cost per Liter', value: `₹${stats.analytics.costPerLiter.toFixed(1)}`, color: 'red', icon: '💸' },
+            { label: 'Revenue per Liter', value: `₹${stats.analytics.revenuePerLiter.toFixed(1)}`, color: 'blue', icon: '💰' },
+            { label: 'Profit per Liter', value: `₹${stats.analytics.profitPerLiter.toFixed(1)}`, color: stats.analytics.profitPerLiter >= 0 ? 'emerald' : 'red', icon: stats.analytics.profitPerLiter >= 0 ? '📈' : '📉' },
+          ].map((item, i) => (
+            <div key={i} className={`card !p-4 flex items-center gap-3 border-l-4 border-l-${item.color}-500`}>
+              <span className="text-2xl">{item.icon}</span>
+              <div>
+                <p className={`text-lg font-bold text-${item.color}-600 dark:text-${item.color}-400`}>{item.value}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{item.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Quick Insights Bar */}
       <div className="card !p-4 flex flex-wrap items-center gap-6 text-sm">
         <div className="flex items-center gap-2">

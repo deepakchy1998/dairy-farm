@@ -351,6 +351,40 @@ export default function Landing() {
         </FadeIn>
       </section>
 
+      {/* ─── FAQ Section ─── */}
+      <section className="py-20 px-4 bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-4xl mx-auto">
+          <FadeIn>
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-extrabold dark:text-white">❓ Frequently Asked Questions</h2>
+              <p className="text-gray-500 dark:text-gray-400 mt-3">Everything you need to know about DairyPro</p>
+            </div>
+          </FadeIn>
+          <div className="space-y-4">
+            {[
+              { q: 'Is DairyPro free to try?', a: 'Yes! You get a 5-day free trial with full access to all features. No credit card required.' },
+              { q: 'Can I use it on my phone?', a: 'Absolutely! DairyPro is a Progressive Web App (PWA). You can install it on your phone like a regular app from the browser. Works offline too!' },
+              { q: 'Does it support Hindi?', a: 'Yes! Our AI Farm Assistant (chatbot) understands both Hindi and English. You can ask questions in Hinglish too — "Aaj ka dudh kitna hai?" works perfectly!' },
+              { q: 'How does the AI chatbot work?', a: 'Our chatbot is powered by Google Gemini AI and has real-time access to your farm data. It can answer questions, analyze trends, give recommendations, and flag problems automatically.' },
+              { q: 'Is my data safe?', a: 'Your data is stored securely on MongoDB Atlas with encryption. Each farm\'s data is isolated — no one else can see your records.' },
+              { q: 'How do I pay for subscription?', a: 'We support UPI payments — simply pay using any UPI app (PhonePe, GPay, Paytm) and enter your transaction ID. Our admin verifies it within hours.' },
+              { q: 'Can I export my records?', a: 'Yes! You can export milk records, reports, and financial data as PDF or CSV from the dashboard and reports pages.' },
+              { q: 'How many cattle can I track?', a: 'There\'s no limit! Track as many cattle as you have — milking, dry, heifers, calves, bulls. All included in every plan.' },
+            ].map((faq, i) => (
+              <FadeIn key={i} delay={i * 0.05}>
+                <details className="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <summary className="flex items-center justify-between p-5 cursor-pointer font-semibold text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-750 transition">
+                    {faq.q}
+                    <span className="text-emerald-500 group-open:rotate-45 transition-transform text-xl">+</span>
+                  </summary>
+                  <div className="px-5 pb-5 text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{faq.a}</div>
+                </details>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ─── Footer ─── */}
       <footer className="py-12 px-4 bg-gray-900 dark:bg-gray-950 text-gray-400 border-t border-gray-800">
         <div className="max-w-7xl mx-auto">
