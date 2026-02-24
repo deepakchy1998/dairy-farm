@@ -38,6 +38,7 @@ export default function Layout({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const notifRef = useRef(null);
+  const prevUnreadRef = useRef(0);
   const { user, logout } = useAuth();
   const { dark, toggle: toggleTheme } = useTheme();
   const location = useLocation();
@@ -48,13 +49,46 @@ export default function Layout({ children }) {
     navigate('/login');
   };
 
+  const showBrowserNotification = (title, body, url) => {
+    if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
+      const notif = new Notification(title, {
+        body,
+        icon: '/icon-192.png',
+        tag: 'dairypro-' + Date.now(),
+        vibrate: [200, 100, 200],
+      });
+      notif.onclick = () => {
+        window.focus();
+        if (url) navigate(url);
+        notif.close();
+      };
+    }
+  };
+
   // Fetch unread count
-  const fetchUnread = () => {
-    api.get('/notifications/count').then(r => setUnreadCount(r.data.data?.unread || 0)).catch(() => {});
+  const fetchUnread = async () => {
+    try {
+      const r = await api.get('/notifications/count');
+      const newCount = r.data.data?.unread || 0;
+      if (newCount > prevUnreadRef.current && prevUnreadRef.current >= 0) {
+        // New notifications arrived — fetch latest to show browser notif
+        const latest = await api.get('/notifications', { params: { limit: 1 } });
+        const n = latest.data.data?.[0];
+        if (n && !n.read) {
+          showBrowserNotification(n.title, n.message, n.actionUrl);
+        }
+      }
+      prevUnreadRef.current = newCount;
+      setUnreadCount(newCount);
+    } catch {}
   };
 
   // Auto-generate + fetch on mount, then poll every 5 min
   useEffect(() => {
+    // Request push notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
     api.post('/notifications/generate').catch(() => {});
     fetchUnread();
     const interval = setInterval(() => {
@@ -174,14 +208,19 @@ export default function Layout({ children }) {
 
               {/* Notification Dropdown */}
               {notifOpen && (
-                <div className="absolute right-0 top-12 w-80 sm:w-96 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 animate-modalSlide overflow-hidden">
+                <div className="fixed inset-x-3 top-16 sm:absolute sm:inset-auto sm:right-0 sm:top-12 sm:w-96 max-h-[70vh] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 animate-modalSlide overflow-hidden">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                     <h3 className="font-bold text-sm dark:text-white">Notifications</h3>
-                    {unreadCount > 0 && (
-                      <button onClick={markAllRead} className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
-                        Mark all read
+                    <div className="flex items-center gap-2">
+                      {unreadCount > 0 && (
+                        <button onClick={markAllRead} className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
+                          Mark all read
+                        </button>
+                      )}
+                      <button onClick={() => setNotifOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" title="Close">
+                        <FiX size={16} />
                       </button>
-                    )}
+                    </div>
                   </div>
                   <div className="max-h-80 overflow-y-auto divide-y divide-gray-50 dark:divide-gray-800">
                     {notifications.length === 0 ? (

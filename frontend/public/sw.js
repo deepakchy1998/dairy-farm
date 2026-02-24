@@ -38,3 +38,31 @@ self.addEventListener('fetch', (event) => {
       .catch(() => caches.match(event.request).then((r) => r || caches.match('/')))
   );
 });
+
+// Push notifications
+self.addEventListener('push', (event) => {
+  const data = event.data?.json() || { title: 'DairyPro', body: 'You have a new notification' };
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: data.tag || 'dairypro-notification',
+      data: { url: data.url || '/dashboard' },
+      vibrate: [200, 100, 200],
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/dashboard';
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then((windowClients) => {
+      for (const client of windowClients) {
+        if (client.url.includes(url) && 'focus' in client) return client.focus();
+      }
+      return clients.openWindow(url);
+    })
+  );
+});
