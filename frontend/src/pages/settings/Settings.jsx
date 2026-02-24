@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import { formatDate } from '../../utils/helpers';
-import { FiUser, FiLock, FiHome, FiSave } from 'react-icons/fi';
+import { FiUser, FiLock, FiHome, FiSave, FiDownload } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export default function Settings() {
@@ -77,6 +77,7 @@ export default function Settings() {
     { id: 'profile', label: '👤 Profile', icon: FiUser },
     { id: 'password', label: '🔒 Password', icon: FiLock },
     { id: 'farm', label: '🏠 Farm Details', icon: FiHome },
+    { id: 'backup', label: '💾 Backup', icon: FiDownload },
   ];
 
   return (
@@ -207,6 +208,45 @@ export default function Settings() {
               <FiSave size={16} /> {saving ? 'Saving...' : 'Save Farm Details'}
             </button>
           </form>
+        </div>
+      )}
+      {/* Backup Tab */}
+      {tab === 'backup' && (
+        <div className="card space-y-6">
+          <div>
+            <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">💾 Farm Data Backup</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Download a complete backup of all your farm data as a JSON file. This includes cattle, milk records, health records, breeding, finance, feed, and insurance data.</p>
+            <button onClick={async () => {
+              try {
+                toast.loading('Preparing backup...');
+                const res = await api.get('/farm/export');
+                const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `dairypro-backup-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.dismiss();
+                toast.success('Backup downloaded!');
+              } catch { toast.dismiss(); toast.error('Failed to create backup'); }
+            }} className="btn-primary flex items-center gap-2">
+              <FiDownload size={16} /> Download Full Backup (JSON)
+            </button>
+          </div>
+          <div className="border-t pt-4">
+            <h3 className="font-semibold mb-2">What's included:</h3>
+            <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+              <li>✅ All cattle records & weight history</li>
+              <li>✅ All milk production records</li>
+              <li>✅ Health & vaccination records</li>
+              <li>✅ Breeding records</li>
+              <li>✅ Feed records</li>
+              <li>✅ All financial data (expenses & revenue)</li>
+              <li>✅ Insurance policies</li>
+              <li>✅ Farm details</li>
+            </ul>
+          </div>
         </div>
       )}
     </div>

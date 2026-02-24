@@ -15,6 +15,11 @@ const cattleSchema = new mongoose.Schema({
   motherTag: { type: String, default: '' },
   fatherTag: { type: String, default: '' },
   notes: { type: String, default: '' },
+  salePrice: { type: Number, default: 0 },
+  saleDate: { type: Date },
+  deathDate: { type: Date },
+  deathCause: { type: String, default: '' },
+  exitReason: { type: String, default: '' }, // sold, died, gifted, etc.
   image: { type: String, default: '' },
   lactationNumber: { type: Number, default: 0 },
   lastCalvingDate: { type: Date },

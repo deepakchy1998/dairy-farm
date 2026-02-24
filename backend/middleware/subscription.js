@@ -10,7 +10,7 @@ export const checkSubscription = async (req, res, next) => {
       userId: req.user._id,
       isActive: true,
       endDate: { $gte: new Date() },
-    });
+    }).lean();
 
     if (!sub) {
       return res.status(403).json({
@@ -42,7 +42,7 @@ export const subscriptionStatus = async (req, res, next) => {
       userId: req.user._id,
       isActive: true,
       endDate: { $gte: new Date() },
-    });
+    }).lean();
     req.subscriptionActive = !!sub;
     req.subscription = sub;
     req.daysLeft = sub ? Math.ceil((new Date(sub.endDate) - new Date()) / (1000 * 60 * 60 * 24)) : 0;

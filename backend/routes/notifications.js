@@ -191,6 +191,33 @@ router.post('/generate', async (req, res, next) => {
       }
     }
 
+    // Insurance expiry alerts
+    try {
+      const Insurance = (await import('../models/Insurance.js')).default;
+      const expiringPolicies = await Insurance.find({
+        farmId,
+        status: 'active',
+        endDate: { $gte: new Date(), $lte: new Date(Date.now() + 30 * 86400000) },
+      }).populate('cattleId', 'tagNumber').lean();
+
+      for (const policy of expiringPolicies) {
+        const daysLeft = Math.ceil((new Date(policy.endDate) - new Date()) / 86400000);
+        if (daysLeft <= 7 || daysLeft === 15 || daysLeft === 30) {
+          await createIfNew({
+            farmId, userId,
+            title: '🛡️ Insurance Expiring',
+            message: `Insurance for Tag ${policy.cattleId?.tagNumber || 'Unknown'} (${policy.provider}) expires in ${daysLeft} day${daysLeft > 1 ? 's' : ''}. Policy: ${policy.policyNumber}`,
+            severity: daysLeft <= 7 ? 'critical' : 'warning',
+            type: 'insurance',
+            actionUrl: '/insurance',
+            refId: `insurance_expiry_${policy._id}_${todayStr}`,
+          }, userPhone);
+        }
+      }
+    } catch (err) {
+      // Insurance module not loaded — skip silently
+    }
+
     // Cleanup: read notifications older than 24 hours
     await Notification.deleteMany({ 
       farmId, 

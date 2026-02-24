@@ -29,10 +29,44 @@ const app = express();
 
 app.use(helmet());
 app.use(cors());
+
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
 app.use(express.json({ limit: '10mb' }));
 
+// Simple rate limiter for auth routes
+const authAttempts = new Map();
+const AUTH_LIMIT = 10; // max attempts
+const AUTH_WINDOW = 15 * 60 * 1000; // 15 minutes
+
+const authRateLimit = (req, res, next) => {
+  const key = req.ip + ':' + (req.body?.email || '');
+  const now = Date.now();
+  const attempts = authAttempts.get(key) || [];
+  const recent = attempts.filter(t => now - t < AUTH_WINDOW);
+  if (recent.length >= AUTH_LIMIT) {
+    return res.status(429).json({ success: false, message: 'Too many attempts. Please try again in 15 minutes.' });
+  }
+  recent.push(now);
+  authAttempts.set(key, recent);
+  // Cleanup old entries periodically
+  if (authAttempts.size > 10000) {
+    for (const [k, v] of authAttempts) {
+      if (v.every(t => now - t > AUTH_WINDOW)) authAttempts.delete(k);
+    }
+  }
+  next();
+};
+
 // Public routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRateLimit, authRoutes);
 app.use('/api/landing', landingRoutes);
 
 // Protected routes
