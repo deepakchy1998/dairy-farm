@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import api from '../../utils/api';
-import { FiSend, FiMessageSquare, FiUser, FiTrash2, FiCopy, FiCheck, FiZap, FiClock } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+import { FiSend, FiMessageSquare, FiUser, FiTrash2, FiCopy, FiCheck, FiZap, FiClock, FiX } from 'react-icons/fi';
 
 const QUICK_ACTIONS = [
   { label: '🥛 Today\'s Milk', msg: 'Aaj ka dudh kitna hai? Give detailed breakdown' },
@@ -36,6 +37,7 @@ function detectContext(lastReply) {
 }
 
 export default function Chatbot() {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([
     { role: 'assistant', content: "Namaste! 🐄 I'm your **DairyPro AI Assistant** — powered by Google Gemini.\n\nI have real-time access to all your farm data. Ask me anything in **Hindi** or **English**!\n\n**Quick commands:**\n- `/alerts` — Instant farm alerts\n- `/milk` — Today's milk summary\n\nOr tap a quick action below 👇", ts: Date.now() },
   ]);
@@ -113,6 +115,9 @@ export default function Chatbot() {
           <span className="text-xs text-gray-400 dark:text-gray-500 hidden sm:block">{messages.length - 1} messages</span>
           <button onClick={clear} className="text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition" title="Clear chat">
             <FiTrash2 size={18} />
+          </button>
+          <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition" title="Close">
+            <FiX size={20} />
           </button>
         </div>
       </div>

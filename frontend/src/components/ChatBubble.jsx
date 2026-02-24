@@ -70,7 +70,7 @@ export default function ChatBubble() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed z-[9999] inset-0 sm:inset-auto sm:bottom-6 sm:right-6 sm:w-[380px] sm:h-[520px] sm:max-h-[calc(100vh-3rem)] bg-white dark:bg-gray-900 sm:rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
+        <div className="fixed bottom-6 right-6 z-[9999] w-[380px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-3rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
           <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center"><span className="text-lg">🤖</span></div>
@@ -79,7 +79,7 @@ export default function ChatBubble() {
                 <p className="text-emerald-100 text-xs">AI Farm Advisor</p>
               </div>
             </div>
-            <button onClick={() => setOpen(false)} className="text-white/80 hover:text-white p-2 bg-white/10 rounded-full hover:bg-white/20 transition"><FiX size={22} /></button>
+            <button onClick={() => setOpen(false)} className="text-white/80 hover:text-white p-1"><FiX size={20} /></button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50 dark:bg-gray-950">

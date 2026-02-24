@@ -291,51 +291,76 @@ export default function MilkRecords() {
           <button onClick={() => handleSharePdf(viewCattle)} className="text-purple-600 hover:text-purple-800 text-sm font-medium">📄 Share PDF</button>
         </div>
 
-        <div className="card p-0 overflow-x-auto">
+        <div className="card p-0">
           {loadingHistory ? (
             <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div></div>
           ) : history.length === 0 ? (
             <div className="text-center py-8 text-gray-400">No records found</div>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-b text-xs text-gray-500 uppercase">
-                  <th className="px-3 py-2 text-left">Date</th>
-                  <th className="px-2 py-2 text-center bg-blue-50 text-blue-600">Morn (L)</th>
-                  <th className="px-2 py-2 text-center bg-blue-50 text-blue-600">Fat%</th>
-                  <th className="px-2 py-2 text-center bg-blue-50 text-blue-600">SNF%</th>
-                  <th className="px-2 py-2 text-center bg-amber-50 text-amber-600">Noon (L)</th>
-                  <th className="px-2 py-2 text-center bg-amber-50 text-amber-600">Fat%</th>
-                  <th className="px-2 py-2 text-center bg-amber-50 text-amber-600">SNF%</th>
-                  <th className="px-2 py-2 text-center bg-orange-50 text-orange-600">Eve (L)</th>
-                  <th className="px-2 py-2 text-center bg-orange-50 text-orange-600">Fat%</th>
-                  <th className="px-2 py-2 text-center bg-orange-50 text-orange-600">SNF%</th>
-                  <th className="px-3 py-2 text-center text-emerald-600">Total</th>
-                  <th className="px-2 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((r, i) => (
-                  <tr key={r._id} className={`border-b ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                    <td className="px-3 py-2 text-gray-600">{formatDate(r.date)}</td>
-                    <td className="px-2 py-2 text-center">{r.morningYield > 0 ? r.morningYield.toFixed(1) : '-'}</td>
-                    <td className="px-2 py-2 text-center text-xs text-gray-400">{r.morningFat ?? '-'}</td>
-                    <td className="px-2 py-2 text-center text-xs text-gray-400">{r.morningSNF ?? '-'}</td>
-                    <td className="px-2 py-2 text-center">{r.afternoonYield > 0 ? r.afternoonYield.toFixed(1) : '-'}</td>
-                    <td className="px-2 py-2 text-center text-xs text-gray-400">{r.afternoonFat ?? '-'}</td>
-                    <td className="px-2 py-2 text-center text-xs text-gray-400">{r.afternoonSNF ?? '-'}</td>
-                    <td className="px-2 py-2 text-center">{r.eveningYield > 0 ? r.eveningYield.toFixed(1) : '-'}</td>
-                    <td className="px-2 py-2 text-center text-xs text-gray-400">{r.eveningFat ?? '-'}</td>
-                    <td className="px-2 py-2 text-center text-xs text-gray-400">{r.eveningSNF ?? '-'}</td>
-                    <td className="px-3 py-2 text-center font-bold text-emerald-600">{r.totalYield.toFixed(1)}</td>
-                    <td className="px-2 py-2 whitespace-nowrap">
-                      <button onClick={() => { setRecordCattle(viewCattle); setForm({ date: r.date?.slice(0,10) || todayStr(), morningYield: r.morningYield || '', morningFat: r.morningFat || '', morningSNF: r.morningSNF || '', afternoonYield: r.afternoonYield || '', afternoonFat: r.afternoonFat || '', afternoonSNF: r.afternoonSNF || '', eveningYield: r.eveningYield || '', eveningFat: r.eveningFat || '', eveningSNF: r.eveningSNF || '' }); setEditId(r._id); setRecordModal(true); }} className="text-blue-500 hover:text-blue-700 text-xs mr-2">Edit</button>
-                      <button onClick={() => handleDeleteRecord(r._id)} className="text-red-400 hover:text-red-600 text-xs">Delete</button>
-                    </td>
-                  </tr>
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
+                      <th className="px-3 py-2 text-left">Date</th>
+                      <th className="px-2 py-2 text-center text-blue-600">Morning</th>
+                      <th className="px-2 py-2 text-center text-amber-600">Afternoon</th>
+                      <th className="px-2 py-2 text-center text-orange-600">Evening</th>
+                      <th className="px-3 py-2 text-center text-emerald-600">Total</th>
+                      <th className="px-2 py-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {history.map((r, i) => (
+                      <tr key={r._id} className={`border-b hover:bg-gray-50 dark:hover:bg-gray-800/30 ${i % 2 === 0 ? '' : 'bg-gray-50/50 dark:bg-gray-800/20'}`}>
+                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 whitespace-nowrap">{formatDate(r.date)}</td>
+                        <td className="px-2 py-2 text-center">{r.morningYield > 0 ? <span>{r.morningYield.toFixed(1)}L {r.morningFat ? <span className="text-xs text-gray-400">({r.morningFat}%)</span> : ''}</span> : <span className="text-gray-300">-</span>}</td>
+                        <td className="px-2 py-2 text-center">{r.afternoonYield > 0 ? <span>{r.afternoonYield.toFixed(1)}L</span> : <span className="text-gray-300">-</span>}</td>
+                        <td className="px-2 py-2 text-center">{r.eveningYield > 0 ? <span>{r.eveningYield.toFixed(1)}L {r.eveningFat ? <span className="text-xs text-gray-400">({r.eveningFat}%)</span> : ''}</span> : <span className="text-gray-300">-</span>}</td>
+                        <td className="px-3 py-2 text-center font-bold text-emerald-600">{r.totalYield.toFixed(1)}L</td>
+                        <td className="px-2 py-2 whitespace-nowrap">
+                          <button onClick={() => { setRecordCattle(viewCattle); setForm({ date: r.date?.slice(0,10) || todayStr(), morningYield: r.morningYield || '', morningFat: r.morningFat || '', morningSNF: r.morningSNF || '', afternoonYield: r.afternoonYield || '', afternoonFat: r.afternoonFat || '', afternoonSNF: r.afternoonSNF || '', eveningYield: r.eveningYield || '', eveningFat: r.eveningFat || '', eveningSNF: r.eveningSNF || '' }); setEditId(r._id); setRecordModal(true); }} className="text-blue-500 hover:text-blue-700 text-xs mr-2">Edit</button>
+                          <button onClick={() => handleDeleteRecord(r._id)} className="text-red-400 hover:text-red-600 text-xs">Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+                {history.map(r => (
+                  <div key={r._id} className="p-3 hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{formatDate(r.date)}</span>
+                      <span className="text-lg font-bold text-emerald-600">{r.totalYield.toFixed(1)}L</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg py-1.5 px-1">
+                        <p className="text-[10px] text-blue-500 font-medium">Morning</p>
+                        <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">{r.morningYield > 0 ? r.morningYield.toFixed(1) + 'L' : '-'}</p>
+                        {r.morningFat > 0 && <p className="text-[10px] text-gray-400">Fat {r.morningFat}%</p>}
+                      </div>
+                      <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg py-1.5 px-1">
+                        <p className="text-[10px] text-amber-500 font-medium">Afternoon</p>
+                        <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">{r.afternoonYield > 0 ? r.afternoonYield.toFixed(1) + 'L' : '-'}</p>
+                      </div>
+                      <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg py-1.5 px-1">
+                        <p className="text-[10px] text-orange-500 font-medium">Evening</p>
+                        <p className="text-sm font-semibold text-orange-700 dark:text-orange-300">{r.eveningYield > 0 ? r.eveningYield.toFixed(1) + 'L' : '-'}</p>
+                        {r.eveningFat > 0 && <p className="text-[10px] text-gray-400">Fat {r.eveningFat}%</p>}
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-3 mt-2">
+                      <button onClick={() => { setRecordCattle(viewCattle); setForm({ date: r.date?.slice(0,10) || todayStr(), morningYield: r.morningYield || '', morningFat: r.morningFat || '', morningSNF: r.morningSNF || '', afternoonYield: r.afternoonYield || '', afternoonFat: r.afternoonFat || '', afternoonSNF: r.afternoonSNF || '', eveningYield: r.eveningYield || '', eveningFat: r.eveningFat || '', eveningSNF: r.eveningSNF || '' }); setEditId(r._id); setRecordModal(true); }} className="text-blue-500 text-xs font-medium">✏️ Edit</button>
+                      <button onClick={() => handleDeleteRecord(r._id)} className="text-red-400 text-xs font-medium">🗑️ Delete</button>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
         </div>
 
@@ -343,16 +368,48 @@ export default function MilkRecords() {
         <Modal isOpen={recordModal} onClose={() => setRecordModal(false)} title={`${editId ? 'Edit' : 'Add'} Record — Tag No ${recordCattle?.tagNumber || ''}`} size="xl">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div><label className="label">Date *</label><input type="date" className="input w-auto" required value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border rounded-lg overflow-hidden">
-                <thead><tr className="bg-gray-50"><th className="px-3 py-2 text-left text-xs text-gray-500 uppercase">Session</th><th className="px-3 py-2 text-center text-xs text-gray-500 uppercase">Yield (L) *</th><th className="px-3 py-2 text-center text-xs text-gray-500 uppercase">Fat %</th><th className="px-3 py-2 text-center text-xs text-gray-500 uppercase">SNF %</th></tr></thead>
-                <tbody>
-                  <tr className="bg-blue-50/50 border-b"><td className="px-3 py-2 font-medium text-blue-700">☀️ Morning</td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.morningYield} onChange={e => setForm({ ...form, morningYield: e.target.value })} placeholder="0" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.morningFat} onChange={e => setForm({ ...form, morningFat: e.target.value })} placeholder="3.5" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.morningSNF} onChange={e => setForm({ ...form, morningSNF: e.target.value })} placeholder="8.5" /></td></tr>
-                  <tr className="bg-amber-50/50 border-b"><td className="px-3 py-2 font-medium text-amber-700">🕐 Afternoon <span className="text-xs font-normal text-gray-400">(optional)</span></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.afternoonYield} onChange={e => setForm({ ...form, afternoonYield: e.target.value })} placeholder="0" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.afternoonFat} onChange={e => setForm({ ...form, afternoonFat: e.target.value })} placeholder="3.5" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.afternoonSNF} onChange={e => setForm({ ...form, afternoonSNF: e.target.value })} placeholder="8.5" /></td></tr>
-                  <tr className="bg-orange-50/50 border-b"><td className="px-3 py-2 font-medium text-orange-700">🌙 Evening</td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.eveningYield} onChange={e => setForm({ ...form, eveningYield: e.target.value })} placeholder="0" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.eveningFat} onChange={e => setForm({ ...form, eveningFat: e.target.value })} placeholder="3.5" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.eveningSNF} onChange={e => setForm({ ...form, eveningSNF: e.target.value })} placeholder="8.5" /></td></tr>
-                  {formTotal > 0 && <tr className="bg-emerald-50"><td className="px-3 py-2 font-bold text-emerald-700">Total</td><td className="px-3 py-2 text-center font-bold text-emerald-700 text-lg">{formTotal.toFixed(1)} L</td><td></td><td></td></tr>}
-                </tbody>
-              </table>
+            <div className="space-y-4">
+              {/* Desktop table */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-sm border rounded-lg overflow-hidden">
+                  <thead><tr className="bg-gray-50 dark:bg-gray-800"><th className="px-3 py-2 text-left text-xs text-gray-500 uppercase">Session</th><th className="px-3 py-2 text-center text-xs text-gray-500 uppercase">Yield (L) *</th><th className="px-3 py-2 text-center text-xs text-gray-500 uppercase">Fat %</th><th className="px-3 py-2 text-center text-xs text-gray-500 uppercase">SNF %</th></tr></thead>
+                  <tbody>
+                    <tr className="bg-blue-50/50 dark:bg-blue-900/10 border-b"><td className="px-3 py-2 font-medium text-blue-700 dark:text-blue-400">☀️ Morning</td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.morningYield} onChange={e => setForm({ ...form, morningYield: e.target.value })} placeholder="0" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.morningFat} onChange={e => setForm({ ...form, morningFat: e.target.value })} placeholder="3.5" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.morningSNF} onChange={e => setForm({ ...form, morningSNF: e.target.value })} placeholder="8.5" /></td></tr>
+                    <tr className="bg-amber-50/50 dark:bg-amber-900/10 border-b"><td className="px-3 py-2 font-medium text-amber-700 dark:text-amber-400">🕐 Afternoon</td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.afternoonYield} onChange={e => setForm({ ...form, afternoonYield: e.target.value })} placeholder="0" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.afternoonFat} onChange={e => setForm({ ...form, afternoonFat: e.target.value })} placeholder="3.5" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.afternoonSNF} onChange={e => setForm({ ...form, afternoonSNF: e.target.value })} placeholder="8.5" /></td></tr>
+                    <tr className="bg-orange-50/50 dark:bg-orange-900/10 border-b"><td className="px-3 py-2 font-medium text-orange-700 dark:text-orange-400">🌙 Evening</td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.eveningYield} onChange={e => setForm({ ...form, eveningYield: e.target.value })} placeholder="0" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.eveningFat} onChange={e => setForm({ ...form, eveningFat: e.target.value })} placeholder="3.5" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.eveningSNF} onChange={e => setForm({ ...form, eveningSNF: e.target.value })} placeholder="8.5" /></td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile stacked layout */}
+              <div className="sm:hidden space-y-3">
+                <div className="bg-blue-50 dark:bg-blue-900/10 rounded-xl p-3">
+                  <p className="font-medium text-blue-700 dark:text-blue-400 text-sm mb-2">☀️ Morning</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div><label className="text-[10px] text-gray-500">Yield (L)</label><input type="number" step="0.1" className="input text-center text-sm" value={form.morningYield} onChange={e => setForm({ ...form, morningYield: e.target.value })} placeholder="0" /></div>
+                    <div><label className="text-[10px] text-gray-500">Fat %</label><input type="number" step="0.1" className="input text-center text-sm" value={form.morningFat} onChange={e => setForm({ ...form, morningFat: e.target.value })} placeholder="3.5" /></div>
+                    <div><label className="text-[10px] text-gray-500">SNF %</label><input type="number" step="0.1" className="input text-center text-sm" value={form.morningSNF} onChange={e => setForm({ ...form, morningSNF: e.target.value })} placeholder="8.5" /></div>
+                  </div>
+                </div>
+                <div className="bg-amber-50 dark:bg-amber-900/10 rounded-xl p-3">
+                  <p className="font-medium text-amber-700 dark:text-amber-400 text-sm mb-2">🕐 Afternoon</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div><label className="text-[10px] text-gray-500">Yield (L)</label><input type="number" step="0.1" className="input text-center text-sm" value={form.afternoonYield} onChange={e => setForm({ ...form, afternoonYield: e.target.value })} placeholder="0" /></div>
+                    <div><label className="text-[10px] text-gray-500">Fat %</label><input type="number" step="0.1" className="input text-center text-sm" value={form.afternoonFat} onChange={e => setForm({ ...form, afternoonFat: e.target.value })} placeholder="3.5" /></div>
+                    <div><label className="text-[10px] text-gray-500">SNF %</label><input type="number" step="0.1" className="input text-center text-sm" value={form.afternoonSNF} onChange={e => setForm({ ...form, afternoonSNF: e.target.value })} placeholder="8.5" /></div>
+                  </div>
+                </div>
+                <div className="bg-orange-50 dark:bg-orange-900/10 rounded-xl p-3">
+                  <p className="font-medium text-orange-700 dark:text-orange-400 text-sm mb-2">🌙 Evening</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div><label className="text-[10px] text-gray-500">Yield (L)</label><input type="number" step="0.1" className="input text-center text-sm" value={form.eveningYield} onChange={e => setForm({ ...form, eveningYield: e.target.value })} placeholder="0" /></div>
+                    <div><label className="text-[10px] text-gray-500">Fat %</label><input type="number" step="0.1" className="input text-center text-sm" value={form.eveningFat} onChange={e => setForm({ ...form, eveningFat: e.target.value })} placeholder="3.5" /></div>
+                    <div><label className="text-[10px] text-gray-500">SNF %</label><input type="number" step="0.1" className="input text-center text-sm" value={form.eveningSNF} onChange={e => setForm({ ...form, eveningSNF: e.target.value })} placeholder="8.5" /></div>
+                  </div>
+                </div>
+              </div>
+
+              {formTotal > 0 && <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 text-center"><span className="text-sm text-emerald-600 font-medium">Total: </span><span className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{formTotal.toFixed(1)} L</span></div>}
             </div>
             <div className="flex justify-end gap-3 pt-2 border-t">
               <button type="button" onClick={() => setRecordModal(false)} className="btn-secondary">Cancel</button>
@@ -424,48 +481,71 @@ export default function MilkRecords() {
         </div>
 
         {/* Records Table */}
-        <div className="card p-0 overflow-x-auto">
+        <div className="card p-0">
           {loadingRecords ? (
             <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div></div>
           ) : filteredRecords.length === 0 ? (
             <div className="text-center py-8 text-gray-400">No records found for selected filters</div>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-b text-xs text-gray-500 uppercase">
-                  <th className="px-3 py-2 text-left">Date</th>
-                  <th className="px-2 py-2 text-left">Tag No</th>
-                  <th className="px-2 py-2 text-left">Breed</th>
-                  <th className="px-2 py-2 text-center bg-blue-50 text-blue-600">Morn (L)</th>
-                  <th className="px-2 py-2 text-center bg-blue-50 text-blue-600">Fat%</th>
-                  <th className="px-2 py-2 text-center bg-blue-50 text-blue-600">SNF%</th>
-                  <th className="px-2 py-2 text-center bg-orange-50 text-orange-600">Eve (L)</th>
-                  <th className="px-2 py-2 text-center bg-orange-50 text-orange-600">Fat%</th>
-                  <th className="px-2 py-2 text-center bg-orange-50 text-orange-600">SNF%</th>
-                  <th className="px-3 py-2 text-center text-emerald-600">Total</th>
-                  <th className="px-2 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRecords.map((r, i) => (
-                  <tr key={r._id} className={`border-b ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                    <td className="px-3 py-2 text-gray-600">{formatDate(r.date)}</td>
-                    <td className="px-2 py-2 font-mono font-medium">{'Tag No ' + (r.cattleId?.tagNumber || '-')}</td>
-                    <td className="px-2 py-2 text-gray-500 text-xs">{r.cattleId?.breed || '-'}</td>
-                    <td className="px-2 py-2 text-center">{r.morningYield > 0 ? r.morningYield.toFixed(1) : '-'}</td>
-                    <td className="px-2 py-2 text-center text-xs text-gray-400">{r.morningFat ?? '-'}</td>
-                    <td className="px-2 py-2 text-center text-xs text-gray-400">{r.morningSNF ?? '-'}</td>
-                    <td className="px-2 py-2 text-center">{r.eveningYield > 0 ? r.eveningYield.toFixed(1) : '-'}</td>
-                    <td className="px-2 py-2 text-center text-xs text-gray-400">{r.eveningFat ?? '-'}</td>
-                    <td className="px-2 py-2 text-center text-xs text-gray-400">{r.eveningSNF ?? '-'}</td>
-                    <td className="px-3 py-2 text-center font-bold text-emerald-600">{r.totalYield.toFixed(1)}</td>
-                    <td className="px-2 py-2 whitespace-nowrap">
-                      <button onClick={() => handleDeleteRecord(r._id)} className="text-red-400 hover:text-red-600 text-xs">Delete</button>
-                    </td>
-                  </tr>
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
+                      <th className="px-3 py-2 text-left">Date</th>
+                      <th className="px-2 py-2 text-left">Tag No</th>
+                      <th className="px-2 py-2 text-center text-blue-600">Morning</th>
+                      <th className="px-2 py-2 text-center text-orange-600">Evening</th>
+                      <th className="px-3 py-2 text-center text-emerald-600">Total</th>
+                      <th className="px-2 py-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRecords.map((r, i) => (
+                      <tr key={r._id} className={`border-b hover:bg-gray-50 dark:hover:bg-gray-800/30 ${i % 2 === 0 ? '' : 'bg-gray-50/50 dark:bg-gray-800/20'}`}>
+                        <td className="px-3 py-2 text-gray-600 dark:text-gray-400 whitespace-nowrap">{formatDate(r.date)}</td>
+                        <td className="px-2 py-2 font-mono font-medium">{'Tag No ' + (r.cattleId?.tagNumber || '-')} <span className="text-xs text-gray-400 font-normal">{r.cattleId?.breed || ''}</span></td>
+                        <td className="px-2 py-2 text-center">{r.morningYield > 0 ? <span>{r.morningYield.toFixed(1)}L {r.morningFat ? <span className="text-xs text-gray-400">({r.morningFat}%)</span> : ''}</span> : <span className="text-gray-300">-</span>}</td>
+                        <td className="px-2 py-2 text-center">{r.eveningYield > 0 ? <span>{r.eveningYield.toFixed(1)}L {r.eveningFat ? <span className="text-xs text-gray-400">({r.eveningFat}%)</span> : ''}</span> : <span className="text-gray-300">-</span>}</td>
+                        <td className="px-3 py-2 text-center font-bold text-emerald-600">{r.totalYield.toFixed(1)}L</td>
+                        <td className="px-2 py-2 whitespace-nowrap">
+                          <button onClick={() => handleDeleteRecord(r._id)} className="text-red-400 hover:text-red-600 text-xs">Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+                {filteredRecords.map(r => (
+                  <div key={r._id} className="p-3 hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{formatDate(r.date)}</span>
+                      <span className="text-lg font-bold text-emerald-600">{r.totalYield.toFixed(1)}L</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-2">Tag No {r.cattleId?.tagNumber || '-'} • {r.cattleId?.breed || '-'}</p>
+                    <div className="grid grid-cols-2 gap-2 text-center">
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg py-1.5 px-1">
+                        <p className="text-[10px] text-blue-500 font-medium">Morning</p>
+                        <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">{r.morningYield > 0 ? r.morningYield.toFixed(1) + 'L' : '-'}</p>
+                        {r.morningFat > 0 && <p className="text-[10px] text-gray-400">Fat {r.morningFat}%</p>}
+                      </div>
+                      <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg py-1.5 px-1">
+                        <p className="text-[10px] text-orange-500 font-medium">Evening</p>
+                        <p className="text-sm font-semibold text-orange-700 dark:text-orange-300">{r.eveningYield > 0 ? r.eveningYield.toFixed(1) + 'L' : '-'}</p>
+                        {r.eveningFat > 0 && <p className="text-[10px] text-gray-400">Fat {r.eveningFat}%</p>}
+                      </div>
+                    </div>
+                    <div className="flex justify-end mt-2">
+                      <button onClick={() => handleDeleteRecord(r._id)} className="text-red-400 text-xs font-medium">🗑️ Delete</button>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
         </div>
 
@@ -627,17 +707,49 @@ export default function MilkRecords() {
       <Modal isOpen={recordModal} onClose={() => setRecordModal(false)} title={`${editId ? 'Update' : 'Add'} Record — Tag No ${recordCattle?.tagNumber || ''}`} size="xl">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div><label className="label">Date *</label><input type="date" className="input w-auto" required value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border rounded-lg overflow-hidden">
-              <thead><tr className="bg-gray-50"><th className="px-3 py-2 text-left text-xs text-gray-500 uppercase">Session</th><th className="px-3 py-2 text-center text-xs text-gray-500 uppercase">Yield (L)</th><th className="px-3 py-2 text-center text-xs text-gray-500 uppercase">Fat %</th><th className="px-3 py-2 text-center text-xs text-gray-500 uppercase">SNF %</th></tr></thead>
-              <tbody>
-                <tr className="bg-blue-50/50 border-b"><td className="px-3 py-2 font-medium text-blue-700">☀️ Morning</td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.morningYield} onChange={e => setForm({ ...form, morningYield: e.target.value })} placeholder="0" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.morningFat} onChange={e => setForm({ ...form, morningFat: e.target.value })} placeholder="3.5" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.morningSNF} onChange={e => setForm({ ...form, morningSNF: e.target.value })} placeholder="8.5" /></td></tr>
-                <tr className="bg-amber-50/50 border-b"><td className="px-3 py-2 font-medium text-amber-700">🕐 Afternoon <span className="text-xs font-normal text-gray-400">(optional)</span></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.afternoonYield} onChange={e => setForm({ ...form, afternoonYield: e.target.value })} placeholder="0" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.afternoonFat} onChange={e => setForm({ ...form, afternoonFat: e.target.value })} placeholder="3.5" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.afternoonSNF} onChange={e => setForm({ ...form, afternoonSNF: e.target.value })} placeholder="8.5" /></td></tr>
-                <tr className="bg-orange-50/50 border-b"><td className="px-3 py-2 font-medium text-orange-700">🌙 Evening</td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.eveningYield} onChange={e => setForm({ ...form, eveningYield: e.target.value })} placeholder="0" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.eveningFat} onChange={e => setForm({ ...form, eveningFat: e.target.value })} placeholder="3.5" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.eveningSNF} onChange={e => setForm({ ...form, eveningSNF: e.target.value })} placeholder="8.5" /></td></tr>
-                {formTotal > 0 && <tr className="bg-emerald-50"><td className="px-3 py-2 font-bold text-emerald-700">Total</td><td className="px-3 py-2 text-center font-bold text-emerald-700 text-lg">{formTotal.toFixed(1)} L</td><td></td><td></td></tr>}
-              </tbody>
-            </table>
-          </div>
+          <div className="space-y-4">
+              {/* Desktop table */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-sm border rounded-lg overflow-hidden">
+                  <thead><tr className="bg-gray-50 dark:bg-gray-800"><th className="px-3 py-2 text-left text-xs text-gray-500 uppercase">Session</th><th className="px-3 py-2 text-center text-xs text-gray-500 uppercase">Yield (L) *</th><th className="px-3 py-2 text-center text-xs text-gray-500 uppercase">Fat %</th><th className="px-3 py-2 text-center text-xs text-gray-500 uppercase">SNF %</th></tr></thead>
+                  <tbody>
+                    <tr className="bg-blue-50/50 dark:bg-blue-900/10 border-b"><td className="px-3 py-2 font-medium text-blue-700 dark:text-blue-400">☀️ Morning</td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.morningYield} onChange={e => setForm({ ...form, morningYield: e.target.value })} placeholder="0" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.morningFat} onChange={e => setForm({ ...form, morningFat: e.target.value })} placeholder="3.5" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.morningSNF} onChange={e => setForm({ ...form, morningSNF: e.target.value })} placeholder="8.5" /></td></tr>
+                    <tr className="bg-amber-50/50 dark:bg-amber-900/10 border-b"><td className="px-3 py-2 font-medium text-amber-700 dark:text-amber-400">🕐 Afternoon</td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.afternoonYield} onChange={e => setForm({ ...form, afternoonYield: e.target.value })} placeholder="0" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.afternoonFat} onChange={e => setForm({ ...form, afternoonFat: e.target.value })} placeholder="3.5" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.afternoonSNF} onChange={e => setForm({ ...form, afternoonSNF: e.target.value })} placeholder="8.5" /></td></tr>
+                    <tr className="bg-orange-50/50 dark:bg-orange-900/10 border-b"><td className="px-3 py-2 font-medium text-orange-700 dark:text-orange-400">🌙 Evening</td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.eveningYield} onChange={e => setForm({ ...form, eveningYield: e.target.value })} placeholder="0" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.eveningFat} onChange={e => setForm({ ...form, eveningFat: e.target.value })} placeholder="3.5" /></td><td className="px-2 py-1"><input type="number" step="0.1" className="input text-center" value={form.eveningSNF} onChange={e => setForm({ ...form, eveningSNF: e.target.value })} placeholder="8.5" /></td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile stacked layout */}
+              <div className="sm:hidden space-y-3">
+                <div className="bg-blue-50 dark:bg-blue-900/10 rounded-xl p-3">
+                  <p className="font-medium text-blue-700 dark:text-blue-400 text-sm mb-2">☀️ Morning</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div><label className="text-[10px] text-gray-500">Yield (L)</label><input type="number" step="0.1" className="input text-center text-sm" value={form.morningYield} onChange={e => setForm({ ...form, morningYield: e.target.value })} placeholder="0" /></div>
+                    <div><label className="text-[10px] text-gray-500">Fat %</label><input type="number" step="0.1" className="input text-center text-sm" value={form.morningFat} onChange={e => setForm({ ...form, morningFat: e.target.value })} placeholder="3.5" /></div>
+                    <div><label className="text-[10px] text-gray-500">SNF %</label><input type="number" step="0.1" className="input text-center text-sm" value={form.morningSNF} onChange={e => setForm({ ...form, morningSNF: e.target.value })} placeholder="8.5" /></div>
+                  </div>
+                </div>
+                <div className="bg-amber-50 dark:bg-amber-900/10 rounded-xl p-3">
+                  <p className="font-medium text-amber-700 dark:text-amber-400 text-sm mb-2">🕐 Afternoon</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div><label className="text-[10px] text-gray-500">Yield (L)</label><input type="number" step="0.1" className="input text-center text-sm" value={form.afternoonYield} onChange={e => setForm({ ...form, afternoonYield: e.target.value })} placeholder="0" /></div>
+                    <div><label className="text-[10px] text-gray-500">Fat %</label><input type="number" step="0.1" className="input text-center text-sm" value={form.afternoonFat} onChange={e => setForm({ ...form, afternoonFat: e.target.value })} placeholder="3.5" /></div>
+                    <div><label className="text-[10px] text-gray-500">SNF %</label><input type="number" step="0.1" className="input text-center text-sm" value={form.afternoonSNF} onChange={e => setForm({ ...form, afternoonSNF: e.target.value })} placeholder="8.5" /></div>
+                  </div>
+                </div>
+                <div className="bg-orange-50 dark:bg-orange-900/10 rounded-xl p-3">
+                  <p className="font-medium text-orange-700 dark:text-orange-400 text-sm mb-2">🌙 Evening</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div><label className="text-[10px] text-gray-500">Yield (L)</label><input type="number" step="0.1" className="input text-center text-sm" value={form.eveningYield} onChange={e => setForm({ ...form, eveningYield: e.target.value })} placeholder="0" /></div>
+                    <div><label className="text-[10px] text-gray-500">Fat %</label><input type="number" step="0.1" className="input text-center text-sm" value={form.eveningFat} onChange={e => setForm({ ...form, eveningFat: e.target.value })} placeholder="3.5" /></div>
+                    <div><label className="text-[10px] text-gray-500">SNF %</label><input type="number" step="0.1" className="input text-center text-sm" value={form.eveningSNF} onChange={e => setForm({ ...form, eveningSNF: e.target.value })} placeholder="8.5" /></div>
+                  </div>
+                </div>
+              </div>
+
+              {formTotal > 0 && <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 text-center"><span className="text-sm text-emerald-600 font-medium">Total: </span><span className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{formTotal.toFixed(1)} L</span></div>}
+            </div>
           <div className="flex justify-end gap-3 pt-2 border-t">
             <button type="button" onClick={() => setRecordModal(false)} className="btn-secondary">Cancel</button>
             <button type="submit" disabled={saving} className="btn-primary">{saving ? 'Saving...' : editId ? 'Update' : 'Add Record'}</button>
