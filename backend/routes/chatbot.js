@@ -48,6 +48,9 @@ function detectTopics(message) {
     expense: ['expense', 'kharcha', 'cost', 'spending', 'budget', 'paisa'],
     revenue: ['revenue', 'income', 'aay', 'kamai', 'sale', 'bikri', 'profit', 'munafa', 'loss'],
     feed: ['feed', 'chara', 'fodder', 'khana', 'dana', 'silage', 'nutrition'],
+    insurance: ['insurance', 'bima', 'policy', 'claim', 'insured'],
+    lactation: ['lactation', 'dim', 'days in milk', 'dry off', 'calving'],
+    weight: ['weight', 'wajan', 'vajan', 'kg', 'kilo'],
     finance: ['finance', 'money', 'paise', 'hisab', 'balance', 'profit', 'loss'],
   };
 
@@ -58,7 +61,7 @@ function detectTopics(message) {
   // General/overview queries fetch everything
   const overviewWords = ['summary', 'overview', 'status', 'haal', 'report', 'dashboard', 'sab', 'everything', 'farm', 'all'];
   if (overviewWords.some(w => lower.includes(w)) || topics.size === 0) {
-    return ['milk', 'cattle', 'health', 'breeding', 'expense', 'revenue', 'feed'];
+    return ['milk', 'cattle', 'health', 'breeding', 'expense', 'revenue', 'feed', 'insurance'];
   }
 
   // Finance = expense + revenue
@@ -193,6 +196,15 @@ async function buildFarmContext(farmId, topics) {
     ]);
   }
 
+  // Insurance
+  try {
+    const Insurance = (await import('../models/Insurance.js')).default;
+    queries.activeInsurance = Insurance.countDocuments({ farmId, status: 'active' });
+    queries.expiringInsurance = Insurance.find({
+      farmId, status: 'active', endDate: { $lte: new Date(Date.now() + 30 * 86400000) }
+    }).populate('cattleId', 'tagNumber').limit(5).lean();
+  } catch {}
+
   // Execute all queries in parallel
   const keys = Object.keys(queries);
   const results = await Promise.all(Object.values(queries));
@@ -305,6 +317,15 @@ async function buildFarmContext(farmId, topics) {
     lines.push(`\n⚡ ALERTS: ${alerts.join(' | ')}`);
   }
 
+  // Insurance context
+  if (data.activeInsurance > 0 || data.expiringInsurance?.length) {
+    lines.push(`\n🛡️ INSURANCE:`);
+    lines.push(`Active Policies: ${data.activeInsurance || 0}`);
+    if (data.expiringInsurance?.length) {
+      lines.push(`⚠️ Expiring Soon: ${data.expiringInsurance.map(i => `Tag ${i.cattleId?.tagNumber}: expires ${new Date(i.endDate).toLocaleDateString('en-IN')}`).join('; ')}`);
+    }
+  }
+
   lines.push(`=== END ===`);
   const contextStr = lines.join('\n');
 
@@ -329,6 +350,8 @@ RULES:
 - Compare with last month's data when available to show trends.
 - If data is empty/zero, suggest the farmer to add records from the app.
 - For health issues: always recommend consulting a veterinarian for serious concerns.
+- Always give exact numbers, percentages, and comparisons — never vague answers.
+- When recommending actions, be step-by-step and practical for rural Indian dairy farmers.
 
 SMART FEATURES you should proactively do:
 - 📊 Spot trends (milk going up/down, expenses increasing)
@@ -337,6 +360,19 @@ SMART FEATURES you should proactively do:
 - 🏆 Highlight top performers
 - 📈 Compare month-over-month when data available
 - 🔔 Remind about upcoming events (deliveries, vaccinations)
+- 🐄 Lactation analysis — track days in milk (DIM), predict dry-off dates (305-day standard)
+- 🔥 Heat detection — predict next heat based on 21-day cycle from last breeding
+- ⚖️ Weight tracking — flag underweight or overweight cattle
+- 🛡️ Insurance awareness — remind about expiring policies, suggest govt schemes like Pashu Dhan Bima Yojana
+- 💰 Milk rate calculation — help with fat/SNF based payment (Indian cooperative formula: quantity × fat% × rate per fat)
+- 📋 Data backup — remind farmers to periodically backup data from Settings
+
+INDIAN DAIRY EXPERTISE:
+- Know common Indian breeds: Gir, Sahiwal, Murrah, HF, Jersey, Crossbred and their typical yields
+- Know Indian dairy cooperative systems (Amul model, fat/SNF pricing)
+- Know govt schemes: DEDS, NDP, Rashtriya Gokul Mission, Pashu Dhan Bima
+- Know seasonal patterns: summer heat stress, monsoon fodder, winter peak milk
+- Know common diseases: FMD, HS, BQ, Mastitis, Theileriosis and their vaccination schedules
 
 ${farmContext}`;
 
@@ -363,9 +399,10 @@ ${farmContext}`;
         system_instruction: { parts: [{ text: systemPrompt }] },
         contents,
         generationConfig: {
-          temperature: 0.6,
-          maxOutputTokens: 800,
-          topP: 0.85,
+          temperature: 0.4,
+          maxOutputTokens: 1200,
+          topP: 0.8,
+          topK: 40,
         },
         safetySettings: [
           { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },

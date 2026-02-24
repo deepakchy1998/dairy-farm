@@ -268,7 +268,7 @@ export default function MilkRecords() {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <button onClick={() => setViewCattle(null)} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200"><FiArrowLeft size={20} /></button>
+          <button onClick={() => setViewCattle(null)} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white"><FiArrowLeft size={20} /></button>
           <div>
             <h1 className="text-2xl font-bold">Tag No {viewCattle.tagNumber} <span className="text-base font-normal text-gray-400">({viewCattle.breed})</span></h1>
             <p className="text-gray-500 text-sm">Milk History</p>
@@ -428,7 +428,7 @@ export default function MilkRecords() {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <button onClick={() => setShowRecords(false)} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200"><FiArrowLeft size={20} /></button>
+          <button onClick={() => setShowRecords(false)} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white"><FiArrowLeft size={20} /></button>
           <div className="flex-1">
             <h1 className="text-2xl font-bold">📋 All Milk Records</h1>
             <p className="text-gray-500 text-sm">Filter and view entire milk production data</p>
@@ -565,12 +565,12 @@ export default function MilkRecords() {
   // ─── MAIN VIEW ───
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">🥛 Milk Records</h1>
           <p className="text-gray-500 text-sm">Manage daily milk production</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button onClick={() => {
             if (!milkCattle?.length) return;
             const rows = milkCattle.map(c => {
