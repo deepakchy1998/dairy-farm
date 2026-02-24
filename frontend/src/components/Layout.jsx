@@ -23,6 +23,7 @@ const navItems = [
   { path: '/breeding', label: 'Breeding', icon: FiActivity },
   { path: '/feed', label: 'Feed', icon: FiPackage },
   { path: '/finance', label: 'Finance', icon: FaIndianRupeeSign },
+  { path: '/insurance', label: 'Insurance', icon: FiShield },
   { path: '/reports', label: 'Reports', icon: FiBarChart2 },
   { path: '/subscription', label: 'Subscription', icon: FiCreditCard },
   { path: '/chatbot', label: 'Farm Assistant', icon: FiMessageSquare },

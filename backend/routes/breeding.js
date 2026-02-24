@@ -2,10 +2,46 @@ import { Router } from 'express';
 import { auth } from '../middleware/auth.js';
 import { checkSubscription } from '../middleware/subscription.js';
 import BreedingRecord from '../models/BreedingRecord.js';
+import Cattle from '../models/Cattle.js';
 import { paginate, dateFilter, logActivity } from '../utils/helpers.js';
 
 const router = Router();
 router.use(auth, checkSubscription);
+
+// GET /api/breeding/heat-calendar — Upcoming heat predictions
+router.get('/heat-calendar', async (req, res, next) => {
+  try {
+    const farmId = req.user.farmId;
+    const femaleCattle = await Cattle.find({
+      farmId, status: 'active', gender: 'female',
+      category: { $nin: ['pregnant', 'calf'] },
+    }).lean();
+
+    const predictions = [];
+    for (const cow of femaleCattle) {
+      const lastBreeding = await BreedingRecord.findOne({ farmId, cattleId: cow._id }).sort('-breedingDate').lean();
+      let lastHeatDate = lastBreeding?.breedingDate || cow.lastCalvingDate;
+      if (!lastHeatDate) continue;
+
+      const now = new Date();
+      let nextHeat = new Date(lastHeatDate);
+      while (nextHeat < now) {
+        nextHeat = new Date(nextHeat.getTime() + 21 * 86400000);
+      }
+
+      predictions.push({
+        cattleId: cow._id, tagNumber: cow.tagNumber, breed: cow.breed, category: cow.category,
+        lastHeatDate: new Date(nextHeat.getTime() - 21 * 86400000),
+        predictedNextHeat: nextHeat,
+        breedingWindow: { start: nextHeat, end: new Date(nextHeat.getTime() + 18 * 3600000) },
+        daysUntilHeat: Math.ceil((nextHeat - now) / 86400000),
+      });
+    }
+
+    predictions.sort((a, b) => a.daysUntilHeat - b.daysUntilHeat);
+    res.json({ success: true, data: predictions });
+  } catch (err) { next(err); }
+});
 
 // List
 router.get('/', async (req, res, next) => {

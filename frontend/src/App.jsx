@@ -21,6 +21,7 @@ const HealthRecords = lazy(() => import('./pages/health/HealthRecords'));
 const BreedingRecords = lazy(() => import('./pages/breeding/BreedingRecords'));
 const FeedRecords = lazy(() => import('./pages/feed/FeedRecords'));
 const Finance = lazy(() => import('./pages/finance/Finance'));
+const Insurance = lazy(() => import('./pages/insurance/Insurance'));
 const Reports = lazy(() => import('./pages/reports/Reports'));
 const Subscription = lazy(() => import('./pages/subscription/Subscription'));
 const Chatbot = lazy(() => import('./pages/chatbot/Chatbot'));
@@ -65,6 +66,7 @@ export default function App() {
           <Route path="/breeding" element={<ProtectedLayout><BreedingRecords /></ProtectedLayout>} />
           <Route path="/feed" element={<ProtectedLayout><FeedRecords /></ProtectedLayout>} />
           <Route path="/finance" element={<ProtectedLayout><Finance /></ProtectedLayout>} />
+          <Route path="/insurance" element={<ProtectedLayout><Insurance /></ProtectedLayout>} />
           <Route path="/reports" element={<ProtectedLayout><Reports /></ProtectedLayout>} />
           <Route path="/subscription" element={<ProtectedLayout><Subscription /></ProtectedLayout>} />
           <Route path="/chatbot" element={<ProtectedLayout><Chatbot /></ProtectedLayout>} />

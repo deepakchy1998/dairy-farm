@@ -97,6 +97,13 @@ export default function CattleProfile() {
           <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white text-4xl shadow-lg shrink-0">
             {c.photo ? <img src={c.photo} alt={c.tagNumber} loading="lazy" className="w-full h-full object-cover rounded-2xl" /> : '🐄'}
           </div>
+          {/* QR Code */}
+          <img 
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin + '/cattle/' + c._id)}`}
+            alt="QR Code"
+            className="w-24 h-24 rounded-lg border border-gray-200 dark:border-gray-700 shrink-0"
+            loading="lazy"
+          />
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-3 mb-2">
               <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">{c.tagNumber}</h1>

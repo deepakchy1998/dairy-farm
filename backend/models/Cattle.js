@@ -16,6 +16,15 @@ const cattleSchema = new mongoose.Schema({
   fatherTag: { type: String, default: '' },
   notes: { type: String, default: '' },
   image: { type: String, default: '' },
+  lactationNumber: { type: Number, default: 0 },
+  lastCalvingDate: { type: Date },
+  dryOffDate: { type: Date },
+  expectedDryDate: { type: Date },
+  weightHistory: [{
+    date: { type: Date, required: true },
+    weight: { type: Number, required: true },
+    notes: { type: String, default: '' },
+  }],
 }, { timestamps: true });
 
 cattleSchema.index({ farmId: 1, tagNumber: 1 }, { unique: true });

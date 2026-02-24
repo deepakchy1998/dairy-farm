@@ -8,6 +8,7 @@ import Revenue from '../models/Revenue.js';
 import Expense from '../models/Expense.js';
 import HealthRecord from '../models/HealthRecord.js';
 import BreedingRecord from '../models/BreedingRecord.js';
+import FeedRecord from '../models/FeedRecord.js';
 import { dateFilter } from '../utils/helpers.js';
 
 const router = Router();
@@ -129,6 +130,40 @@ router.get('/dashboard', checkSubscription, async (req, res, next) => {
         analytics: { costPerLiter, revenuePerLiter, profitPerLiter, totalMilkPeriod },
       },
     });
+  } catch (err) { next(err); }
+});
+
+// GET /api/farm/export — Export all farm data as JSON
+router.get('/export', checkSubscription, async (req, res, next) => {
+  try {
+    const farmId = req.user.farmId;
+
+    const [cattle, milkRecords, healthRecords, breedingRecords, feedRecords, expenses, revenues, insurances] = await Promise.all([
+      Cattle.find({ farmId }).lean(),
+      MilkRecord.find({ farmId }).lean(),
+      HealthRecord.find({ farmId }).lean(),
+      BreedingRecord.find({ farmId }).lean(),
+      FeedRecord.find({ farmId }).lean(),
+      Expense.find({ farmId }).lean(),
+      Revenue.find({ farmId }).lean(),
+      (async () => { try { const Insurance = (await import('../models/Insurance.js')).default; return Insurance.find({ farmId }).lean(); } catch { return []; } })(),
+    ]);
+
+    const farm = await Farm.findById(farmId).lean();
+
+    const exportData = {
+      exportedAt: new Date().toISOString(),
+      farm, cattle, milkRecords, healthRecords, breedingRecords, feedRecords, expenses, revenues, insurances,
+      summary: {
+        totalCattle: cattle.length, totalMilkRecords: milkRecords.length,
+        totalHealthRecords: healthRecords.length, totalBreedingRecords: breedingRecords.length,
+        totalFeedRecords: feedRecords.length, totalExpenses: expenses.length, totalRevenues: revenues.length,
+      },
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename=dairypro-backup-${new Date().toISOString().split('T')[0]}.json`);
+    res.json(exportData);
   } catch (err) { next(err); }
 });
 

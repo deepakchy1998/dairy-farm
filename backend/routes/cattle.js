@@ -5,7 +5,7 @@ import Cattle from '../models/Cattle.js';
 import MilkRecord from '../models/MilkRecord.js';
 import HealthRecord from '../models/HealthRecord.js';
 import BreedingRecord from '../models/BreedingRecord.js';
-import { paginate } from '../utils/helpers.js';
+import { paginate, logActivity } from '../utils/helpers.js';
 
 const router = Router();
 router.use(auth, checkSubscription);
@@ -77,6 +77,13 @@ router.post('/', async (req, res, next) => {
 // Update cattle
 router.put('/:id', async (req, res, next) => {
   try {
+    // Auto-increment lactation number when lastCalvingDate is set
+    if (req.body.lastCalvingDate) {
+      const existing = await Cattle.findOne({ _id: req.params.id, farmId: req.user.farmId });
+      if (existing && (!existing.lastCalvingDate || new Date(req.body.lastCalvingDate).getTime() !== new Date(existing.lastCalvingDate).getTime())) {
+        req.body.lactationNumber = (existing.lactationNumber || 0) + 1;
+      }
+    }
     const cattle = await Cattle.findOneAndUpdate(
       { _id: req.params.id, farmId: req.user.farmId },
       req.body,
@@ -93,6 +100,91 @@ router.delete('/:id', async (req, res, next) => {
     const cattle = await Cattle.findOneAndDelete({ _id: req.params.id, farmId: req.user.farmId });
     if (!cattle) return res.status(404).json({ success: false, message: 'Cattle not found' });
     res.json({ success: true, message: 'Cattle deleted' });
+  } catch (err) { next(err); }
+});
+
+// GET /api/cattle/:id/lactation — Get lactation info
+router.get('/:id/lactation', async (req, res, next) => {
+  try {
+    const cattle = await Cattle.findOne({ _id: req.params.id, farmId: req.user.farmId }).lean();
+    if (!cattle) return res.status(404).json({ success: false, message: 'Cattle not found' });
+
+    let dim = null;
+    if (cattle.lastCalvingDate && cattle.category === 'milking') {
+      dim = Math.floor((Date.now() - new Date(cattle.lastCalvingDate)) / 86400000);
+    }
+
+    const milkQuery = cattle.lastCalvingDate
+      ? { farmId: req.user.farmId, cattleId: cattle._id, date: { $gte: cattle.lastCalvingDate } }
+      : { farmId: req.user.farmId, cattleId: cattle._id };
+
+    const milkRecords = await MilkRecord.find(milkQuery).sort('date').lean();
+
+    const weeklyAvg = [];
+    if (milkRecords.length > 0 && cattle.lastCalvingDate) {
+      const startDate = new Date(cattle.lastCalvingDate);
+      const weeks = {};
+      milkRecords.forEach(r => {
+        const weekNum = Math.floor((new Date(r.date) - startDate) / (7 * 86400000));
+        if (!weeks[weekNum]) weeks[weekNum] = { total: 0, count: 0 };
+        weeks[weekNum].total += r.totalYield;
+        weeks[weekNum].count++;
+      });
+      for (const [week, data] of Object.entries(weeks)) {
+        weeklyAvg.push({ week: parseInt(week) + 1, avg: +(data.total / data.count).toFixed(1) });
+      }
+    }
+
+    const predictedDryOff = cattle.lastCalvingDate
+      ? new Date(new Date(cattle.lastCalvingDate).getTime() + 305 * 86400000)
+      : null;
+
+    res.json({
+      success: true,
+      data: {
+        lactationNumber: cattle.lactationNumber || 0,
+        lastCalvingDate: cattle.lastCalvingDate,
+        dim,
+        predictedDryOff,
+        dryOffDate: cattle.dryOffDate,
+        expectedDryDate: cattle.expectedDryDate,
+        totalMilkThisLactation: milkRecords.reduce((s, r) => s + r.totalYield, 0),
+        avgDailyYield: milkRecords.length > 0 ? +(milkRecords.reduce((s, r) => s + r.totalYield, 0) / milkRecords.length).toFixed(1) : 0,
+        lactationCurve: weeklyAvg.sort((a, b) => a.week - b.week),
+      },
+    });
+  } catch (err) { next(err); }
+});
+
+// POST /api/cattle/:id/weight — Add weight entry
+router.post('/:id/weight', async (req, res, next) => {
+  try {
+    const { date, weight, notes } = req.body;
+    if (!date || !weight) return res.status(400).json({ success: false, message: 'Date and weight required' });
+    
+    const cattle = await Cattle.findOneAndUpdate(
+      { _id: req.params.id, farmId: req.user.farmId },
+      { 
+        $push: { weightHistory: { date, weight, notes } },
+        $set: { weight: weight }
+      },
+      { new: true }
+    );
+    if (!cattle) return res.status(404).json({ success: false, message: 'Not found' });
+    
+    await logActivity(req.user.farmId, 'cattle', '⚖️', `Weight recorded: ${weight}kg for Tag ${cattle.tagNumber}`);
+    res.json({ success: true, data: cattle });
+  } catch (err) { next(err); }
+});
+
+// GET /api/cattle/:id/weight — Get weight history
+router.get('/:id/weight', async (req, res, next) => {
+  try {
+    const cattle = await Cattle.findOne({ _id: req.params.id, farmId: req.user.farmId }).select('weightHistory tagNumber').lean();
+    if (!cattle) return res.status(404).json({ success: false, message: 'Not found' });
+    
+    const sorted = (cattle.weightHistory || []).sort((a, b) => new Date(b.date) - new Date(a.date));
+    res.json({ success: true, data: sorted });
   } catch (err) { next(err); }
 });
 

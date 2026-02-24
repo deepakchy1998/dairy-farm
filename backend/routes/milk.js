@@ -100,6 +100,31 @@ router.get('/pdf-report', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// POST /api/milk/calculate-rate — Calculate milk payment based on fat/SNF
+router.post('/calculate-rate', async (req, res, next) => {
+  try {
+    const { quantity, fat, snf, ratePerFat = 7.5, baseRate = 0 } = req.body;
+    if (!quantity || !fat) {
+      return res.status(400).json({ success: false, message: 'Quantity and fat% are required' });
+    }
+    const fatBasedAmount = quantity * fat * ratePerFat;
+    const ts = fat + (snf || 8.5);
+    const tsBasedRate = ts * 0.4;
+    const tsBasedAmount = quantity * tsBasedRate;
+    const withBaseRate = baseRate > 0 ? (baseRate * quantity) + ((fat - 3.5) * 2 * quantity) : 0;
+
+    res.json({
+      success: true,
+      data: {
+        quantity, fat, snf: snf || 8.5,
+        fatBased: { ratePerFat, amount: +fatBasedAmount.toFixed(2) },
+        tsBased: { ts: +ts.toFixed(1), ratePerLiter: +tsBasedRate.toFixed(2), amount: +tsBasedAmount.toFixed(2) },
+        baseRateBased: baseRate > 0 ? { baseRate, amount: +withBaseRate.toFixed(2) } : null,
+      },
+    });
+  } catch (err) { next(err); }
+});
+
 // Create milk record (upsert by cattle+date)
 router.post('/', async (req, res, next) => {
   try {

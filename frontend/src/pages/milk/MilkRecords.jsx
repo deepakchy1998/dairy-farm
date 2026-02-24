@@ -56,6 +56,11 @@ export default function MilkRecords() {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [historyFilter, setHistoryFilter] = useState('month');
 
+  const [calcModal, setCalcModal] = useState(false);
+  const [calcForm, setCalcForm] = useState({ quantity: '', fat: '', snf: '', ratePerFat: '7.5' });
+  const [calcResult, setCalcResult] = useState(null);
+  const [calculating, setCalculating] = useState(false);
+
   // Filter state for main records view
   const [showRecords, setShowRecords] = useState(false);
   const [filterPeriod, setFilterPeriod] = useState('month');
@@ -479,6 +484,7 @@ export default function MilkRecords() {
           <p className="text-gray-500 text-sm">Manage daily milk production</p>
         </div>
         <div className="flex gap-2">
+          <button onClick={() => setCalcModal(true)} className="btn-secondary flex items-center gap-2 text-sm">💰 Rate Calculator</button>
           <button onClick={openRecordsView} className="btn-secondary flex items-center gap-2 text-sm"><FiFilter size={16} /> All Records</button>
           <button onClick={() => setAddCattleModal(true)} className="btn-primary flex items-center gap-2"><FiPlus size={18} /> Add Cattle</button>
         </div>
@@ -611,6 +617,51 @@ export default function MilkRecords() {
             <button type="submit" disabled={saving} className="btn-primary">{saving ? 'Saving...' : editId ? 'Update' : 'Add Record'}</button>
           </div>
         </form>
+      </Modal>
+
+      {/* Milk Rate Calculator Modal */}
+      <Modal isOpen={calcModal} onClose={() => { setCalcModal(false); setCalcResult(null); }} title="💰 Milk Rate Calculator" size="lg">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">Calculate milk payment based on fat% and SNF% (Indian dairy cooperative formula)</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="label">Quantity (Liters) *</label><input type="number" step="0.1" className="input" value={calcForm.quantity} onChange={e => setCalcForm({ ...calcForm, quantity: e.target.value })} placeholder="e.g., 10" /></div>
+            <div><label className="label">Fat % *</label><input type="number" step="0.1" className="input" value={calcForm.fat} onChange={e => setCalcForm({ ...calcForm, fat: e.target.value })} placeholder="e.g., 4.5" /></div>
+            <div><label className="label">SNF %</label><input type="number" step="0.1" className="input" value={calcForm.snf} onChange={e => setCalcForm({ ...calcForm, snf: e.target.value })} placeholder="e.g., 8.5" /></div>
+            <div><label className="label">Rate per Fat (₹)</label><input type="number" step="0.1" className="input" value={calcForm.ratePerFat} onChange={e => setCalcForm({ ...calcForm, ratePerFat: e.target.value })} placeholder="7.5" /></div>
+          </div>
+          <button onClick={async () => {
+            if (!calcForm.quantity || !calcForm.fat) { toast.error('Enter quantity and fat%'); return; }
+            setCalculating(true);
+            try {
+              const res = await api.post('/milk/calculate-rate', {
+                quantity: parseFloat(calcForm.quantity),
+                fat: parseFloat(calcForm.fat),
+                snf: calcForm.snf ? parseFloat(calcForm.snf) : undefined,
+                ratePerFat: parseFloat(calcForm.ratePerFat) || 7.5,
+              });
+              setCalcResult(res.data.data);
+            } catch { toast.error('Calculation failed'); }
+            finally { setCalculating(false); }
+          }} disabled={calculating} className="btn-primary w-full">{calculating ? 'Calculating...' : 'Calculate Payment'}</button>
+
+          {calcResult && (
+            <div className="space-y-3 pt-3 border-t">
+              <h4 className="font-semibold text-gray-700 dark:text-gray-300">Payment Estimates:</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4">
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Fat-Based Method</p>
+                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">₹{calcResult.fatBased.amount.toLocaleString('en-IN')}</p>
+                  <p className="text-xs text-gray-500 mt-1">{calcResult.quantity}L × {calcResult.fat}% × ₹{calcResult.fatBased.ratePerFat}/fat</p>
+                </div>
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">TS-Based Method</p>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">₹{calcResult.tsBased.amount.toLocaleString('en-IN')}</p>
+                  <p className="text-xs text-gray-500 mt-1">TS: {calcResult.tsBased.ts}% → ₹{calcResult.tsBased.ratePerLiter}/L</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   );
