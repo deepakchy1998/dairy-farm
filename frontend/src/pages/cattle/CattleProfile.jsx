@@ -95,7 +95,7 @@ export default function CattleProfile() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-6">
           {/* Avatar */}
           <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white text-4xl shadow-lg shrink-0">
-            {c.photo ? <img src={c.photo} alt={c.tagNumber} className="w-full h-full object-cover rounded-2xl" /> : '🐄'}
+            {c.photo ? <img src={c.photo} alt={c.tagNumber} loading="lazy" className="w-full h-full object-cover rounded-2xl" /> : '🐄'}
           </div>
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-3 mb-2">

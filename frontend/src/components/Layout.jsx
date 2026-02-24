@@ -197,7 +197,7 @@ export default function Layout({ children }) {
 
             {/* Notification Bell */}
             <div className="relative" ref={notifRef}>
-              <button onClick={() => setNotifOpen(!notifOpen)} className="relative p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-gray-800 rounded-lg transition-colors" title="Notifications">
+              <button onClick={() => setNotifOpen(!notifOpen)} className="relative p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-gray-800 rounded-lg transition-colors" title="Notifications" aria-label={`${unreadCount} unread notifications`}>
                 <FiBell size={20} />
                 {unreadCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
@@ -245,6 +245,20 @@ export default function Layout({ children }) {
                         {!n.read && <div className="w-2 h-2 bg-blue-500 rounded-full shrink-0 mt-1.5" />}
                       </div>
                     ))}
+                    {notifications.length >= 15 && (
+                      <button
+                        onClick={() => {
+                          api.get('/notifications', { params: { limit: 15, skip: notifications.length } })
+                            .then(r => {
+                              const more = r.data.data || [];
+                              if (more.length) setNotifications(prev => [...prev, ...more]);
+                            }).catch(() => {});
+                        }}
+                        className="w-full py-2 text-xs text-emerald-600 dark:text-emerald-400 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium"
+                      >
+                        Load more...
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

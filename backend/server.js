@@ -22,6 +22,7 @@ import landingRoutes from './routes/landing.js';
 import chatbotRoutes from './routes/chatbot.js';
 import notificationRoutes from './routes/notifications.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { ensureIndexes } from './utils/ensureIndexes.js';
 
 const app = express();
 
@@ -57,8 +58,9 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
+  .then(async () => {
     console.log('✅ MongoDB connected');
+    await ensureIndexes();
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   })
   .catch(err => {

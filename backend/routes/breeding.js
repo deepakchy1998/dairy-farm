@@ -17,7 +17,7 @@ router.get('/', async (req, res, next) => {
     if (status) filter.status = status;
     const p = paginate(page, limit);
     const [data, total] = await Promise.all([
-      BreedingRecord.find(filter).populate('cattleId', 'tagNumber breed').sort('-breedingDate').skip(p.skip).limit(p.limit),
+      BreedingRecord.find(filter).populate('cattleId', 'tagNumber breed').sort('-breedingDate').skip(p.skip).limit(p.limit).lean(),
       BreedingRecord.countDocuments(filter),
     ]);
     res.json({ success: true, data, pagination: { page: p.page, pages: Math.ceil(total / p.limit), total } });

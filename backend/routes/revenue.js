@@ -15,7 +15,7 @@ router.get('/', async (req, res, next) => {
     if (category) filter.category = category;
     const p = paginate(page, limit);
     const [data, total] = await Promise.all([
-      Revenue.find(filter).sort('-date').skip(p.skip).limit(p.limit),
+      Revenue.find(filter).sort('-date').skip(p.skip).limit(p.limit).lean(),
       Revenue.countDocuments(filter),
     ]);
     res.json({ success: true, data, pagination: { page: p.page, pages: Math.ceil(total / p.limit), total } });

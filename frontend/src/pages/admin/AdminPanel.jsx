@@ -5,6 +5,7 @@ import Modal from '../../components/Modal';
 import DataTable from '../../components/DataTable';
 import { FiUsers, FiHome, FiCreditCard, FiSettings, FiCheck, FiX, FiShield, FiPlus, FiTrash2 } from 'react-icons/fi';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import Pagination from '../../components/Pagination';
 import toast from 'react-hot-toast';
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
@@ -20,22 +21,26 @@ export default function AdminPanel() {
   const [settingsForm, setSettingsForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [websiteForm, setWebsiteForm] = useState({});
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersPagination, setUsersPagination] = useState({});
+  const [paymentsPage, setPaymentsPage] = useState(1);
+  const [paymentsPagination, setPaymentsPagination] = useState({});
 
   useEffect(() => {
     setLoading(true);
     const promises = [api.get('/admin/revenue-dashboard')];
-    if (tab === 'users') promises.push(api.get('/admin/users'));
-    if (tab === 'payments') promises.push(api.get('/admin/payments'));
+    if (tab === 'users') promises.push(api.get('/admin/users', { params: { page: usersPage, limit: 20 } }));
+    if (tab === 'payments') promises.push(api.get('/admin/payments', { params: { page: paymentsPage, limit: 20 } }));
     if (tab === 'settings' || tab === 'website') promises.push(api.get('/admin/settings'));
 
     Promise.all(promises).then(results => {
       setDashboard(results[0].data.data);
-      if (tab === 'users') setUsers(results[1].data.data);
-      if (tab === 'payments') setPayments(results[1].data.data);
+      if (tab === 'users') { setUsers(results[1].data.data); setUsersPagination(results[1].data.pagination || {}); }
+      if (tab === 'payments') { setPayments(results[1].data.data); setPaymentsPagination(results[1].data.pagination || {}); }
       if (tab === 'settings') { setSettings(results[1].data.data); setSettingsForm(results[1].data.data); }
       if (tab === 'website') { setSettings(results[1].data.data); setWebsiteForm(results[1].data.data); }
     }).catch(() => toast.error('Failed to load')).finally(() => setLoading(false));
-  }, [tab]);
+  }, [tab, usersPage, paymentsPage]);
 
   const verifyPayment = async (id) => {
     try {
@@ -171,6 +176,7 @@ export default function AdminPanel() {
       {tab === 'users' && (
         <div className="card p-0">
           <DataTable columns={userColumns} data={users} emptyMessage="No users yet" />
+          <Pagination page={usersPagination.page} pages={usersPagination.pages} total={usersPagination.total} onPageChange={p => setUsersPage(p)} />
         </div>
       )}
 
@@ -178,6 +184,7 @@ export default function AdminPanel() {
       {tab === 'payments' && (
         <div className="card p-0">
           <DataTable columns={paymentColumns} data={payments} emptyMessage="No payments yet" />
+          <Pagination page={paymentsPagination.page} pages={paymentsPagination.pages} total={paymentsPagination.total} onPageChange={p => setPaymentsPage(p)} />
         </div>
       )}
 

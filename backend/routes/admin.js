@@ -8,6 +8,7 @@ import Payment from '../models/Payment.js';
 import Subscription from '../models/Subscription.js';
 import Revenue from '../models/Revenue.js';
 import LandingContent from '../models/LandingContent.js';
+import { paginate } from '../utils/helpers.js';
 
 const router = Router();
 router.use(auth, admin);
@@ -17,7 +18,10 @@ const PLAN_DAYS = { monthly: 30, quarterly: 90, halfyearly: 180, yearly: 365 };
 // List users with subscription status
 router.get('/users', async (req, res, next) => {
   try {
-    const users = await User.find().select('-password').populate('farmId', 'name city state').sort('-createdAt').lean();
+    const { skip, limit, page } = paginate(req.query.page, req.query.limit);
+    const total = await User.countDocuments();
+    const pages = Math.ceil(total / limit);
+    const users = await User.find().select('-password').populate('farmId', 'name city state').sort('-createdAt').skip(skip).limit(limit).lean();
     // Attach subscription info
     const userIds = users.map(u => u._id);
     const subs = await Subscription.find({ userId: { $in: userIds }, isActive: true, endDate: { $gte: new Date() } }).sort('-endDate');
@@ -29,7 +33,7 @@ router.get('/users', async (req, res, next) => {
       subscription: subMap[u._id.toString()] || null,
       subscriptionActive: !!subMap[u._id.toString()],
     }));
-    res.json({ success: true, data: enriched });
+    res.json({ success: true, data: enriched, pagination: { page, pages, total, limit } });
   } catch (err) { next(err); }
 });
 
@@ -46,8 +50,11 @@ router.get('/payments', async (req, res, next) => {
       { status: 'expired' }
     );
 
-    const payments = await Payment.find(filter).populate('userId', 'name email phone').sort('-createdAt').limit(100);
-    res.json({ success: true, data: payments });
+    const { skip, limit, page } = paginate(req.query.page, req.query.limit);
+    const total = await Payment.countDocuments(filter);
+    const pages = Math.ceil(total / limit);
+    const payments = await Payment.find(filter).populate('userId', 'name email phone').sort('-createdAt').skip(skip).limit(limit);
+    res.json({ success: true, data: payments, pagination: { page, pages, total, limit } });
   } catch (err) { next(err); }
 });
 

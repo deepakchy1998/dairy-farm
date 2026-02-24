@@ -290,8 +290,9 @@ router.post('/generate', async (req, res, next) => {
 router.get('/', async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
+    const skip = parseInt(req.query.skip) || 0;
     const data = await Notification.find({ userId: req.user._id })
-      .sort('-createdAt').limit(limit);
+      .sort('-createdAt').skip(skip).limit(limit);
     res.json({ success: true, data });
   } catch (err) { next(err); }
 });

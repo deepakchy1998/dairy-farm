@@ -52,7 +52,11 @@ export default function CattleList() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchCattle(); }, [filters]);
+  useEffect(() => {
+    const delay = filters.search ? 400 : 0;
+    const timer = setTimeout(() => fetchCattle(), delay);
+    return () => clearTimeout(timer);
+  }, [filters]);
 
   // Predict generation when mother tag is entered
   const fetchGeneration = useCallback(async (motherTag) => {

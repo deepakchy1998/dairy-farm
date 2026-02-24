@@ -28,7 +28,7 @@ router.get('/', async (req, res, next) => {
     }
     const p = paginate(page, limit);
     const [data, total] = await Promise.all([
-      Cattle.find(filter).sort('-createdAt').skip(p.skip).limit(p.limit),
+      Cattle.find(filter).sort('-createdAt').skip(p.skip).limit(p.limit).lean(),
       Cattle.countDocuments(filter),
     ]);
     res.json({ success: true, data, pagination: { page: p.page, pages: Math.ceil(total / p.limit), total } });

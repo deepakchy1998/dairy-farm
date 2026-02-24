@@ -1,7 +1,9 @@
-const CACHE_NAME = 'dairypro-v1';
+const CACHE_NAME = 'dairypro-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
 ];
 
 // Install — cache shell
@@ -22,20 +24,23 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch — network first, fallback to cache
+// Fetch — stale-while-revalidate for non-API requests
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  // Skip API calls
   if (event.request.url.includes('/api/')) return;
 
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+    caches.match(event.request).then((cached) => {
+      const fetchPromise = fetch(event.request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
         return response;
-      })
-      .catch(() => caches.match(event.request).then((r) => r || caches.match('/')))
+      }).catch(() => cached || caches.match('/'));
+      
+      return cached || fetchPromise;
+    })
   );
 });
 

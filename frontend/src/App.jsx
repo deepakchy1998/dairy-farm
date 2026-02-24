@@ -6,6 +6,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import InstallPrompt from './components/InstallPrompt';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy load all pages — only loaded when user navigates to them
 const Login = lazy(() => import('./pages/auth/Login'));
@@ -48,6 +49,7 @@ export default function App() {
     <ThemeProvider>
     <AuthProvider>
       <Router>
+        <ErrorBoundary>
         <Toaster position="top-right" toastOptions={{ duration: 3000, style: { borderRadius: '12px', padding: '12px 16px' } }} />
         <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -73,6 +75,7 @@ export default function App() {
         </Routes>
         </Suspense>
         <InstallPrompt />
+        </ErrorBoundary>
       </Router>
     </AuthProvider>
     </ThemeProvider>

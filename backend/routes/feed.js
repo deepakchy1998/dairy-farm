@@ -15,7 +15,7 @@ router.get('/', async (req, res, next) => {
     if (feedType) filter.feedType = { $regex: feedType, $options: 'i' };
     const p = paginate(page, limit);
     const [data, total] = await Promise.all([
-      FeedRecord.find(filter).sort('-date').skip(p.skip).limit(p.limit),
+      FeedRecord.find(filter).sort('-date').skip(p.skip).limit(p.limit).lean(),
       FeedRecord.countDocuments(filter),
     ]);
     res.json({ success: true, data, pagination: { page: p.page, pages: Math.ceil(total / p.limit), total } });
