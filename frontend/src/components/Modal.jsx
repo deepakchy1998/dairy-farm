@@ -29,13 +29,13 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn"
       onClick={onClose}
     >
       <div
         ref={contentRef}
         tabIndex={-1}
-        className={`bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full ${sizes[size]} max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-700 outline-none animate-modalSlide`}
+        className={`bg-white dark:bg-gray-900 sm:rounded-2xl shadow-2xl w-full ${sizes[size]} max-h-full sm:max-h-[90vh] h-full sm:h-auto overflow-y-auto border-0 sm:border border-gray-200 dark:border-gray-700 outline-none animate-modalSlide`}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-800">

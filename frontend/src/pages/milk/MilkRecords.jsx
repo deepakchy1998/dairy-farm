@@ -501,6 +501,15 @@ export default function MilkRecords() {
             const blob = new Blob([csv], { type: 'text/csv' });
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'milk-records.csv'; a.click();
           }} className="btn-secondary flex items-center gap-1 text-xs">📊 CSV</button>
+          <button onClick={() => {
+            if (!milkCattle?.length) return;
+            const rows = milkCattle.map(c => {
+              const rec = lastRecords[c._id];
+              return `<tr><td>${c.tagNumber}</td><td>${c.breed}</td><td>${rec?.morningYield || '-'}</td><td>${rec?.eveningYield || '-'}</td><td><strong>${rec?.totalYield || '-'}</strong></td></tr>`;
+            }).join('');
+            const html = `<!DOCTYPE html><html><head><title>Milk Records</title><style>body{font-family:Arial;padding:20px}h1{color:#059669}table{width:100%;border-collapse:collapse}th{background:#ecfdf5;padding:8px;text-align:left}td{padding:8px;border-bottom:1px solid #e5e7eb}@media print{body{padding:10px}}</style></head><body><h1>🥛 Milk Records</h1><p>Exported: ${new Date().toLocaleDateString('en-IN')}</p><table><tr><th>Tag</th><th>Breed</th><th>Morning</th><th>Evening</th><th>Total</th></tr>${rows}</table></body></html>`;
+            const w = window.open('', '_blank'); w.document.write(html); w.document.close(); setTimeout(() => w.print(), 500);
+          }} className="btn-secondary flex items-center gap-1 text-xs">📄 PDF</button>
           <button onClick={() => setCalcModal(true)} className="btn-secondary flex items-center gap-2 text-sm">💰 Rate Calculator</button>
           <button onClick={openRecordsView} className="btn-secondary flex items-center gap-2 text-sm"><FiFilter size={16} /> All Records</button>
           <button onClick={() => setAddCattleModal(true)} className="btn-primary flex items-center gap-2"><FiPlus size={18} /> Add Cattle</button>

@@ -159,6 +159,12 @@ export default function CattleList() {
             const blob = new Blob([csv], { type: 'text/csv' });
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'cattle.csv'; a.click();
           }} className="btn-secondary text-xs flex items-center gap-1">📊 CSV</button>
+          <button onClick={() => {
+            if (!cattle?.length) return;
+            const rows = cattle.map(c => `<tr><td>${c.tagNumber}</td><td>${c.breed}</td><td>${c.category}</td><td>${c.gender}</td><td>${c.status}</td><td>${c.weight || '-'}</td></tr>`).join('');
+            const html = `<!DOCTYPE html><html><head><title>Cattle List</title><style>body{font-family:Arial;padding:20px}h1{color:#059669}table{width:100%;border-collapse:collapse}th{background:#ecfdf5;padding:8px;text-align:left}td{padding:8px;border-bottom:1px solid #e5e7eb}@media print{body{padding:10px}}</style></head><body><h1>🐄 Cattle List</h1><p>Total: ${cattle.length} | Exported: ${new Date().toLocaleDateString('en-IN')}</p><table><tr><th>Tag</th><th>Breed</th><th>Category</th><th>Gender</th><th>Status</th><th>Weight</th></tr>${rows}</table></body></html>`;
+            const w = window.open('', '_blank'); w.document.write(html); w.document.close(); setTimeout(() => w.print(), 500);
+          }} className="btn-secondary text-xs flex items-center gap-1">📄 PDF</button>
           <button onClick={() => { setForm(defaultForm); setEditId(null); setPredictedGen(null); setShowSemen(false); setModalOpen(true); }} className="btn-primary flex items-center gap-2">
             <FiPlus size={18} /> Add Cattle
           </button>

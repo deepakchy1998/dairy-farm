@@ -28,6 +28,16 @@ import { ensureIndexes } from './utils/ensureIndexes.js';
 
 const app = express();
 
+// Enable trust proxy for proper IP detection behind Render's proxy
+app.set('trust proxy', 1);
+
+// Keep-alive for better performance
+app.use((req, res, next) => {
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Keep-Alive', 'timeout=65');
+  next();
+});
+
 app.use(helmet());
 app.use(cors({
   origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : '*',
@@ -43,6 +53,16 @@ app.use((req, res, next) => {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
+// Cache control for performance
+app.use((req, res, next) => {
+  if (req.path.includes('/landing') || req.path.includes('/plans')) {
+    res.setHeader('Cache-Control', 'public, max-age=300');
+  } else if (req.headers.authorization) {
+    res.setHeader('Cache-Control', 'private, no-cache');
+  }
   next();
 });
 
