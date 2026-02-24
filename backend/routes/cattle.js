@@ -70,6 +70,7 @@ router.post('/', async (req, res, next) => {
     const exists = await Cattle.findOne({ farmId, tagNumber: req.body.tagNumber });
     if (exists) return res.status(400).json({ success: false, message: 'Tag number already exists in your farm' });
     const cattle = await Cattle.create({ ...req.body, farmId });
+    await logActivity(farmId, 'cattle', '🐄', `New cattle added: Tag ${cattle.tagNumber}`);
     res.status(201).json({ success: true, data: cattle });
   } catch (err) { next(err); }
 });
@@ -90,6 +91,7 @@ router.put('/:id', async (req, res, next) => {
       { new: true, runValidators: true }
     );
     if (!cattle) return res.status(404).json({ success: false, message: 'Cattle not found' });
+    await logActivity(req.user.farmId, 'cattle', '✏️', `Cattle updated: Tag ${cattle.tagNumber}`);
     res.json({ success: true, data: cattle });
   } catch (err) { next(err); }
 });
@@ -97,8 +99,28 @@ router.put('/:id', async (req, res, next) => {
 // Delete cattle
 router.delete('/:id', async (req, res, next) => {
   try {
-    const cattle = await Cattle.findOneAndDelete({ _id: req.params.id, farmId: req.user.farmId });
+    const farmId = req.user.farmId;
+
+    // Check for active insurance
+    try {
+      const Insurance = (await import('../models/Insurance.js')).default;
+      const activeInsurance = await Insurance.countDocuments({ cattleId: req.params.id, farmId, status: 'active' });
+      if (activeInsurance > 0) {
+        return res.status(400).json({ success: false, message: 'Cannot delete cattle with active insurance policies. Cancel the insurance first.' });
+      }
+    } catch {}
+
+    // Check for active breeding
+    const activeBreeding = await BreedingRecord.countDocuments({ 
+      cattleId: req.params.id, farmId, status: { $in: ['bred', 'confirmed'] } 
+    });
+    if (activeBreeding > 0) {
+      return res.status(400).json({ success: false, message: 'Cannot delete cattle with active breeding records. Update breeding status first.' });
+    }
+
+    const cattle = await Cattle.findOneAndDelete({ _id: req.params.id, farmId });
     if (!cattle) return res.status(404).json({ success: false, message: 'Cattle not found' });
+    await logActivity(farmId, 'cattle', '🗑️', `Cattle deleted: Tag ${cattle.tagNumber}`);
     res.json({ success: true, message: 'Cattle deleted' });
   } catch (err) { next(err); }
 });

@@ -10,6 +10,10 @@ const userSchema = new mongoose.Schema({
   farmId: { type: mongoose.Schema.Types.ObjectId, ref: 'Farm' },
   resetPasswordToken: String,
   resetPasswordExpires: Date,
+  isBlocked: { type: Boolean, default: false },
+  lastLogin: { type: Date },
+  loginAttempts: { type: Number, default: 0 },
+  lockUntil: { type: Date },
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

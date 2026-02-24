@@ -82,6 +82,7 @@ router.put('/:id', async (req, res, next) => {
       { _id: req.params.id, farmId: req.user.farmId }, req.body, { new: true, runValidators: true }
     );
     if (!record) return res.status(404).json({ success: false, message: 'Not found' });
+    await logActivity(req.user.farmId, 'breeding', '🐣', `Breeding record updated: status ${record.status}`);
     res.json({ success: true, data: record });
   } catch (err) { next(err); }
 });

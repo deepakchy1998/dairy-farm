@@ -27,6 +27,15 @@ export const getGreeting = () => {
   return 'Good Evening';
 };
 
+// Sanitize HTML to prevent XSS
+export const sanitizeHtml = (str) => {
+  if (!str) return '';
+  return str.replace(/[&<>"']/g, (match) => {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;' };
+    return map[match];
+  });
+};
+
 export const categoryColors = {
   milking: '#10b981', dry: '#f59e0b', heifer: '#8b5cf6', calf: '#3b82f6', bull: '#ef4444', pregnant: '#ec4899',
 };

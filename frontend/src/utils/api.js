@@ -8,7 +8,24 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    // Check if token is expired
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.exp * 1000 < Date.now()) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        return Promise.reject(new Error('Token expired'));
+      }
+    } catch {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+      return Promise.reject(new Error('Invalid token'));
+    }
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 

@@ -23,12 +23,19 @@ import chatbotRoutes from './routes/chatbot.js';
 import notificationRoutes from './routes/notifications.js';
 import insuranceRoutes from './routes/insurance.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { sanitize } from './middleware/sanitize.js';
 import { ensureIndexes } from './utils/ensureIndexes.js';
 
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  maxAge: 86400, // 24 hour preflight cache
+}));
 
 // Security headers
 app.use((req, res, next) => {
@@ -39,7 +46,16 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '2mb' }));
+app.use(sanitize);
+
+// Request timeout (30 seconds)
+app.use((req, res, next) => {
+  req.setTimeout(30000, () => {
+    res.status(408).json({ success: false, message: 'Request timeout' });
+  });
+  next();
+});
 
 // Simple rate limiter for auth routes
 const authAttempts = new Map();
@@ -81,7 +97,7 @@ app.use('/api/revenue', revenueRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/subscription', subscriptionRoutes);
-app.use('/api/payment', paymentRoutes);
+app.use('/api/payment', express.json({ limit: '10mb' }), paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/notifications', notificationRoutes);
@@ -93,7 +109,12 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(process.env.MONGODB_URI, {
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  autoIndex: process.env.NODE_ENV !== 'production',
+})
   .then(async () => {
     console.log('✅ MongoDB connected');
     await ensureIndexes();

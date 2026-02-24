@@ -45,12 +45,35 @@ router.post('/login', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid input' });
     }
     const user = await User.findOne({ email: email.toLowerCase() });
+
+    // Check account lockout
+    if (user && user.lockUntil && user.lockUntil > Date.now()) {
+      const minutesLeft = Math.ceil((user.lockUntil - Date.now()) / 60000);
+      return res.status(423).json({ success: false, message: `Account temporarily locked. Try again in ${minutesLeft} minutes.` });
+    }
+
     if (!user || !(await user.comparePassword(password))) {
+      // Increment failed attempts
+      if (user) {
+        user.loginAttempts = (user.loginAttempts || 0) + 1;
+        if (user.loginAttempts >= 5) {
+          user.lockUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 min lockout
+          user.loginAttempts = 0;
+        }
+        await user.save();
+      }
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
     if (user.isBlocked) {
       return res.status(403).json({ success: false, message: 'Your account has been blocked. Contact support.' });
     }
+
+    // Reset login attempts on success
+    user.loginAttempts = 0;
+    user.lockUntil = undefined;
+    user.lastLogin = new Date();
+    await user.save();
+
     const token = signToken(user);
     const userData = { _id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, farmId: user.farmId, createdAt: user.createdAt };
     res.json({ success: true, data: { token, user: userData } });
