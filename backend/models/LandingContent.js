@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 
 const landingContentSchema = new mongoose.Schema({
+  upiId: { type: String, default: '' },
+  upiName: { type: String, default: '' },
   heroTitle: { type: String, default: 'Manage Your Dairy Farm Smarter' },
   heroSubtitle: { type: String, default: 'Track cattle, milk production, health records, breeding, finances — all in one place. Built for Indian dairy farmers.' },
   supportPhone: { type: String, default: '+91 98765 43210' },

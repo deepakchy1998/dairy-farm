@@ -215,25 +215,155 @@ export default function Settings() {
         <div className="card space-y-6">
           <div>
             <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">💾 Farm Data Backup</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Download a complete backup of all your farm data as a JSON file. This includes cattle, milk records, health records, breeding, finance, feed, and insurance data.</p>
-            <button onClick={async () => {
-              try {
-                toast.loading('Preparing backup...');
-                const res = await api.get('/farm/export');
-                const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `dairypro-backup-${new Date().toISOString().split('T')[0]}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-                toast.dismiss();
-                toast.success('Backup downloaded!');
-              } catch { toast.dismiss(); toast.error('Failed to create backup'); }
-            }} className="btn-primary flex items-center gap-2">
-              <FiDownload size={16} /> Download Full Backup (JSON)
-            </button>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Download a complete backup of all your farm data. Choose PDF for a printable report or CSV for spreadsheet use.</p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* PDF Export */}
+              <button onClick={async () => {
+                try {
+                  toast.loading('Generating PDF...');
+                  const res = await api.get('/farm/export');
+                  const d = res.data;
+                  const cattle = d.cattle || [];
+                  const milkRecords = d.milkRecords || [];
+                  const healthRecords = d.healthRecords || [];
+                  const expenses = d.expenses || [];
+                  const revenues = d.revenues || [];
+                  const breedingRecords = d.breedingRecords || [];
+                  const insurances = d.insurances || [];
+
+                  const cattleRows = cattle.map(c => `<tr><td>${c.tagNumber}</td><td>${c.breed}</td><td>${c.category}</td><td>${c.gender}</td><td>${c.status}</td><td>${c.weight || '-'}</td></tr>`).join('');
+                  const milkRows = milkRecords.slice(-50).map(m => `<tr><td>${new Date(m.date).toLocaleDateString('en-IN')}</td><td>${m.cattleId}</td><td>${m.morningYield || 0}</td><td>${m.afternoonYield || 0}</td><td>${m.eveningYield || 0}</td><td><strong>${m.totalYield || 0}</strong></td></tr>`).join('');
+                  const healthRows = healthRecords.slice(-30).map(h => `<tr><td>${new Date(h.date).toLocaleDateString('en-IN')}</td><td>${h.cattleId}</td><td>${h.type}</td><td>${h.description}</td><td>₹${h.cost || 0}</td></tr>`).join('');
+                  const expenseRows = expenses.slice(-30).map(e => `<tr><td>${new Date(e.date).toLocaleDateString('en-IN')}</td><td>${e.category}</td><td>${e.description || '-'}</td><td>₹${e.amount?.toLocaleString('en-IN')}</td></tr>`).join('');
+                  const revenueRows = revenues.slice(-30).map(r => `<tr><td>${new Date(r.date).toLocaleDateString('en-IN')}</td><td>${r.category?.replace('_',' ')}</td><td>${r.description || '-'}</td><td>₹${r.amount?.toLocaleString('en-IN')}</td></tr>`).join('');
+                  const insuranceRows = insurances.map(i => `<tr><td>${i.cattleId}</td><td>${i.provider}</td><td>${i.policyNumber}</td><td>₹${i.sumInsured?.toLocaleString('en-IN')}</td><td>${i.status}</td><td>${new Date(i.endDate).toLocaleDateString('en-IN')}</td></tr>`).join('');
+
+                  const totalExpense = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+                  const totalRevenue = revenues.reduce((s, r) => s + (r.amount || 0), 0);
+                  const totalMilk = milkRecords.reduce((s, m) => s + (m.totalYield || 0), 0);
+
+                  const html = `<!DOCTYPE html><html><head><title>DairyPro Farm Backup</title><style>
+                    body{font-family:'Segoe UI',Arial,sans-serif;padding:30px;color:#333;font-size:12px}
+                    h1{color:#059669;margin-bottom:5px;font-size:22px} h2{color:#065f46;margin-top:25px;border-bottom:2px solid #d1fae5;padding-bottom:5px;font-size:16px}
+                    .header{border-bottom:3px solid #059669;padding-bottom:15px;margin-bottom:20px}
+                    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:15px 0}
+                    .stat{background:#ecfdf5;border-radius:10px;padding:15px;text-align:center}
+                    .stat .num{font-size:22px;font-weight:700;color:#059669} .stat .lbl{font-size:10px;color:#666;margin-top:3px}
+                    table{width:100%;border-collapse:collapse;margin:8px 0;font-size:11px}
+                    th{background:#ecfdf5;color:#065f46;padding:8px;text-align:left;font-weight:600}
+                    td{padding:8px;border-bottom:1px solid #e5e7eb}
+                    tr:nth-child(even){background:#fafafa}
+                    .footer{text-align:center;color:#999;font-size:10px;margin-top:30px;border-top:1px solid #e5e7eb;padding-top:10px}
+                    @media print{body{padding:15px;font-size:10px} .stat .num{font-size:18px} table{font-size:9px}}
+                  </style></head><body>
+                  <div class="header">
+                    <h1>🐄 DairyPro — Complete Farm Backup</h1>
+                    <p style="color:#666">Farm: ${d.farm?.name || 'My Farm'} | Exported: ${new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' })}</p>
+                  </div>
+                  <div class="stats">
+                    <div class="stat"><div class="num">${cattle.length}</div><div class="lbl">Total Cattle</div></div>
+                    <div class="stat"><div class="num">${totalMilk.toFixed(0)}L</div><div class="lbl">Total Milk</div></div>
+                    <div class="stat"><div class="num">₹${totalRevenue.toLocaleString('en-IN')}</div><div class="lbl">Total Revenue</div></div>
+                    <div class="stat"><div class="num">₹${totalExpense.toLocaleString('en-IN')}</div><div class="lbl">Total Expense</div></div>
+                  </div>
+                  <h2>🐄 Cattle (${cattle.length})</h2>
+                  <table><tr><th>Tag</th><th>Breed</th><th>Category</th><th>Gender</th><th>Status</th><th>Weight</th></tr>${cattleRows || '<tr><td colspan="6">No cattle</td></tr>'}</table>
+                  <h2>🥛 Milk Records (last 50 of ${milkRecords.length})</h2>
+                  <table><tr><th>Date</th><th>Cattle</th><th>Morning</th><th>Afternoon</th><th>Evening</th><th>Total</th></tr>${milkRows || '<tr><td colspan="6">No records</td></tr>'}</table>
+                  <h2>💉 Health Records (last 30 of ${healthRecords.length})</h2>
+                  <table><tr><th>Date</th><th>Cattle</th><th>Type</th><th>Description</th><th>Cost</th></tr>${healthRows || '<tr><td colspan="5">No records</td></tr>'}</table>
+                  <h2>💰 Expenses (last 30 of ${expenses.length})</h2>
+                  <table><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th></tr>${expenseRows || '<tr><td colspan="4">No expenses</td></tr>'}</table>
+                  <h2>📈 Revenue (last 30 of ${revenues.length})</h2>
+                  <table><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th></tr>${revenueRows || '<tr><td colspan="4">No revenue</td></tr>'}</table>
+                  ${insurances.length ? `<h2>🛡️ Insurance (${insurances.length})</h2><table><tr><th>Cattle</th><th>Provider</th><th>Policy #</th><th>Insured</th><th>Status</th><th>Expires</th></tr>${insuranceRows}</table>` : ''}
+                  <div class="footer">DairyPro — Smart Dairy Farm Management • Backup generated automatically</div>
+                  </body></html>`;
+                  const w = window.open('', '_blank');
+                  w.document.write(html);
+                  w.document.close();
+                  setTimeout(() => { w.print(); }, 500);
+                  toast.dismiss();
+                  toast.success('PDF ready — use Print dialog to save');
+                } catch { toast.dismiss(); toast.error('Failed to generate PDF'); }
+              }} className="btn-primary flex items-center gap-2 justify-center py-3">
+                <FiDownload size={16} /> 📄 Download PDF
+              </button>
+
+              {/* CSV Export */}
+              <button onClick={async () => {
+                try {
+                  toast.loading('Generating CSV...');
+                  const res = await api.get('/farm/export');
+                  const d = res.data;
+
+                  const sections = [];
+
+                  // Cattle CSV
+                  if (d.cattle?.length) {
+                    sections.push('=== CATTLE ===');
+                    sections.push('Tag,Breed,Category,Gender,Status,Weight,DOB,Purchase Price');
+                    d.cattle.forEach(c => sections.push(`"${c.tagNumber}","${c.breed}","${c.category}","${c.gender}","${c.status}","${c.weight || ''}","${c.dateOfBirth ? new Date(c.dateOfBirth).toLocaleDateString('en-IN') : ''}","${c.purchasePrice || ''}"`));
+                  }
+
+                  // Milk CSV
+                  if (d.milkRecords?.length) {
+                    sections.push('');
+                    sections.push('=== MILK RECORDS ===');
+                    sections.push('Date,Cattle ID,Morning,Afternoon,Evening,Total');
+                    d.milkRecords.forEach(m => sections.push(`"${new Date(m.date).toLocaleDateString('en-IN')}","${m.cattleId}","${m.morningYield || 0}","${m.afternoonYield || 0}","${m.eveningYield || 0}","${m.totalYield || 0}"`));
+                  }
+
+                  // Health CSV
+                  if (d.healthRecords?.length) {
+                    sections.push('');
+                    sections.push('=== HEALTH RECORDS ===');
+                    sections.push('Date,Cattle ID,Type,Description,Medicine,Cost,Next Due');
+                    d.healthRecords.forEach(h => sections.push(`"${new Date(h.date).toLocaleDateString('en-IN')}","${h.cattleId}","${h.type}","${h.description}","${h.medicine || ''}","${h.cost || 0}","${h.nextDueDate ? new Date(h.nextDueDate).toLocaleDateString('en-IN') : ''}"`));
+                  }
+
+                  // Expenses CSV
+                  if (d.expenses?.length) {
+                    sections.push('');
+                    sections.push('=== EXPENSES ===');
+                    sections.push('Date,Category,Description,Amount');
+                    d.expenses.forEach(e => sections.push(`"${new Date(e.date).toLocaleDateString('en-IN')}","${e.category}","${e.description || ''}","${e.amount}"`));
+                  }
+
+                  // Revenue CSV
+                  if (d.revenues?.length) {
+                    sections.push('');
+                    sections.push('=== REVENUE ===');
+                    sections.push('Date,Category,Description,Amount');
+                    d.revenues.forEach(r => sections.push(`"${new Date(r.date).toLocaleDateString('en-IN')}","${r.category}","${r.description || ''}","${r.amount}"`));
+                  }
+
+                  // Insurance CSV
+                  if (d.insurances?.length) {
+                    sections.push('');
+                    sections.push('=== INSURANCE ===');
+                    sections.push('Cattle ID,Provider,Policy Number,Sum Insured,Premium,Start,End,Status');
+                    d.insurances.forEach(i => sections.push(`"${i.cattleId}","${i.provider}","${i.policyNumber}","${i.sumInsured}","${i.premium}","${new Date(i.startDate).toLocaleDateString('en-IN')}","${new Date(i.endDate).toLocaleDateString('en-IN')}","${i.status}"`));
+                  }
+
+                  const csv = '\ufeff' + sections.join('\n');
+                  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `dairypro-backup-${new Date().toISOString().split('T')[0]}.csv`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  toast.dismiss();
+                  toast.success('CSV downloaded!');
+                } catch { toast.dismiss(); toast.error('Failed to generate CSV'); }
+              }} className="btn-secondary flex items-center gap-2 justify-center py-3">
+                <FiDownload size={16} /> 📊 Download CSV
+              </button>
+            </div>
           </div>
+
           <div className="border-t pt-4">
             <h3 className="font-semibold mb-2">What's included:</h3>
             <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">

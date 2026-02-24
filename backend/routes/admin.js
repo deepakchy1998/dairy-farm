@@ -166,4 +166,125 @@ router.get('/landing', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Revenue dashboard (alias for stats with extra data)
+router.get('/revenue-dashboard', async (req, res, next) => {
+  try {
+    const [totalUsers, totalFarms, activeSubscriptions, pendingPayments] = await Promise.all([
+      User.countDocuments({ role: 'user' }),
+      Farm.countDocuments(),
+      Subscription.countDocuments({ isActive: true, endDate: { $gte: new Date() } }),
+      Payment.countDocuments({ status: 'pending' }),
+    ]);
+
+    // Total revenue from verified payments
+    const totalRevenueAgg = await Payment.aggregate([
+      { $match: { status: 'verified' } },
+      { $group: { _id: null, total: { $sum: '$amount' } } },
+    ]);
+    const totalRevenue = totalRevenueAgg[0]?.total || 0;
+
+    // Monthly revenue (last 12 months)
+    const monthlyRevenue = await Payment.aggregate([
+      { $match: { status: 'verified', createdAt: { $gte: new Date(Date.now() - 365 * 86400000) } } },
+      { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } }, total: { $sum: '$amount' } } },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Plan distribution
+    const planDistribution = await Subscription.aggregate([
+      { $match: { isActive: true, endDate: { $gte: new Date() } } },
+      { $group: { _id: '$plan', count: { $sum: 1 } } },
+    ]);
+
+    res.json({
+      success: true,
+      data: { totalUsers, totalFarms, activeSubscriptions, pendingPayments, totalRevenue, monthlyRevenue, planDistribution },
+    });
+  } catch (err) { next(err); }
+});
+
+// Get settings (landing content as settings)
+router.get('/settings', async (req, res, next) => {
+  try {
+    let content = await LandingContent.findOne().lean();
+    if (!content) content = {};
+    // Flatten pricing for frontend
+    res.json({
+      success: true,
+      data: {
+        ...content,
+        upiId: content.upiId || '',
+        upiName: content.upiName || '',
+        monthlyPrice: content.pricing?.monthly || 499,
+        quarterlyPrice: content.pricing?.quarterly || 1299,
+        halfyearlyPrice: content.pricing?.halfyearly || 2499,
+        yearlyPrice: content.pricing?.yearly || 4499,
+        trialDays: content.pricing?.trialDays || 5,
+      },
+    });
+  } catch (err) { next(err); }
+});
+
+// Update settings
+router.put('/settings', async (req, res, next) => {
+  try {
+    const { upiId, upiName, monthlyPrice, quarterlyPrice, halfyearlyPrice, yearlyPrice, trialDays, supportEmail, supportPhone, contactAddress, heroTitle, heroSubtitle, testimonials, statsActiveFarms, statsCattleManaged, statsMilkRecords, statsUptime } = req.body;
+    
+    let content = await LandingContent.findOne();
+    if (!content) content = new LandingContent();
+    
+    if (heroTitle !== undefined) content.heroTitle = heroTitle;
+    if (heroSubtitle !== undefined) content.heroSubtitle = heroSubtitle;
+    if (supportPhone !== undefined) content.supportPhone = supportPhone;
+    if (supportEmail !== undefined) content.supportEmail = supportEmail;
+    if (contactAddress !== undefined) content.contactAddress = contactAddress;
+    if (testimonials !== undefined) content.testimonials = testimonials;
+    if (upiId !== undefined) content.upiId = upiId;
+    if (upiName !== undefined) content.upiName = upiName;
+    
+    // Stats
+    if (statsActiveFarms !== undefined) content.stats = { ...content.stats?.toObject?.() || content.stats || {}, activeFarms: statsActiveFarms };
+    if (statsCattleManaged !== undefined) content.stats = { ...content.stats?.toObject?.() || content.stats || {}, cattleManaged: statsCattleManaged };
+    if (statsMilkRecords !== undefined) content.stats = { ...content.stats?.toObject?.() || content.stats || {}, milkRecords: statsMilkRecords };
+    if (statsUptime !== undefined) content.stats = { ...content.stats?.toObject?.() || content.stats || {}, uptime: statsUptime };
+    
+    // Pricing
+    content.pricing = {
+      monthly: monthlyPrice || content.pricing?.monthly || 499,
+      quarterly: quarterlyPrice || content.pricing?.quarterly || 1299,
+      halfyearly: halfyearlyPrice || content.pricing?.halfyearly || 2499,
+      yearly: yearlyPrice || content.pricing?.yearly || 4499,
+      trialDays: trialDays || content.pricing?.trialDays || 5,
+    };
+    
+    await content.save();
+    res.json({ success: true, data: content });
+  } catch (err) { next(err); }
+});
+
+// Block user
+router.put('/users/:id/block', async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (user.role === 'admin') return res.status(400).json({ success: false, message: 'Cannot block admin' });
+    user.isBlocked = true;
+    await user.save();
+    res.json({ success: true, message: 'User blocked' });
+  } catch (err) { next(err); }
+});
+
+// Unblock user
+router.put('/users/:id/unblock', async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    user.isBlocked = false;
+    user.loginAttempts = 0;
+    user.lockUntil = undefined;
+    await user.save();
+    res.json({ success: true, message: 'User unblocked' });
+  } catch (err) { next(err); }
+});
+
 export default router;
