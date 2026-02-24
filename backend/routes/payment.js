@@ -16,6 +16,12 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Plan and UPI Transaction ID are required' });
     }
 
+    // Validate transaction ID format (only alphanumeric, 6-35 chars)
+    const cleanTxnId = upiTransactionId.trim();
+    if (!/^[a-zA-Z0-9]{6,35}$/.test(cleanTxnId)) {
+      return res.status(400).json({ success: false, message: 'Invalid UPI Transaction ID. Enter only the numeric/alphanumeric transaction ID from your payment receipt (6-35 characters, no spaces or special characters).' });
+    }
+
     // Validate plan exists and get admin-set price
     const content = await LandingContent.findOne();
     const amount = content?.pricing?.[plan] || PLAN_PRICES[plan];
@@ -47,6 +53,24 @@ router.post('/', async (req, res, next) => {
       screenshot: screenshot || '',
       expiresAt,
     });
+
+    // Notify admin about new payment
+    try {
+      const Notification = (await import('../models/Notification.js')).default;
+      const adminUsers = await (await import('../models/User.js')).default.find({ role: 'admin' }).select('_id farmId').lean();
+      for (const admin of adminUsers) {
+        await Notification.create({
+          farmId: admin.farmId || payment.userId,
+          userId: admin._id,
+          title: '💰 New Payment Received',
+          message: `New ${plan} plan payment of ₹${amount} received. TXN: ${cleanTxnId}. Please verify.`,
+          severity: 'warning',
+          type: 'payment_received',
+          actionUrl: '/admin',
+          refId: `payment_received_${payment._id}`,
+        }).catch(() => {}); // Ignore duplicate
+      }
+    } catch (err) { console.error('Admin notification error:', err.message); }
 
     res.status(201).json({ success: true, data: payment, message: 'Payment submitted! Admin will verify within 24 hours.' });
   } catch (err) {

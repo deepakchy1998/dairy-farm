@@ -4,6 +4,7 @@ import { formatDate, formatCurrency } from '../../utils/helpers';
 import Modal from '../../components/Modal';
 import DataTable from '../../components/DataTable';
 import { FiUsers, FiHome, FiCreditCard, FiSettings, FiCheck, FiX, FiShield, FiPlus, FiTrash2 } from 'react-icons/fi';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import Pagination from '../../components/Pagination';
 import toast from 'react-hot-toast';
@@ -25,6 +26,7 @@ export default function AdminPanel() {
   const [usersPagination, setUsersPagination] = useState({});
   const [paymentsPage, setPaymentsPage] = useState(1);
   const [paymentsPagination, setPaymentsPagination] = useState({});
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', onConfirm: null, variant: 'danger', confirmText: 'Confirm' });
 
   useEffect(() => {
     setLoading(true);
@@ -97,8 +99,8 @@ export default function AdminPanel() {
     { key: 'status', label: 'Status', render: r => <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${r.status === 'verified' ? 'bg-green-100 text-green-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>{r.status}</span> },
     { key: 'actions', label: 'Actions', render: r => r.status === 'pending' ? (
       <div className="flex gap-2">
-        <button onClick={() => verifyPayment(r._id)} className="bg-green-100 text-green-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-green-200 flex items-center gap-1"><FiCheck size={14} /> Verify</button>
-        <button onClick={() => rejectPayment(r._id)} className="bg-red-100 text-red-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-red-200 flex items-center gap-1"><FiX size={14} /> Reject</button>
+        <button onClick={() => setConfirmDialog({ open: true, title: 'Verify Payment?', message: 'This will activate the subscription for this user.', variant: 'info', confirmText: 'Verify', onConfirm: () => verifyPayment(r._id) })} className="bg-green-100 text-green-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-green-200 flex items-center gap-1"><FiCheck size={14} /> Verify</button>
+        <button onClick={() => setConfirmDialog({ open: true, title: 'Reject Payment?', message: 'This will reject the payment. You can add a reason in the next step.', variant: 'danger', confirmText: 'Reject', onConfirm: () => rejectPayment(r._id) })} className="bg-red-100 text-red-700 px-3 py-1 rounded-lg text-xs font-medium hover:bg-red-200 flex items-center gap-1"><FiX size={14} /> Reject</button>
       </div>
     ) : '-' },
   ];
@@ -110,7 +112,7 @@ export default function AdminPanel() {
     { key: 'joined', label: 'Joined', render: r => formatDate(r.createdAt) },
     { key: 'status', label: 'Status', render: r => <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${r.isBlocked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{r.isBlocked ? 'Blocked' : 'Active'}</span> },
     { key: 'actions', label: '', render: r => r.role !== 'admin' && (
-      <button onClick={() => toggleBlock(r._id, r.isBlocked)} className={`text-xs px-3 py-1 rounded-lg font-medium ${r.isBlocked ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}>
+      <button onClick={() => setConfirmDialog({ open: true, title: r.isBlocked ? 'Unblock User?' : 'Block User?', message: r.isBlocked ? 'This user will regain access.' : 'This user will lose access to the platform.', variant: r.isBlocked ? 'info' : 'danger', confirmText: r.isBlocked ? 'Unblock' : 'Block', onConfirm: () => toggleBlock(r._id, r.isBlocked) })} className={`text-xs px-3 py-1 rounded-lg font-medium ${r.isBlocked ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}>
         {r.isBlocked ? 'Unblock' : 'Block'}
       </button>
     )},
@@ -123,9 +125,9 @@ export default function AdminPanel() {
         <div><h1 className="text-2xl font-bold">Admin Panel</h1><p className="text-gray-500 text-sm">Manage users, payments & settings</p></div>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
         {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.id ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t.label}</button>
+          <button key={t.id} onClick={() => setTab(t.id)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${tab === t.id ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{t.label}</button>
         ))}
       </div>
 
@@ -305,6 +307,7 @@ export default function AdminPanel() {
           </form>
         </div>
       )}
+      <ConfirmDialog isOpen={confirmDialog.open} onClose={() => setConfirmDialog({ ...confirmDialog, open: false })} title={confirmDialog.title} message={confirmDialog.message} variant={confirmDialog.variant} confirmText={confirmDialog.confirmText || 'Confirm'} onConfirm={confirmDialog.onConfirm} />
     </div>
   );
 }

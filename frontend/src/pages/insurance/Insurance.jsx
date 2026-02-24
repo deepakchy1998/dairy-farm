@@ -4,6 +4,7 @@ import { formatDate, formatCurrency } from '../../utils/helpers';
 import Modal from '../../components/Modal';
 import Pagination from '../../components/Pagination';
 import { FiPlus, FiEdit2, FiTrash2, FiShield, FiAlertTriangle } from 'react-icons/fi';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import toast from 'react-hot-toast';
 
 export default function Insurance() {
@@ -19,6 +20,7 @@ export default function Insurance() {
     startDate: '', endDate: '', status: 'active', govtScheme: '', notes: '',
   });
   const [saving, setSaving] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', onConfirm: null, variant: 'danger', confirmText: 'Confirm' });
 
   const fetchRecords = () => {
     setLoading(true);
@@ -71,9 +73,10 @@ export default function Insurance() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this insurance record?')) return;
-    try { await api.delete(`/insurance/${id}`); toast.success('Deleted'); fetchRecords(); }
-    catch { toast.error('Failed'); }
+    setConfirmDialog({ open: true, title: 'Delete Insurance?', message: 'This will permanently delete this insurance record.', variant: 'danger', confirmText: 'Delete', onConfirm: async () => {
+      try { await api.delete(`/insurance/${id}`); toast.success('Deleted'); fetchRecords(); }
+      catch { toast.error('Failed'); }
+    }});
   };
 
   // Stats
@@ -177,6 +180,8 @@ export default function Insurance() {
         )}
         <Pagination page={pagination.page} pages={pagination.pages} total={pagination.total} onPageChange={p => setFilters({ ...filters, page: p })} />
       </div>
+
+      <ConfirmDialog isOpen={confirmDialog.open} onClose={() => setConfirmDialog({ ...confirmDialog, open: false })} title={confirmDialog.title} message={confirmDialog.message} variant={confirmDialog.variant} confirmText={confirmDialog.confirmText || 'Confirm'} onConfirm={confirmDialog.onConfirm} />
 
       {/* Add/Edit Modal */}
       <Modal isOpen={modal} onClose={() => setModal(false)} title={editId ? 'Edit Insurance' : 'Add Insurance Policy'} size="lg">

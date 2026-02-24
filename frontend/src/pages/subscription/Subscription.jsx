@@ -188,8 +188,9 @@ export default function Subscription() {
 
           <div>
             <label className="label">UPI Transaction ID *</label>
-            <input className="input" required value={txnId} onChange={e => setTxnId(e.target.value)}
+            <input className="input" required value={txnId} onChange={e => setTxnId(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
               placeholder="Enter UPI transaction/reference ID from payment receipt" />
+            <p className="text-xs text-gray-400 mt-1">Enter only the numeric/alphanumeric transaction ID (no spaces or special characters)</p>
           </div>
 
           <div>
@@ -220,6 +221,11 @@ export default function Subscription() {
               ⚠️ <strong>Important:</strong> Pay the exact amount shown above. Admin will verify your payment and activate the subscription within 24 hours. Do not use a previously used Transaction ID.
             </p>
           </div>
+
+          <label className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <input type="checkbox" required className="mt-1 rounded border-gray-300" />
+            <span>I confirm that I have paid <strong>₹{plans?.[payModal]}</strong> via UPI and the transaction ID entered above is correct.</span>
+          </label>
 
           <div className="flex justify-end gap-3">
             <button type="button" onClick={() => setPayModal(null)} className="btn-secondary">Cancel</button>

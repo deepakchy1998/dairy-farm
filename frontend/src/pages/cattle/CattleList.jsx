@@ -6,6 +6,7 @@ import Modal from '../../components/Modal';
 import DataTable from '../../components/DataTable';
 import Pagination from '../../components/Pagination';
 import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiEye, FiDownload, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import toast from 'react-hot-toast';
 
 const categories = ['', 'milking', 'dry', 'heifer', 'calf', 'bull', 'pregnant'];
@@ -41,6 +42,7 @@ export default function CattleList() {
   const [predictedGen, setPredictedGen] = useState(null); // { generation, mother }
   const [predicting, setPredicting] = useState(false);
   const [showSemen, setShowSemen] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', onConfirm: null, variant: 'danger', confirmText: 'Confirm' });
 
   const fetchCattle = () => {
     setLoading(true);
@@ -107,8 +109,9 @@ export default function CattleList() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this cattle record?')) return;
-    try { await api.delete(`/cattle/${id}`); toast.success('Deleted'); fetchCattle(); } catch { toast.error('Failed'); }
+    setConfirmDialog({ open: true, title: 'Delete Cattle?', message: 'This will permanently delete this cattle record.', variant: 'danger', confirmText: 'Delete', onConfirm: async () => {
+      try { await api.delete(`/cattle/${id}`); toast.success('Deleted'); fetchCattle(); } catch { toast.error('Failed'); }
+    }});
   };
 
   const handleDownloadPdf = async (id, tagNumber) => {
@@ -149,9 +152,17 @@ export default function CattleList() {
           <h1 className="text-2xl font-bold">🐄 Cattle Management</h1>
           <p className="text-gray-500 text-sm">Manage your cattle records</p>
         </div>
-        <button onClick={() => { setForm(defaultForm); setEditId(null); setPredictedGen(null); setShowSemen(false); setModalOpen(true); }} className="btn-primary flex items-center gap-2">
-          <FiPlus size={18} /> Add Cattle
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => {
+            if (!cattle?.length) return;
+            const csv = '\ufeff' + 'Tag,Breed,Category,Gender,Status,Weight,DOB\n' + cattle.map(c => `"${c.tagNumber}","${c.breed}","${c.category}","${c.gender}","${c.status}","${c.weight || ''}","${c.dateOfBirth ? new Date(c.dateOfBirth).toLocaleDateString('en-IN') : ''}"`).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'cattle.csv'; a.click();
+          }} className="btn-secondary text-xs flex items-center gap-1">📊 CSV</button>
+          <button onClick={() => { setForm(defaultForm); setEditId(null); setPredictedGen(null); setShowSemen(false); setModalOpen(true); }} className="btn-primary flex items-center gap-2">
+            <FiPlus size={18} /> Add Cattle
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -278,6 +289,8 @@ export default function CattleList() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog isOpen={confirmDialog.open} onClose={() => setConfirmDialog({ ...confirmDialog, open: false })} title={confirmDialog.title} message={confirmDialog.message} variant={confirmDialog.variant} confirmText={confirmDialog.confirmText || 'Confirm'} onConfirm={confirmDialog.onConfirm} />
 
       {/* ═══ Detail Modal ═══ */}
       <Modal isOpen={!!detailModal} onClose={() => setDetailModal(null)} title="Cattle Details" size="lg">

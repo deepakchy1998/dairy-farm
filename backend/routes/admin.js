@@ -79,6 +79,21 @@ router.put('/payments/:id/verify', async (req, res, next) => {
 
     await Subscription.create({ userId: payment.userId, plan: payment.plan, startDate, endDate });
 
+    // Notify user about payment verification
+    try {
+      const Notification = (await import('../models/Notification.js')).default;
+      await Notification.create({
+        farmId: (await User.findById(payment.userId).select('farmId').lean())?.farmId,
+        userId: payment.userId,
+        title: '✅ Payment Verified',
+        message: `Your payment of ₹${payment.amount} for ${payment.plan} plan has been verified. Subscription is now active for ${days} days. Thank you!`,
+        severity: 'info',
+        type: 'payment_verified',
+        actionUrl: '/subscription',
+        refId: `payment_verified_${payment._id}`,
+      });
+    } catch (err) { console.error('Notification error:', err.message); }
+
     res.json({ success: true, data: payment, message: `Subscription activated for ${days} days` });
   } catch (err) { next(err); }
 });
@@ -91,6 +106,22 @@ router.put('/payments/:id/reject', async (req, res, next) => {
     payment.status = 'rejected';
     payment.adminNote = req.body.adminNote || '';
     await payment.save();
+
+    // Notify user about payment rejection
+    try {
+      const Notification = (await import('../models/Notification.js')).default;
+      await Notification.create({
+        farmId: (await User.findById(payment.userId).select('farmId').lean())?.farmId,
+        userId: payment.userId,
+        title: '❌ Payment Rejected',
+        message: `Your payment of ₹${payment.amount} (TXN: ${payment.upiTransactionId}) was rejected.${payment.adminNote ? ' Reason: ' + payment.adminNote : ''} Please submit a new payment with a valid transaction ID.`,
+        severity: 'warning',
+        type: 'payment_rejected',
+        actionUrl: '/subscription',
+        refId: `payment_rejected_${payment._id}`,
+      });
+    } catch (err) { console.error('Notification error:', err.message); }
+
     res.json({ success: true, data: payment });
   } catch (err) { next(err); }
 });
@@ -107,6 +138,23 @@ router.post('/subscription/grant', async (req, res, next) => {
     const endDate = new Date(startDate.getTime() + grantDays * 24 * 60 * 60 * 1000);
 
     const sub = await Subscription.create({ userId, plan: plan || 'manual', startDate, endDate });
+
+    // Notify user
+    try {
+      const Notification = (await import('../models/Notification.js')).default;
+      const targetUser = await User.findById(userId).select('farmId').lean();
+      await Notification.create({
+        farmId: targetUser?.farmId,
+        userId,
+        title: '🎉 Subscription Granted',
+        message: `You have been granted ${grantDays} days of ${plan || 'premium'} subscription by admin. Enjoy DairyPro!`,
+        severity: 'info',
+        type: 'subscription_granted',
+        actionUrl: '/subscription',
+        refId: `sub_granted_${sub._id}`,
+      });
+    } catch (err) { console.error('Notification error:', err.message); }
+
     res.json({ success: true, data: sub, message: `Subscription granted for ${grantDays} days` });
   } catch (err) { next(err); }
 });
@@ -117,6 +165,23 @@ router.post('/subscription/revoke', async (req, res, next) => {
     const { userId } = req.body;
     if (!userId) return res.status(400).json({ success: false, message: 'User ID required' });
     await Subscription.updateMany({ userId, isActive: true }, { isActive: false });
+
+    // Notify user
+    try {
+      const Notification = (await import('../models/Notification.js')).default;
+      const targetUser = await User.findById(userId).select('farmId').lean();
+      await Notification.create({
+        farmId: targetUser?.farmId,
+        userId,
+        title: '⚠️ Subscription Revoked',
+        message: 'Your subscription has been revoked by admin. Please renew to continue using DairyPro.',
+        severity: 'critical',
+        type: 'subscription_revoked',
+        actionUrl: '/subscription',
+        refId: `sub_revoked_${userId}_${Date.now()}`,
+      });
+    } catch (err) { console.error('Notification error:', err.message); }
+
     res.json({ success: true, message: 'Subscription revoked' });
   } catch (err) { next(err); }
 });

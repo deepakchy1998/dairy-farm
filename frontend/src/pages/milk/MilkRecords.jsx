@@ -4,6 +4,7 @@ import { formatDate, formatLiters } from '../../utils/helpers';
 import Modal from '../../components/Modal';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { FiPlus, FiArrowLeft, FiDownload, FiFilter } from 'react-icons/fi';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import toast from 'react-hot-toast';
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
@@ -60,6 +61,8 @@ export default function MilkRecords() {
   const [calcForm, setCalcForm] = useState({ quantity: '', fat: '', snf: '', ratePerFat: '7.5' });
   const [calcResult, setCalcResult] = useState(null);
   const [calculating, setCalculating] = useState(false);
+
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', onConfirm: null, variant: 'danger', confirmText: 'Confirm' });
 
   // Filter state for main records view
   const [showRecords, setShowRecords] = useState(false);
@@ -184,10 +187,11 @@ export default function MilkRecords() {
   };
 
   const handleRemoveCattle = (cattleId) => {
-    if (!confirm('Remove this cattle from milk section?')) return;
-    const stored = JSON.parse(localStorage.getItem('milkCattleIds') || '[]');
-    localStorage.setItem('milkCattleIds', JSON.stringify(stored.filter(id => id !== cattleId)));
-    setMilkCattle(prev => prev.filter(c => c._id !== cattleId));
+    setConfirmDialog({ open: true, title: 'Remove Cattle?', message: 'Remove this cattle from milk section?', variant: 'warning', confirmText: 'Remove', onConfirm: () => {
+      const stored = JSON.parse(localStorage.getItem('milkCattleIds') || '[]');
+      localStorage.setItem('milkCattleIds', JSON.stringify(stored.filter(id => id !== cattleId)));
+      setMilkCattle(prev => prev.filter(c => c._id !== cattleId));
+    }});
   };
 
   const openAddRecord = (cattle) => {
@@ -233,8 +237,9 @@ export default function MilkRecords() {
   };
 
   const handleDeleteRecord = async (id) => {
-    if (!confirm('Delete this record?')) return;
-    try { await api.delete(`/milk/${id}`); toast.success('Deleted'); if (viewCattle) fetchHistory(viewCattle._id, historyFilter); refreshSummary(); if (showRecords) fetchFilteredRecords(filterPeriod, filterCattle, recordsPage); } catch { toast.error('Failed'); }
+    setConfirmDialog({ open: true, title: 'Delete Record?', message: 'This will permanently delete this milk record.', variant: 'danger', confirmText: 'Delete', onConfirm: async () => {
+      try { await api.delete(`/milk/${id}`); toast.success('Deleted'); if (viewCattle) fetchHistory(viewCattle._id, historyFilter); refreshSummary(); if (showRecords) fetchFilteredRecords(filterPeriod, filterCattle, recordsPage); } catch { toast.error('Failed'); }
+    }});
   };
 
   const handleSharePdf = async (cattle) => {
@@ -355,6 +360,7 @@ export default function MilkRecords() {
             </div>
           </form>
         </Modal>
+        <ConfirmDialog isOpen={confirmDialog.open} onClose={() => setConfirmDialog({ ...confirmDialog, open: false })} title={confirmDialog.title} message={confirmDialog.message} variant={confirmDialog.variant} confirmText={confirmDialog.confirmText || 'Confirm'} onConfirm={confirmDialog.onConfirm} />
       </div>
     );
   }
@@ -471,6 +477,7 @@ export default function MilkRecords() {
             <button onClick={() => fetchFilteredRecords(filterPeriod, filterCattle, recordsPage + 1)} disabled={recordsPage >= totalPages} className="px-3 py-1 rounded bg-gray-100 text-sm disabled:opacity-40">Next</button>
           </div>
         )}
+        <ConfirmDialog isOpen={confirmDialog.open} onClose={() => setConfirmDialog({ ...confirmDialog, open: false })} title={confirmDialog.title} message={confirmDialog.message} variant={confirmDialog.variant} confirmText={confirmDialog.confirmText || 'Confirm'} onConfirm={confirmDialog.onConfirm} />
       </div>
     );
   }
@@ -484,6 +491,16 @@ export default function MilkRecords() {
           <p className="text-gray-500 text-sm">Manage daily milk production</p>
         </div>
         <div className="flex gap-2">
+          <button onClick={() => {
+            if (!milkCattle?.length) return;
+            const rows = milkCattle.map(c => {
+              const rec = lastRecords[c._id];
+              return `"${c.tagNumber}","${c.breed}","${rec?.morningYield || ''}","${rec?.eveningYield || ''}","${rec?.totalYield || ''}"`;
+            });
+            const csv = '\ufeff' + 'Tag,Breed,Morning(L),Evening(L),Total(L)\n' + rows.join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'milk-records.csv'; a.click();
+          }} className="btn-secondary flex items-center gap-1 text-xs">📊 CSV</button>
           <button onClick={() => setCalcModal(true)} className="btn-secondary flex items-center gap-2 text-sm">💰 Rate Calculator</button>
           <button onClick={openRecordsView} className="btn-secondary flex items-center gap-2 text-sm"><FiFilter size={16} /> All Records</button>
           <button onClick={() => setAddCattleModal(true)} className="btn-primary flex items-center gap-2"><FiPlus size={18} /> Add Cattle</button>
@@ -663,6 +680,7 @@ export default function MilkRecords() {
           )}
         </div>
       </Modal>
+      <ConfirmDialog isOpen={confirmDialog.open} onClose={() => setConfirmDialog({ ...confirmDialog, open: false })} title={confirmDialog.title} message={confirmDialog.message} variant={confirmDialog.variant} confirmText={confirmDialog.confirmText || 'Confirm'} onConfirm={confirmDialog.onConfirm} />
     </div>
   );
 }

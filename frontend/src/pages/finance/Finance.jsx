@@ -5,6 +5,7 @@ import Modal from '../../components/Modal';
 import DataTable from '../../components/DataTable';
 import Pagination from '../../components/Pagination';
 import { FiPlus, FiEdit2, FiTrash2, FiTrendingUp, FiTrendingDown, FiDownload, FiFileText, FiLayers, FiPieChart } from 'react-icons/fi';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import { FaIndianRupeeSign } from 'react-icons/fa6';
 import DateRangeFilter, { getDateRange } from '../../components/DateRangeFilter';
 import { exportPdf } from '../../utils/exportPdf';
@@ -29,6 +30,7 @@ export default function Finance() {
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [summary, setSummary] = useState({ total: 0, count: 0, byCategory: {} });
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', onConfirm: null, variant: 'danger', confirmText: 'Confirm' });
 
   const endpoint = tab === 'expense' ? '/expense' : '/revenue';
   const cats = tab === 'expense' ? expCategories : revCategories;
@@ -74,8 +76,9 @@ export default function Finance() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this record?')) return;
-    try { await api.delete(`${endpoint}/${id}`); toast.success('Deleted'); fetchData(); } catch { toast.error('Failed'); }
+    setConfirmDialog({ open: true, title: 'Delete Record?', message: 'This will permanently delete this finance record.', variant: 'danger', confirmText: 'Delete', onConfirm: async () => {
+      try { await api.delete(`${endpoint}/${id}`); toast.success('Deleted'); fetchData(); } catch { toast.error('Failed'); }
+    }});
   };
 
   const catBadgeColor = (cat) => {
@@ -211,6 +214,8 @@ export default function Finance() {
           </>
         )}
       </div>
+
+      <ConfirmDialog isOpen={confirmDialog.open} onClose={() => setConfirmDialog({ ...confirmDialog, open: false })} title={confirmDialog.title} message={confirmDialog.message} variant={confirmDialog.variant} confirmText={confirmDialog.confirmText || 'Confirm'} onConfirm={confirmDialog.onConfirm} />
 
       {/* Modal */}
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={`${editId ? 'Edit' : 'Add'} ${tab === 'expense' ? 'Expense' : 'Revenue'}`}>
