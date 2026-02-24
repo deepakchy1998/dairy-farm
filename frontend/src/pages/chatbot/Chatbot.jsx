@@ -5,26 +5,36 @@ import { useNavigate } from 'react-router-dom';
 import { FiSend, FiMessageSquare, FiUser, FiTrash2, FiCopy, FiCheck, FiZap, FiClock, FiX } from 'react-icons/fi';
 
 const QUICK_ACTIONS = [
-  { label: '🥛 Today\'s Milk', msg: 'Aaj ka dudh kitna hai? Give detailed breakdown' },
-  { label: '🐄 Cattle Status', msg: 'Give me complete cattle summary with all categories and breeds' },
-  { label: '💰 Profit & Loss', msg: 'Show this month profit loss with comparison to last month' },
-  { label: '💉 Health Alerts', msg: 'Any overdue or upcoming vaccinations? List all with dates' },
-  { label: '🐣 Breeding Status', msg: 'Show all active breeding records and expected deliveries' },
-  { label: '📊 Weekly Analysis', msg: 'Analyze my farm performance this week with trends and recommendations' },
-  { label: '🌾 Feed Cost', msg: 'Show feed expenses this month by type' },
+  { label: '🥛 Today\'s Milk', msg: 'Aaj ka dudh kitna hai? Give detailed breakdown with morning/evening split' },
+  { label: '🐄 Cattle Status', msg: 'Give me complete cattle summary with all categories, breeds, and health status' },
+  { label: '💰 Profit & Loss', msg: 'Show this month profit loss with comparison to last month and cost per liter' },
+  { label: '💉 Health Alerts', msg: 'Any overdue or upcoming vaccinations? List all with dates and cattle tags' },
+  { label: '🐣 Breeding Status', msg: 'Show all active breeding records, expected deliveries, and heat predictions' },
+  { label: '📊 Weekly Analysis', msg: 'Analyze my farm performance this week with trends and actionable recommendations' },
+  { label: '🌾 Feed Cost', msg: 'Show feed expenses this month by type and suggest optimization' },
   { label: '💡 Improve Profit', msg: 'Analyze my farm data and give me 5 actionable tips to improve profitability' },
   { label: '⚠️ Alerts', msg: '/alerts' },
   { label: '🏆 Top Producers', msg: 'Which cattle are producing the most milk? Show rankings with daily averages' },
-  { label: '📉 Low Producers', msg: 'Which cattle have low milk yield? Should I check their health?' },
+  { label: '📉 Low Producers', msg: 'Which cattle have low milk yield? Should I check their health or change feed?' },
   { label: '🔮 Predictions', msg: 'Based on current trends, predict my end-of-month milk production and revenue' },
+  { label: '🛡️ Insurance', msg: 'Show my insurance status — any policies expiring soon? Suggest govt schemes I should apply for' },
+  { label: '🔥 Heat Calendar', msg: 'Which cattle are due for heat soon? Show predicted heat dates and best breeding windows' },
+  { label: '⚖️ Weight Check', msg: 'Show cattle weight status — any underweight or overweight animals that need attention?' },
+  { label: '🍼 Lactation', msg: 'Show lactation status of milking cattle — days in milk, who needs dry off, lactation curves' },
+  { label: '💊 Disease Risk', msg: 'Based on current season and my cattle health records, what diseases should I watch for?' },
+  { label: '📋 Daily Summary', msg: 'Give me a complete daily summary of my farm — milk, health, breeding, finance, alerts — everything' },
+  { label: '💵 Milk Rate', msg: 'Calculate my milk payment — what should I get from dairy cooperative based on fat% and SNF%?' },
+  { label: '🏥 Vet Schedule', msg: 'Create a vaccination and health checkup schedule for next 30 days for all my cattle' },
 ];
 
 const FOLLOW_UPS = {
-  milk: ['Compare with last week', 'Which cattle gave most today?', 'Show fat% analysis'],
-  cattle: ['Show milking cattle details', 'Any cattle need attention?', 'Breed-wise distribution'],
-  finance: ['How to reduce expenses?', 'Best revenue sources?', 'Cost per liter analysis'],
-  health: ['Schedule next vaccinations', 'Common diseases this season', 'Medicine cost analysis'],
-  default: ['Tell me more', 'Give recommendations', 'Compare with last month'],
+  milk: ['Compare with last week', 'Which cattle gave most today?', 'Show fat% analysis', 'Calculate my milk payment'],
+  cattle: ['Show milking cattle details', 'Any cattle need attention?', 'Breed-wise distribution', 'Weight status check'],
+  finance: ['How to reduce expenses?', 'Best revenue sources?', 'Cost per liter analysis', 'Monthly trend comparison'],
+  health: ['Schedule next vaccinations', 'Common diseases this season', 'Medicine cost analysis', 'Insurance status check'],
+  breeding: ['Heat calendar for this week', 'Expected deliveries', 'Breeding success rate', 'Best time for AI'],
+  insurance: ['Expiring policies', 'Govt schemes available', 'Claim process help', 'Coverage recommendations'],
+  default: ['Tell me more', 'Give recommendations', 'Compare with last month', 'Create action plan'],
 };
 
 function detectContext(lastReply) {
@@ -33,6 +43,8 @@ function detectContext(lastReply) {
   if (lower.includes('cattle') || lower.includes('gaay') || lower.includes('tag')) return 'cattle';
   if (lower.includes('expense') || lower.includes('revenue') || lower.includes('profit') || lower.includes('₹')) return 'finance';
   if (lower.includes('vaccine') || lower.includes('health') || lower.includes('treatment')) return 'health';
+  if (lower.includes('breed') || lower.includes('heat') || lower.includes('deliver') || lower.includes('pregnan')) return 'breeding';
+  if (lower.includes('insurance') || lower.includes('bima') || lower.includes('policy')) return 'insurance';
   return 'default';
 }
 
