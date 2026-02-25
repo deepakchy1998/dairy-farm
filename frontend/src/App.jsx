@@ -28,6 +28,7 @@ const Subscription = lazy(() => import('./pages/subscription/Subscription'));
 const Chatbot = lazy(() => import('./pages/chatbot/Chatbot'));
 const AdminPanel = lazy(() => import('./pages/admin/AdminPanel'));
 const Settings = lazy(() => import('./pages/settings/Settings'));
+const MilkDelivery = lazy(() => import('./pages/milkDelivery/MilkDelivery'));
 const Landing = lazy(() => import('./pages/Landing'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
@@ -70,6 +71,7 @@ export default function App() {
           <Route path="/feed" element={<ProtectedLayout><FeedRecords /></ProtectedLayout>} />
           <Route path="/finance" element={<ProtectedLayout><Finance /></ProtectedLayout>} />
           <Route path="/insurance" element={<ProtectedLayout><Insurance /></ProtectedLayout>} />
+          <Route path="/milk-delivery" element={<ProtectedLayout><MilkDelivery /></ProtectedLayout>} />
           <Route path="/reports" element={<ProtectedLayout><Reports /></ProtectedLayout>} />
           <Route path="/subscription" element={<ProtectedLayout><Subscription /></ProtectedLayout>} />
           <Route path="/chatbot" element={<ProtectedLayout><Chatbot /></ProtectedLayout>} />
