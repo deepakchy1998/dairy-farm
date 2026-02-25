@@ -28,11 +28,7 @@ router.get('/plans', async (req, res, next) => {
 
     res.json({
       success: true,
-      data: {
-        plans,
-        upiId: content?.upiId || (content?.supportPhone ? `${content.supportPhone}@upi` : 'dairypro@upi'),
-        upiName: content?.upiName || 'DairyPro',
-      },
+      data: { plans },
     });
   } catch (err) { next(err); }
 });

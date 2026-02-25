@@ -697,15 +697,8 @@ export default function AdminPanel() {
                         <td className="px-3 py-2 font-mono text-[10px] text-gray-500">{p.upiTransactionId}</td>
                         <td className="px-3 py-2 text-xs text-gray-500">{formatDate(p.createdAt)}</td>
                         <td className="px-3 py-2"><span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${p.status === 'verified' ? 'bg-green-100 text-green-700' : p.status === 'rejected' ? 'bg-red-100 text-red-700' : p.status === 'expired' ? 'bg-gray-100 text-gray-500' : 'bg-yellow-100 text-yellow-700'}`}>{p.status}</span></td>
-                        <td className="px-3 py-2">{p.screenshot ? <button onClick={() => viewScreenshot(p._id)} className="text-xs text-blue-600 hover:underline">📷 View</button> : <span className="text-xs text-gray-300">—</span>}</td>
-                        <td className="px-3 py-2">
-                          {p.status === 'pending' && (
-                            <div className="flex gap-1">
-                              <button onClick={() => setConfirmDialog({ open: true, title: 'Verify?', message: 'Activate subscription for this user?', variant: 'info', confirmText: 'Verify', onConfirm: () => verifyPayment(p._id) })} className="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded-lg hover:bg-green-200"><FiCheck size={12} /></button>
-                              <button onClick={() => setConfirmDialog({ open: true, title: 'Reject?', message: 'Reject this payment?', variant: 'danger', confirmText: 'Reject', onConfirm: () => rejectPayment(p._id) })} className="text-[10px] bg-red-100 text-red-700 px-2 py-1 rounded-lg hover:bg-red-200"><FiX size={12} /></button>
-                            </div>
-                          )}
-                        </td>
+                        <td className="px-3 py-2 text-xs text-gray-400">{p.paymentMethod === 'razorpay' ? '💳 Razorpay' : '📱 Legacy'}</td>
+                        <td className="px-3 py-2 text-xs text-gray-400">{p.adminNote || '—'}</td>
                       </tr>
                     ))}
                   </tbody>

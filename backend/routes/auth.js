@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import User from '../models/User.js';
 import Farm from '../models/Farm.js';
 import Subscription from '../models/Subscription.js';
+import AppConfig from '../models/AppConfig.js';
 import { auth } from '../middleware/auth.js';
 
 const router = Router();
@@ -46,9 +47,11 @@ router.post('/register', async (req, res, next) => {
     user.farmId = farm._id;
     await user.save();
 
-    // 5-day free trial
+    // Dynamic free trial from AppConfig
+    const appConfig = await AppConfig.findOne({ key: 'global' }).lean();
+    const trialDays = appConfig?.trialDays || 5;
     const now = new Date();
-    const trialEnd = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
+    const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);
     await Subscription.create({ userId: user._id, plan: 'trial', startDate: now, endDate: trialEnd });
 
     const token = signToken(user);

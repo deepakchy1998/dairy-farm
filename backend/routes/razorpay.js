@@ -7,20 +7,72 @@ import Subscription from '../models/Subscription.js';
 import Plan from '../models/Plan.js';
 
 const router = Router();
-router.use(auth);
 
+// ═══════════════════════════════════════════
+//  RAZORPAY INSTANCE (Singleton)
+// ═══════════════════════════════════════════
+let razorpayInstance = null;
 function getRazorpay() {
-  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-    return null;
+  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) return null;
+  if (!razorpayInstance) {
+    razorpayInstance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
   }
-  return new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
-  });
+  return razorpayInstance;
 }
 
-// Check if Razorpay is configured
-router.get('/config', (req, res) => {
+// ═══════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════
+async function activateSubscription(userId, planName, paymentId) {
+  const planDoc = await Plan.findOne({ name: planName });
+  const days = planDoc?.days || 30;
+
+  // Check for existing active subscription to extend
+  const existing = await Subscription.findOne({
+    userId,
+    isActive: true,
+    endDate: { $gte: new Date() },
+  }).sort('-endDate');
+
+  const startDate = existing ? new Date(existing.endDate) : new Date();
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + days);
+
+  const sub = await Subscription.create({
+    userId,
+    plan: planName,
+    startDate,
+    endDate,
+    paymentId,
+  });
+
+  // Send notification
+  try {
+    const Notification = (await import('../models/Notification.js')).default;
+    const User = (await import('../models/User.js')).default;
+    const user = await User.findById(userId).select('farmId').lean();
+    await Notification.create({
+      farmId: user?.farmId || userId,
+      userId,
+      title: '✅ Subscription Activated!',
+      message: `Your ${planName} plan is now active. Valid until ${endDate.toLocaleDateString('en-IN')}.`,
+      severity: 'info',
+      type: 'subscription_activated',
+      actionUrl: '/subscription',
+      refId: `sub_activated_${paymentId || sub._id}`,
+    }).catch(() => {});
+  } catch (err) { console.error('Notification error:', err.message); }
+
+  return { startDate, endDate, days };
+}
+
+// ═══════════════════════════════════════════
+//  PUBLIC: Config check
+// ═══════════════════════════════════════════
+router.get('/config', auth, (req, res) => {
   const enabled = !!(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);
   res.json({
     success: true,
@@ -31,12 +83,14 @@ router.get('/config', (req, res) => {
   });
 });
 
-// Create Razorpay order
-router.post('/create-order', async (req, res, next) => {
+// ═══════════════════════════════════════════
+//  CREATE ORDER (Authenticated)
+// ═══════════════════════════════════════════
+router.post('/create-order', auth, async (req, res, next) => {
   try {
     const razorpay = getRazorpay();
     if (!razorpay) {
-      return res.status(503).json({ success: false, message: 'Razorpay is not configured. Please contact admin.' });
+      return res.status(503).json({ success: false, message: 'Payment gateway is not configured.' });
     }
 
     const { plan } = req.body;
@@ -44,55 +98,49 @@ router.post('/create-order', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Plan is required' });
     }
 
-    // Get plan from DB
     const planDoc = await Plan.findOne({ name: plan, isActive: true });
     if (!planDoc) {
-      return res.status(400).json({ success: false, message: 'Invalid or inactive plan selected' });
-    }
-    const amount = planDoc.price;
-
-    // Check for existing pending Razorpay payment
-    const pendingPayment = await Payment.findOne({ userId: req.user._id, status: 'pending', paymentMethod: 'razorpay' });
-    if (pendingPayment) {
-      // Expire old pending razorpay payment
-      pendingPayment.status = 'expired';
-      await pendingPayment.save();
+      return res.status(400).json({ success: false, message: 'Invalid or inactive plan' });
     }
 
+    // Expire any old pending razorpay payments for this user
+    await Payment.updateMany(
+      { userId: req.user._id, status: 'pending', paymentMethod: 'razorpay' },
+      { status: 'expired' }
+    );
+
+    // Create Razorpay order
     let order;
     try {
       order = await razorpay.orders.create({
-        amount: amount * 100, // Razorpay expects paise
+        amount: planDoc.price * 100, // paise
         currency: 'INR',
         receipt: `dp_${req.user._id.toString().slice(-8)}_${Date.now()}`,
         notes: {
           userId: req.user._id.toString(),
           plan,
+          userName: req.user.name,
+          userEmail: req.user.email,
         },
       });
     } catch (rzErr) {
       console.error('Razorpay order creation failed:', rzErr.error || rzErr.message || rzErr);
-      return res.status(502).json({ success: false, message: 'Payment gateway error. Please check Razorpay credentials or try again.' });
+      return res.status(502).json({ success: false, message: 'Payment gateway error. Please try again.' });
     }
 
-    // Store as pending payment
-    try {
-      await Payment.create({
-        userId: req.user._id,
-        plan,
-        amount,
-        upiTransactionId: order.id, // Store Razorpay order ID here
-        paymentMethod: 'razorpay',
-        razorpayOrderId: order.id,
-        status: 'pending',
-        ipAddress: req.ip,
-        userAgent: (req.headers['user-agent'] || '').slice(0, 500),
-        expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 min expiry for razorpay
-      });
-    } catch (dbErr) {
-      console.error('Failed to save razorpay payment record:', dbErr.message);
-      // Still proceed — order was created on Razorpay
-    }
+    // Store pending payment
+    await Payment.create({
+      userId: req.user._id,
+      plan,
+      amount: planDoc.price,
+      upiTransactionId: order.id,
+      paymentMethod: 'razorpay',
+      razorpayOrderId: order.id,
+      status: 'pending',
+      ipAddress: req.ip,
+      userAgent: (req.headers['user-agent'] || '').slice(0, 500),
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+    });
 
     res.json({
       success: true,
@@ -102,7 +150,7 @@ router.post('/create-order', async (req, res, next) => {
         currency: order.currency,
         keyId: process.env.RAZORPAY_KEY_ID,
         name: 'DairyPro',
-        description: `${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan Subscription`,
+        description: `${planDoc.label} Plan Subscription`,
         prefill: {
           name: req.user.name,
           email: req.user.email,
@@ -116,8 +164,10 @@ router.post('/create-order', async (req, res, next) => {
   }
 });
 
-// Verify Razorpay payment & auto-activate subscription
-router.post('/verify-payment', async (req, res, next) => {
+// ═══════════════════════════════════════════
+//  VERIFY PAYMENT (Client-side callback)
+// ═══════════════════════════════════════════
+router.post('/verify-payment', auth, async (req, res, next) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
@@ -131,78 +181,167 @@ router.post('/verify-payment', async (req, res, next) => {
     const expectedSignature = crypto.createHmac('sha256', secret).update(body).digest('hex');
 
     if (expectedSignature !== razorpay_signature) {
-      return res.status(400).json({ success: false, message: 'Payment verification failed. Invalid signature.' });
+      console.error(`⚠️ Invalid Razorpay signature: user=${req.user._id} order=${razorpay_order_id}`);
+      return res.status(400).json({ success: false, message: 'Payment verification failed.' });
     }
 
-    // Find the pending payment
-    const payment = await Payment.findOne({
-      razorpayOrderId: razorpay_order_id,
-      userId: req.user._id,
-      status: 'pending',
-    });
-
+    // Find the pending payment (idempotency: check if already verified)
+    const payment = await Payment.findOne({ razorpayOrderId: razorpay_order_id, userId: req.user._id });
     if (!payment) {
       return res.status(404).json({ success: false, message: 'Payment record not found' });
     }
 
-    // Update payment as verified
+    // Idempotency: already verified
+    if (payment.status === 'verified') {
+      return res.json({ success: true, message: 'Payment already verified.', data: { plan: payment.plan, amount: payment.amount } });
+    }
+
+    // Double-verify with Razorpay API (server-to-server check)
+    try {
+      const razorpay = getRazorpay();
+      const rzPayment = await razorpay.payments.fetch(razorpay_payment_id);
+      if (rzPayment.status !== 'captured' && rzPayment.status !== 'authorized') {
+        console.error(`⚠️ Razorpay payment not captured: status=${rzPayment.status} user=${req.user._id}`);
+        return res.status(400).json({ success: false, message: `Payment status is ${rzPayment.status}. Please try again.` });
+      }
+      // Verify amount matches
+      if (rzPayment.amount !== payment.amount * 100) {
+        console.error(`⚠️ Amount mismatch: expected=${payment.amount * 100} got=${rzPayment.amount} user=${req.user._id}`);
+        return res.status(400).json({ success: false, message: 'Payment amount mismatch.' });
+      }
+    } catch (fetchErr) {
+      console.error('Razorpay fetch payment error:', fetchErr.message);
+      // If fetch fails, still proceed with signature verification (it's cryptographically secure)
+    }
+
+    // Update payment
     payment.status = 'verified';
     payment.razorpayPaymentId = razorpay_payment_id;
     payment.razorpaySignature = razorpay_signature;
-    payment.verifiedBy = req.user._id; // Auto-verified
+    payment.verifiedBy = req.user._id;
     payment.adminNote = 'Auto-verified via Razorpay';
     await payment.save();
 
-    // Auto-activate subscription
-    const planDoc = await Plan.findOne({ name: payment.plan });
-    const days = planDoc?.days || 30;
-    const existing = await Subscription.findOne({
-      userId: req.user._id,
-      isActive: true,
-      endDate: { $gte: new Date() },
-    }).sort('-endDate');
+    // Activate subscription
+    const result = await activateSubscription(req.user._id, payment.plan, payment._id);
 
-    const startDate = existing ? new Date(existing.endDate) : new Date();
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + days);
-
-    await Subscription.create({
-      userId: req.user._id,
-      plan: payment.plan,
-      startDate,
-      endDate,
-    });
-
-    // Notify user
-    try {
-      const Notification = (await import('../models/Notification.js')).default;
-      const User = (await import('../models/User.js')).default;
-      const user = await User.findById(req.user._id).select('farmId').lean();
-      await Notification.create({
-        farmId: user?.farmId || req.user._id,
-        userId: req.user._id,
-        title: '✅ Subscription Activated!',
-        message: `Your ${payment.plan} plan has been activated via Razorpay. Valid until ${endDate.toLocaleDateString('en-IN')}.`,
-        severity: 'info',
-        type: 'subscription_activated',
-        actionUrl: '/subscription',
-        refId: `razorpay_activated_${payment._id}`,
-      }).catch(() => {});
-    } catch (err) { console.error('Notification error:', err.message); }
+    console.log(`✅ Payment verified: user=${req.user._id} plan=${payment.plan} amount=₹${payment.amount} rzpay=${razorpay_payment_id}`);
 
     res.json({
       success: true,
-      message: 'Payment verified! Subscription activated instantly.',
-      data: {
-        plan: payment.plan,
-        amount: payment.amount,
-        endDate,
-      },
+      message: 'Payment successful! Subscription activated.',
+      data: { plan: payment.plan, amount: payment.amount, endDate: result.endDate },
     });
   } catch (err) {
     console.error('Razorpay verify error:', err);
     next(err);
   }
+});
+
+// ═══════════════════════════════════════════
+//  WEBHOOK (Server-to-server, no auth)
+//  Most reliable: Razorpay calls this directly
+// ═══════════════════════════════════════════
+router.post('/webhook', async (req, res) => {
+  try {
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+
+    // Verify webhook signature
+    if (webhookSecret) {
+      const signature = req.headers['x-razorpay-signature'];
+      if (!signature) {
+        console.error('⚠️ Webhook: Missing signature header');
+        return res.status(400).json({ status: 'error' });
+      }
+
+      const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      const expectedSig = crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
+
+      if (expectedSig !== signature) {
+        console.error('⚠️ Webhook: Invalid signature');
+        return res.status(400).json({ status: 'error' });
+      }
+    }
+
+    const event = req.body;
+    const eventType = event?.event;
+
+    console.log(`[WEBHOOK] Received: ${eventType}`);
+
+    if (eventType === 'payment.captured' || eventType === 'order.paid') {
+      const rzPayment = event.payload?.payment?.entity;
+      const rzOrder = event.payload?.order?.entity || {};
+      const orderId = rzPayment?.order_id || rzOrder?.id;
+      const paymentId = rzPayment?.id;
+
+      if (!orderId) {
+        console.error('⚠️ Webhook: No order_id in payload');
+        return res.json({ status: 'ok' });
+      }
+
+      // Find the payment
+      const payment = await Payment.findOne({ razorpayOrderId: orderId });
+      if (!payment) {
+        console.error(`⚠️ Webhook: Payment not found for order=${orderId}`);
+        return res.json({ status: 'ok' });
+      }
+
+      // Already verified (idempotent)
+      if (payment.status === 'verified') {
+        return res.json({ status: 'ok', message: 'Already processed' });
+      }
+
+      // Verify amount
+      if (rzPayment?.amount && rzPayment.amount !== payment.amount * 100) {
+        console.error(`⚠️ Webhook: Amount mismatch order=${orderId}`);
+        payment.status = 'rejected';
+        payment.adminNote = 'Webhook: Amount mismatch';
+        await payment.save();
+        return res.json({ status: 'ok' });
+      }
+
+      // Mark as verified
+      payment.status = 'verified';
+      payment.razorpayPaymentId = paymentId;
+      payment.adminNote = 'Auto-verified via Razorpay Webhook';
+      await payment.save();
+
+      // Activate subscription
+      await activateSubscription(payment.userId, payment.plan, payment._id);
+
+      console.log(`✅ Webhook: Subscription activated user=${payment.userId} plan=${payment.plan} amount=₹${payment.amount}`);
+    }
+
+    if (eventType === 'payment.failed') {
+      const rzPayment = event.payload?.payment?.entity;
+      const orderId = rzPayment?.order_id;
+      if (orderId) {
+        await Payment.findOneAndUpdate(
+          { razorpayOrderId: orderId, status: 'pending' },
+          { status: 'rejected', adminNote: `Payment failed: ${rzPayment?.error_description || 'Unknown error'}` }
+        );
+        console.log(`❌ Webhook: Payment failed order=${orderId}`);
+      }
+    }
+
+    res.json({ status: 'ok' });
+  } catch (err) {
+    console.error('Webhook error:', err);
+    res.status(500).json({ status: 'error' });
+  }
+});
+
+// ═══════════════════════════════════════════
+//  PAYMENT HISTORY (Authenticated)
+// ═══════════════════════════════════════════
+router.get('/my-payments', auth, async (req, res, next) => {
+  try {
+    const payments = await Payment.find({ userId: req.user._id })
+      .sort('-createdAt')
+      .limit(20)
+      .lean();
+    res.json({ success: true, data: payments });
+  } catch (err) { next(err); }
 });
 
 export default router;

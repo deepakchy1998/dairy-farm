@@ -75,21 +75,13 @@ export default function Paywall({ children }) {
             }
           </p>
 
-          {subscription?.hasPendingPayment && (
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
-              <p className="text-sm text-yellow-700 dark:text-yellow-400">
-                ⏳ You have a pending payment. Admin will verify it within 24 hours.
-              </p>
-            </div>
-          )}
-
           <div className="space-y-3">
             <button
               onClick={() => navigate('/subscription')}
               className="w-full btn-primary flex items-center justify-center gap-2 py-3 text-base"
             >
               <FiCreditCard size={18} />
-              {subscription?.hasPendingPayment ? 'View Subscription' : 'Choose a Plan'}
+              Choose a Plan
             </button>
 
             <div className="flex gap-3">

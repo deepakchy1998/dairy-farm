@@ -1,7 +1,13 @@
 import Subscription from '../models/Subscription.js';
+import Plan from '../models/Plan.js';
 
-// Plan duration limits — server-enforced maximum days per plan
-const MAX_PLAN_DAYS = { trial: 10, monthly: 35, quarterly: 100, halfyearly: 195, yearly: 375, manual: 400 };
+// Get max allowed days for a plan (dynamic from DB + buffer)
+async function getMaxDays(planName) {
+  if (planName === 'trial') return 15; // trial max 15 days
+  const plan = await Plan.findOne({ name: planName }).lean();
+  if (plan) return plan.days + 10; // allow 10-day buffer for timezone/edge cases
+  return 400; // fallback for legacy plans
+}
 
 // Strict subscription check — blocks ALL routes when expired
 export const checkSubscription = async (req, res, next) => {
@@ -27,7 +33,7 @@ export const checkSubscription = async (req, res, next) => {
 
     // Server-side integrity check: verify subscription duration is within allowed limits
     const durationDays = Math.ceil((new Date(sub.endDate) - new Date(sub.startDate)) / (1000 * 60 * 60 * 24));
-    const maxDays = MAX_PLAN_DAYS[sub.plan] || 400;
+    const maxDays = await getMaxDays(sub.plan);
     if (durationDays > maxDays) {
       // Subscription has been tampered with — deactivate it
       await Subscription.findByIdAndUpdate(sub._id, { isActive: false });

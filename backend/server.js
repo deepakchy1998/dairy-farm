@@ -3,6 +3,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { randomUUID } from 'crypto';
 import { createServer } from 'http';
 
@@ -184,8 +185,13 @@ app.use('/api/revenue', revenueRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/subscription', subscriptionRoutes);
+// Razorpay webhook needs raw body for signature verification (no rate limit for webhooks)
+app.use('/api/razorpay/webhook', express.raw({ type: 'application/json' }), razorpayRoutes);
+// Rate limit payment creation: max 10 per 15 min per IP
+const paymentRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { success: false, message: 'Too many payment attempts. Please try again later.' } });
+app.use('/api/razorpay', paymentRateLimit, express.json(), razorpayRoutes);
+// Legacy payment route (read-only for history)
 app.use('/api/payment', express.json({ limit: '10mb' }), paymentRoutes);
-app.use('/api/razorpay', razorpayRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/app-config', appConfigRoutes);
 app.use('/api/chatbot', chatbotRoutes);

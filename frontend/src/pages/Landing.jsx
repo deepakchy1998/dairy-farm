@@ -372,7 +372,7 @@ export default function Landing() {
               { q: 'Does it support Hindi?', a: 'Yes! Our AI Farm Assistant (chatbot) understands both Hindi and English. You can ask questions in Hinglish too — "Aaj ka dudh kitna hai?" works perfectly!' },
               { q: 'How does the AI chatbot work?', a: 'Our chatbot is powered by Google Gemini AI and has real-time access to your farm data. It can answer questions, analyze trends, give recommendations, and flag problems automatically.' },
               { q: 'Is my data safe?', a: 'Your data is stored securely on MongoDB Atlas with encryption. Each farm\'s data is isolated — no one else can see your records.' },
-              { q: 'How do I pay for subscription?', a: 'We support UPI payments — simply pay using any UPI app (PhonePe, GPay, Paytm) and enter your transaction ID. Our admin verifies it within hours.' },
+              { q: 'How do I pay for subscription?', a: 'We accept all payment methods via Razorpay — UPI, QR Code, debit/credit cards, wallets (PhonePe, GPay, Paytm), and net banking. Your subscription activates instantly after payment.' },
               { q: 'Can I export my records?', a: 'Yes! You can export milk records, reports, and financial data as PDF or CSV from the dashboard and reports pages.' },
               { q: 'How many cattle can I track?', a: 'There\'s no limit! Track as many cattle as you have — milking, dry, heifers, calves, bulls. All included in every plan.' },
             ].map((faq, i) => (
