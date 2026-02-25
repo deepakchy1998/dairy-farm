@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { FiX, FiSend } from 'react-icons/fi';
 import api from '../utils/api';
 import useDraggable from '../hooks/useDraggable';
+import { useAuth } from '../context/AuthContext';
 
 const SUGGESTIONS = ["How is my farm doing?", 'Analyze milk production', 'Which cattle need attention?', 'How to increase profit?'];
 
@@ -15,6 +16,7 @@ export default function ChatBubble() {
   const [loading, setLoading] = useState(false);
   const endRef = useRef(null);
   const inputRef = useRef(null);
+  const { user } = useAuth();
   const { ref: btnRef, style: btnStyle, handlers: btnHandlers, hasMoved: btnHasMoved } = useDraggable({ x: null, y: null });
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
@@ -86,7 +88,12 @@ export default function ChatBubble() {
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {m.role === 'user' ? (
-                  <div className="max-w-[85%] px-3 py-2 rounded-2xl rounded-br-sm bg-emerald-600 text-white text-sm">{m.content}</div>
+                  <div className="flex items-end gap-1.5 max-w-[85%] flex-row-reverse">
+                    {user?.profilePhoto ? (
+                      <img src={user.profilePhoto} alt="" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
+                    ) : null}
+                    <div className="px-3 py-2 rounded-2xl rounded-br-sm bg-emerald-600 text-white text-sm">{m.content}</div>
+                  </div>
                 ) : (
                   <div className="max-w-[85%] px-3 py-2 rounded-2xl rounded-bl-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-100 dark:border-gray-700 shadow-sm text-sm prose prose-sm prose-emerald dark:prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1 [&_ul]:pl-3.5 [&_li]:text-sm [&_strong]:text-gray-900 dark:[&_strong]:text-white">
                     <ReactMarkdown>{m.content}</ReactMarkdown>
