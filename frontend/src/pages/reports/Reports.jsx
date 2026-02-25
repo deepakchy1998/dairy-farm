@@ -9,7 +9,9 @@ import {
 import {
   FiTrendingUp, FiTrendingDown, FiDownload, FiDroplet,
   FiPieChart, FiBarChart2, FiCalendar, FiFilter, FiRefreshCw,
+  FiHeart, FiPackage, FiUsers,
 } from 'react-icons/fi';
+import { FiBriefcase } from 'react-icons/fi';
 import { FaIndianRupeeSign } from 'react-icons/fa6';
 import { GiCow, GiMilkCarton } from 'react-icons/gi';
 import toast from 'react-hot-toast';
@@ -60,6 +62,12 @@ export default function Reports() {
   const [milkData, setMilkData] = useState(null);
   const [cattleData, setCattleData] = useState(null);
   const [expenseData, setExpenseData] = useState(null);
+  const [milkQuality, setMilkQuality] = useState(null);
+  const [healthData, setHealthData] = useState(null);
+  const [employeeData, setEmployeeData] = useState(null);
+  const [feedData, setFeedData] = useState(null);
+  const [customerData, setCustomerData] = useState(null);
+  const [revenueData, setRevenueData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [months, setMonths] = useState(6);
   const [exporting, setExporting] = useState(false);
@@ -71,11 +79,23 @@ export default function Reports() {
       api.get('/reports/milk-analytics', { params: { months } }),
       api.get('/reports/cattle-analytics'),
       api.get('/reports/expense-breakdown', { params: { months } }),
-    ]).then(([p, m, c, e]) => {
+      api.get('/reports/milk-quality', { params: { months } }).catch(() => ({ data: { data: null } })),
+      api.get('/reports/health-analytics', { params: { months } }).catch(() => ({ data: { data: null } })),
+      api.get('/reports/employee-analytics', { params: { months } }).catch(() => ({ data: { data: null } })),
+      api.get('/reports/feed-analytics', { params: { months } }).catch(() => ({ data: { data: null } })),
+      api.get('/reports/customer-analytics', { params: { months } }).catch(() => ({ data: { data: null } })),
+      api.get('/reports/revenue-breakdown', { params: { months } }).catch(() => ({ data: { data: null } })),
+    ]).then(([p, m, c, e, mq, h, emp, f, cust, rev]) => {
       setProfitData(p.data.data);
       setMilkData(m.data.data);
       setCattleData(c.data.data);
       setExpenseData(e.data.data);
+      setMilkQuality(mq.data.data);
+      setHealthData(h.data.data);
+      setEmployeeData(emp.data.data);
+      setFeedData(f.data.data);
+      setCustomerData(cust.data.data);
+      setRevenueData(rev.data.data);
     }).catch(() => toast.error('Failed to load reports')).finally(() => setLoading(false));
   };
 
@@ -158,10 +178,16 @@ export default function Reports() {
   }));
 
   const tabs = [
-    { id: 'profit', label: 'Profit & Loss', icon: FiTrendingUp, color: 'emerald' },
-    { id: 'milk', label: 'Milk Analytics', icon: FiDroplet, color: 'blue' },
-    { id: 'cattle', label: 'Cattle Analytics', icon: GiCow, color: 'violet' },
+    { id: 'profit', label: 'P&L', icon: FiTrendingUp, color: 'emerald' },
+    { id: 'milk', label: 'Milk', icon: FiDroplet, color: 'blue' },
+    { id: 'milkQuality', label: 'Quality', icon: GiMilkCarton, color: 'cyan' },
+    { id: 'cattle', label: 'Cattle', icon: GiCow, color: 'violet' },
+    { id: 'health', label: 'Health', icon: FiHeart, color: 'pink' },
     { id: 'expense', label: 'Expenses', icon: FaIndianRupeeSign, color: 'red' },
+    { id: 'revenue', label: 'Revenue', icon: FiTrendingUp, color: 'green' },
+    { id: 'feed', label: 'Feed', icon: FiPackage, color: 'amber' },
+    { id: 'employee', label: 'Team', icon: FiBriefcase, color: 'indigo' },
+    { id: 'customer', label: 'Customers', icon: FiUsers, color: 'orange' },
   ];
 
   return (
@@ -541,6 +567,347 @@ export default function Reports() {
               ) : (
                 <EmptyState icon={FiPieChart} message="No data to show" />
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ══════════════════ MILK QUALITY ══════════════════ */}
+      {tab === 'milkQuality' && milkQuality && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <StatCard icon={FiDroplet} label="Avg Fat %" value={milkQuality.avgFatSNF?.length > 0 ? (milkQuality.avgFatSNF.reduce((s, m) => s + (m.avgFat || 0), 0) / milkQuality.avgFatSNF.length).toFixed(2) + '%' : 'N/A'} color="amber" />
+            <StatCard icon={FiDroplet} label="Avg SNF %" value={milkQuality.avgFatSNF?.length > 0 ? (milkQuality.avgFatSNF.reduce((s, m) => s + (m.avgSNF || 0), 0) / milkQuality.avgFatSNF.length).toFixed(2) + '%' : 'N/A'} color="blue" />
+            <StatCard icon={GiMilkCarton} label="Daily Avg (30d)" value={milkQuality.dailyTrend?.length > 0 ? (milkQuality.dailyTrend.reduce((s, d) => s + d.total, 0) / milkQuality.dailyTrend.length).toFixed(1) + ' L' : 'N/A'} color="cyan" />
+          </div>
+          {/* Fat & SNF Trend */}
+          <div className="card">
+            <h3 className="text-lg font-bold dark:text-white mb-1">Fat & SNF Monthly Trend</h3>
+            <p className="text-xs text-gray-500 mb-4">Quality parameters over time</p>
+            {milkQuality.avgFatSNF?.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={milkQuality.avgFatSNF}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="_id" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip content={<CustomTooltip formatter={(v) => v?.toFixed(2)} />} />
+                  <Legend />
+                  <Line type="monotone" dataKey="avgFat" name="Fat %" stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="avgSNF" name="SNF %" stroke="#3b82f6" strokeWidth={2.5} dot={{ r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : <EmptyState icon={FiDroplet} message="No quality data" />}
+          </div>
+          {/* Session-wise Production */}
+          {milkQuality.sessionWise && (milkQuality.sessionWise.morning > 0 || milkQuality.sessionWise.evening > 0) && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="card">
+                <h3 className="text-lg font-bold dark:text-white mb-4">Session-wise Production</h3>
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie data={[
+                      { name: 'Morning', value: milkQuality.sessionWise.morning || 0 },
+                      { name: 'Afternoon', value: milkQuality.sessionWise.afternoon || 0 },
+                      { name: 'Evening', value: milkQuality.sessionWise.evening || 0 },
+                    ].filter(d => d.value > 0)} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={3} label={({ name, value }) => `${name}: ${value.toFixed(0)}L`}>
+                      {[COLORS[0], COLORS[3], COLORS[1]].map((c, i) => <Cell key={i} fill={c} />)}
+                    </Pie>
+                    <Tooltip formatter={v => `${v.toFixed(1)} L`} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="card">
+                <h3 className="text-lg font-bold dark:text-white mb-1">Daily Production (30d)</h3>
+                <p className="text-xs text-gray-500 mb-4">Day-by-day milk output</p>
+                {milkQuality.dailyTrend?.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <AreaChart data={milkQuality.dailyTrend}>
+                      <defs><linearGradient id="dailyMilkGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} /><stop offset="95%" stopColor="#06b6d4" stopOpacity={0} /></linearGradient></defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="_id" tick={{ fontSize: 9 }} tickFormatter={v => v?.slice(5)} />
+                      <YAxis tick={{ fontSize: 10 }} />
+                      <Tooltip content={<CustomTooltip formatter={(v) => `${v.toFixed(1)} L`} />} />
+                      <Area type="monotone" dataKey="total" stroke="#06b6d4" fill="url(#dailyMilkGrad)" strokeWidth={2} name="Production" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : <EmptyState icon={FiDroplet} message="No data" small />}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ══════════════════ HEALTH ANALYTICS ══════════════════ */}
+      {tab === 'health' && healthData && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <StatCard icon={FiHeart} label="Total Records" value={healthData.byType?.reduce((s, d) => s + d.count, 0) || 0} color="pink" />
+            <StatCard icon={FaIndianRupeeSign} label="Health Cost" value={formatCurrency(healthData.totalCost)} color="red" />
+            <StatCard icon={FiPieChart} label="Record Types" value={healthData.byType?.length || 0} color="violet" />
+            <StatCard icon={FiCalendar} label="Due (30 days)" value={healthData.upcomingDue || 0} color="amber" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="card">
+              <h3 className="text-lg font-bold dark:text-white mb-4">Records by Type</h3>
+              {healthData.byType?.length > 0 ? (
+                <div className="space-y-3">
+                  {healthData.byType.map((d, i) => {
+                    const max = healthData.byType[0]?.count || 1;
+                    return (
+                      <div key={i}>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-gray-600 dark:text-gray-400 capitalize">{d._id}</span>
+                          <span className="font-semibold dark:text-white">{d.count} records • {formatCurrency(d.totalCost)}</span>
+                        </div>
+                        <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${(d.count / max * 100)}%`, backgroundColor: COLORS[i % COLORS.length] }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : <EmptyState icon={FiHeart} message="No health records" small />}
+            </div>
+            <div className="card">
+              <h3 className="text-lg font-bold dark:text-white mb-1">Monthly Health Activity</h3>
+              <p className="text-xs text-gray-500 mb-4">Records & costs over time</p>
+              {healthData.monthlyHealth?.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={healthData.monthlyHealth}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="_id" tick={{ fontSize: 11 }} />
+                    <YAxis yAxisId="left" tick={{ fontSize: 10 }} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} />
+                    <Tooltip content={<CustomTooltip formatter={(v, name) => name === 'Cost' ? formatCurrency(v) : v} />} />
+                    <Legend />
+                    <Bar yAxisId="left" dataKey="count" name="Records" fill="#ec4899" radius={[4, 4, 0, 0]} />
+                    <Line yAxisId="right" type="monotone" dataKey="cost" name="Cost" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : <EmptyState icon={FiHeart} message="No data" small />}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════ REVENUE BREAKDOWN ══════════════════ */}
+      {tab === 'revenue' && revenueData && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <StatCard icon={FiTrendingUp} label="Total Revenue" value={formatCurrency(revenueData.byCategory?.reduce((s, d) => s + d.total, 0))} color="green" />
+            <StatCard icon={FiPieChart} label="Sources" value={revenueData.byCategory?.length || 0} color="emerald" />
+            <StatCard icon={FiBarChart2} label="Top Source" value={formatCurrency(revenueData.byCategory?.[0]?.total)} subtext={revenueData.byCategory?.[0]?._id?.replace(/_/g, ' ')} color="blue" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="card">
+              <h3 className="text-lg font-bold dark:text-white mb-4">Revenue by Source</h3>
+              {revenueData.byCategory?.length > 0 ? (
+                <ResponsiveContainer width="100%" height={Math.max(200, revenueData.byCategory.length * 50)}>
+                  <BarChart data={revenueData.byCategory.map(d => ({ name: d._id?.replace(/_/g, ' '), amount: d.total }))} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
+                    <XAxis type="number" tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
+                    <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12 }} />
+                    <Tooltip content={<CustomTooltip formatter={v => formatCurrency(v)} />} />
+                    <Bar dataKey="amount" name="Revenue" radius={[0, 8, 8, 0]}>
+                      {revenueData.byCategory.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : <EmptyState icon={FiTrendingUp} message="No revenue data" />}
+            </div>
+            <div className="card">
+              <h3 className="text-lg font-bold dark:text-white mb-4">Revenue Distribution</h3>
+              {revenueData.byCategory?.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart><Pie data={revenueData.byCategory.map(d => ({ name: d._id?.replace(/_/g, ' '), value: d.total }))} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" paddingAngle={3}>{revenueData.byCategory.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Pie><Tooltip formatter={v => formatCurrency(v)} /></PieChart>
+                  </ResponsiveContainer>
+                  <div className="space-y-2 mt-3">
+                    {revenueData.byCategory.map((d, i) => {
+                      const total = revenueData.byCategory.reduce((s, x) => s + x.total, 0);
+                      return (
+                        <div key={i} className="flex items-center gap-2 text-sm">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                          <span className="text-gray-600 dark:text-gray-400 capitalize">{d._id?.replace(/_/g, ' ')}</span>
+                          <span className="ml-auto font-semibold dark:text-white">{((d.total / total) * 100).toFixed(1)}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : <EmptyState icon={FiPieChart} message="No data" />}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════ FEED ANALYTICS ══════════════════ */}
+      {tab === 'feed' && feedData && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <StatCard icon={FiPackage} label="Total Feed Cost" value={formatCurrency(feedData.byType?.reduce((s, d) => s + d.totalCost, 0))} color="amber" />
+            <StatCard icon={FiBarChart2} label="Feed Types" value={feedData.byType?.length || 0} color="violet" />
+            <StatCard icon={FiTrendingUp} label="Costliest Feed" value={feedData.byType?.[0]?._id || 'N/A'} subtext={formatCurrency(feedData.byType?.[0]?.totalCost)} color="red" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="card">
+              <h3 className="text-lg font-bold dark:text-white mb-4">Feed Cost by Type</h3>
+              {feedData.byType?.length > 0 ? (
+                <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                  {feedData.byType.map((d, i) => {
+                    const max = feedData.byType[0]?.totalCost || 1;
+                    return (
+                      <div key={i}>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-gray-600 dark:text-gray-400">{d._id}</span>
+                          <span className="font-semibold dark:text-white">{formatCurrency(d.totalCost)} • {d.totalQty.toFixed(0)} qty</span>
+                        </div>
+                        <div className="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${(d.totalCost / max * 100)}%`, backgroundColor: COLORS[i % COLORS.length] }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : <EmptyState icon={FiPackage} message="No feed data" small />}
+            </div>
+            <div className="card">
+              <h3 className="text-lg font-bold dark:text-white mb-1">Monthly Feed Cost</h3>
+              <p className="text-xs text-gray-500 mb-4">Spending trend</p>
+              {feedData.monthlyFeed?.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <AreaChart data={feedData.monthlyFeed}>
+                    <defs><linearGradient id="feedGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} /><stop offset="95%" stopColor="#f59e0b" stopOpacity={0} /></linearGradient></defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="_id" tick={{ fontSize: 11 }} />
+                    <YAxis tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
+                    <Tooltip content={<CustomTooltip formatter={v => formatCurrency(v)} />} />
+                    <Area type="monotone" dataKey="totalCost" stroke="#f59e0b" fill="url(#feedGrad)" strokeWidth={2} name="Feed Cost" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : <EmptyState icon={FiPackage} message="No data" small />}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════ EMPLOYEE ANALYTICS ══════════════════ */}
+      {tab === 'employee' && employeeData && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <StatCard icon={FiBriefcase} label="Active Employees" value={employeeData.totalEmployees || 0} color="indigo" />
+            <StatCard icon={FaIndianRupeeSign} label="Total Salary Paid" value={formatCurrency(employeeData.totalSalaryPaid)} color="green" />
+            <StatCard icon={FiPieChart} label="Roles" value={employeeData.byRole?.length || 0} color="violet" />
+            <StatCard icon={FiBarChart2} label="Attendance Rate" value={(() => { const present = employeeData.attendanceSummary?.find(a => a._id === 'present')?.count || 0; const total = employeeData.attendanceSummary?.reduce((s, a) => s + a.count, 0) || 0; return total > 0 ? ((present / total) * 100).toFixed(0) + '%' : 'N/A'; })()} color="emerald" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="card">
+              <h3 className="text-lg font-bold dark:text-white mb-4">Team by Role</h3>
+              {employeeData.byRole?.length > 0 ? (
+                <div className="flex items-center gap-4">
+                  <ResponsiveContainer width="50%" height={200}>
+                    <PieChart><Pie data={employeeData.byRole.map(d => ({ name: d._id, value: d.count }))} cx="50%" cy="50%" innerRadius={40} outerRadius={75} dataKey="value" paddingAngle={3}>{employeeData.byRole.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Pie><Tooltip /></PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex-1 space-y-2">
+                    {employeeData.byRole.map((d, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                        <span className="text-gray-600 dark:text-gray-400">{d._id}</span>
+                        <span className="ml-auto font-bold dark:text-white">{d.count}</span>
+                        <span className="text-xs text-gray-400">{formatCurrency(d.totalSalary)}/mo</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : <EmptyState icon={FiBriefcase} message="No employee data" small />}
+            </div>
+            <div className="card">
+              <h3 className="text-lg font-bold dark:text-white mb-1">Monthly Salary Payout</h3>
+              <p className="text-xs text-gray-500 mb-4">Total paid per month</p>
+              {employeeData.monthlySalary?.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={employeeData.monthlySalary}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="_id" tick={{ fontSize: 11 }} />
+                    <YAxis tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
+                    <Tooltip content={<CustomTooltip formatter={v => formatCurrency(v)} />} />
+                    <Bar dataKey="total" name="Salary Paid" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : <EmptyState icon={FaIndianRupeeSign} message="No salary data" small />}
+            </div>
+          </div>
+          {/* Attendance Breakdown */}
+          {employeeData.attendanceSummary?.length > 0 && (
+            <div className="card">
+              <h3 className="text-lg font-bold dark:text-white mb-4">Attendance Overview</h3>
+              <div className="flex flex-wrap gap-4">
+                {employeeData.attendanceSummary.map((a, i) => {
+                  const total = employeeData.attendanceSummary.reduce((s, x) => s + x.count, 0);
+                  const pct = ((a.count / total) * 100).toFixed(1);
+                  const colors = { present: '#10b981', absent: '#ef4444', 'half-day': '#f59e0b', leave: '#3b82f6', holiday: '#8b5cf6' };
+                  return (
+                    <div key={i} className="flex-1 min-w-[120px] text-center p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                      <p className="text-2xl font-bold" style={{ color: colors[a._id] || '#6b7280' }}>{a.count}</p>
+                      <p className="text-xs text-gray-500 capitalize mt-1">{a._id}</p>
+                      <p className="text-[10px] text-gray-400">{pct}%</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ══════════════════ CUSTOMER ANALYTICS ══════════════════ */}
+      {tab === 'customer' && customerData && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <StatCard icon={FiUsers} label="Active Customers" value={customerData.totalCustomers || 0} color="blue" />
+            <StatCard icon={FaIndianRupeeSign} label="Total Delivered" value={formatCurrency(customerData.totalDelivered)} color="emerald" />
+            <StatCard icon={FiTrendingUp} label="Total Paid" value={formatCurrency(customerData.totalPaid)} color="green" />
+            <StatCard icon={FiTrendingDown} label="Outstanding Due" value={formatCurrency(customerData.totalDue)} color={customerData.totalDue > 0 ? 'red' : 'emerald'} />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="card">
+              <h3 className="text-lg font-bold dark:text-white mb-1">Monthly Delivery & Revenue</h3>
+              <p className="text-xs text-gray-500 mb-4">Customer milk deliveries</p>
+              {customerData.monthlyDelivery?.length > 0 ? (
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={customerData.monthlyDelivery}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="_id" tick={{ fontSize: 11 }} />
+                    <YAxis tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
+                    <Tooltip content={<CustomTooltip formatter={v => formatCurrency(v)} />} />
+                    <Legend />
+                    <Bar dataKey="totalAmt" name="Revenue" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : <EmptyState icon={FiUsers} message="No delivery data" />}
+            </div>
+            <div className="card">
+              <h3 className="text-lg font-bold dark:text-white mb-4">🏆 Top 10 Customers</h3>
+              {customerData.topCustomers?.length > 0 ? (
+                <div className="space-y-3 max-h-[280px] overflow-y-auto">
+                  {customerData.topCustomers.map((c, i) => {
+                    const max = customerData.topCustomers[0]?.totalAmt || 1;
+                    return (
+                      <div key={i} className="flex items-center gap-3">
+                        <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${i < 3 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}>#{i+1}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="font-medium dark:text-white truncate">{c.customer?.name}</span>
+                            <span className="font-semibold text-emerald-600">{formatCurrency(c.totalAmt)}</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${(c.totalAmt / max * 100)}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : <EmptyState icon={FiUsers} message="No customer data" small />}
             </div>
           </div>
         </div>
