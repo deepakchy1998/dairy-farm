@@ -525,82 +525,140 @@ export default function AdminPanel() {
       )}
 
       {/* ═══ APP CONFIGURATION ═══ */}
-      {tab === 'app-config' && appConfigForm && (
-        <div className="space-y-6 max-w-3xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold">Application Configuration</h2>
-              <p className="text-sm text-gray-500">Manage dropdown options, categories, and lists used across the app</p>
-            </div>
-            <button onClick={async () => {
-              setSavingConfig(true);
-              try {
-                // Convert form strings back to arrays
-                const payload = {};
-                for (const [key, val] of Object.entries(appConfigForm)) {
-                  payload[key] = typeof val === 'string' ? val.split('\n').map(v => v.trim()).filter(Boolean) : val;
-                }
-                await api.put('/app-config', payload);
-                toast.success('Configuration saved! Refresh pages to see changes.');
-                loadTab();
-              } catch (err) { toast.error(err.response?.data?.message || 'Failed to save'); }
-              finally { setSavingConfig(false); }
-            }} disabled={savingConfig} className="btn-primary flex items-center gap-2">
-              {savingConfig ? 'Saving...' : '💾 Save All'}
-            </button>
-          </div>
+      {tab === 'app-config' && appConfigForm && (() => {
+        const configSections = [
+          { key: 'employeeRoles', label: 'Employee Roles', icon: '👷', color: 'blue', desc: 'Available roles when adding employees' },
+          { key: 'cattleCategories', label: 'Cattle Categories', icon: '🐄', color: 'emerald', desc: 'Categories like milking, dry, calf' },
+          { key: 'cattleBreeds', label: 'Cattle Breeds', icon: '🧬', color: 'purple', desc: 'Breed suggestions when adding cattle' },
+          { key: 'healthRecordTypes', label: 'Health Record Types', icon: '💉', color: 'red', desc: 'Vaccination, treatment, checkup, etc.' },
+          { key: 'expenseCategories', label: 'Expense Categories', icon: '📉', color: 'amber', desc: 'Categories in finance expenses' },
+          { key: 'revenueCategories', label: 'Revenue Categories', icon: '📈', color: 'green', desc: 'Categories in finance revenue' },
+          { key: 'feedTypes', label: 'Feed Types', icon: '🌾', color: 'yellow', desc: 'Feed type options in feed records' },
+          { key: 'paymentMethods', label: 'Payment Methods', icon: '💳', color: 'indigo', desc: 'For salary & customer payments' },
+          { key: 'milkDeliverySessions', label: 'Delivery Sessions', icon: '🥛', color: 'cyan', desc: 'Morning, evening, etc.' },
+        ];
+        const tagColors = {
+          blue: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+          emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
+          purple: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
+          red: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
+          amber: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
+          green: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
+          yellow: 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800',
+          indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800',
+          cyan: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-800',
+        };
+        const headerColors = {
+          blue: 'from-blue-500 to-blue-600', emerald: 'from-emerald-500 to-emerald-600', purple: 'from-purple-500 to-purple-600',
+          red: 'from-red-500 to-red-600', amber: 'from-amber-500 to-amber-600', green: 'from-green-500 to-green-600',
+          yellow: 'from-yellow-500 to-yellow-600', indigo: 'from-indigo-500 to-indigo-600', cyan: 'from-cyan-500 to-cyan-600',
+        };
+        const getItems = (key) => {
+          const val = appConfigForm[key];
+          return Array.isArray(val) ? val : [];
+        };
+        const setItems = (key, items) => setAppConfigForm({ ...appConfigForm, [key]: items });
+        const removeItem = (key, idx) => { const items = [...getItems(key)]; items.splice(idx, 1); setItems(key, items); };
+        const addItem = (key, value) => { if (!value.trim()) return; const items = [...getItems(key)]; if (items.includes(value.trim())) return toast.error('Already exists'); items.push(value.trim()); setItems(key, items); };
+        const saveConfig = async () => {
+          setSavingConfig(true);
+          try {
+            await api.put('/app-config', appConfigForm);
+            toast.success('✅ Configuration saved! All pages updated.');
+            loadTab();
+          } catch (err) { toast.error(err.response?.data?.message || 'Failed to save'); }
+          finally { setSavingConfig(false); }
+        };
 
-          {[
-            { key: 'employeeRoles', label: '👷 Employee Roles', desc: 'Roles available when adding/editing employees' },
-            { key: 'cattleCategories', label: '🐄 Cattle Categories', desc: 'Categories for cattle (milking, dry, calf, etc.)' },
-            { key: 'cattleBreeds', label: '🧬 Cattle Breeds', desc: 'Breed suggestions when adding cattle' },
-            { key: 'healthRecordTypes', label: '💉 Health Record Types', desc: 'Types of health records (vaccination, treatment, etc.)' },
-            { key: 'expenseCategories', label: '📉 Expense Categories', desc: 'Expense categories in finance section' },
-            { key: 'revenueCategories', label: '📈 Revenue Categories', desc: 'Revenue categories in finance section' },
-            { key: 'feedTypes', label: '🌾 Feed Types', desc: 'Feed type suggestions in feed records' },
-            { key: 'paymentMethods', label: '💳 Payment Methods', desc: 'Payment methods for salary & customer payments' },
-            { key: 'milkDeliverySessions', label: '🥛 Milk Delivery Sessions', desc: 'Delivery sessions (morning, evening, etc.)' },
-          ].map(({ key, label, desc }) => {
-            const val = appConfigForm[key];
-            const displayVal = Array.isArray(val) ? val.join('\n') : (val || '');
-            return (
-              <div key={key} className="card">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h3 className="font-semibold text-sm">{label}</h3>
-                    <p className="text-xs text-gray-400">{desc}</p>
+        return (
+          <div className="space-y-5">
+            {/* Header */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 dark:from-gray-800 dark:to-gray-900 p-6">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl"></div>
+              <div className="relative flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">🎛️ App Configuration</h2>
+                  <p className="text-gray-400 text-sm mt-1">Customize every dropdown, category & option in your app — no code needed</p>
+                  <div className="flex gap-3 mt-3">
+                    <span className="text-xs bg-white/10 text-gray-300 px-3 py-1 rounded-full">{configSections.length} sections</span>
+                    <span className="text-xs bg-white/10 text-gray-300 px-3 py-1 rounded-full">{configSections.reduce((sum, s) => sum + getItems(s.key).length, 0)} total items</span>
                   </div>
-                  <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-500 px-2 py-1 rounded-lg">{(Array.isArray(val) ? val : displayVal.split('\n').filter(Boolean)).length} items</span>
                 </div>
-                <textarea
-                  className="input font-mono text-sm"
-                  rows={Math.min(Math.max((Array.isArray(val) ? val.length : displayVal.split('\n').length) + 1, 3), 10)}
-                  value={displayVal}
-                  onChange={e => setAppConfigForm({ ...appConfigForm, [key]: e.target.value })}
-                  placeholder="One item per line"
-                />
-                <p className="text-[10px] text-gray-400 mt-1">One item per line. Changes apply after saving.</p>
+                <button onClick={saveConfig} disabled={savingConfig}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-semibold transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-50 flex items-center gap-2">
+                  {savingConfig ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Saving...</> : '💾 Save Changes'}
+                </button>
               </div>
-            );
-          })}
+            </div>
 
-          <button onClick={async () => {
-            setSavingConfig(true);
-            try {
-              const payload = {};
-              for (const [key, val] of Object.entries(appConfigForm)) {
-                payload[key] = typeof val === 'string' ? val.split('\n').map(v => v.trim()).filter(Boolean) : val;
-              }
-              await api.put('/app-config', payload);
-              toast.success('Configuration saved! Refresh pages to see changes.');
-              loadTab();
-            } catch (err) { toast.error(err.response?.data?.message || 'Failed to save'); }
-            finally { setSavingConfig(false); }
-          }} disabled={savingConfig} className="btn-primary w-full py-3 text-lg">
-            {savingConfig ? 'Saving...' : '💾 Save All Configuration'}
-          </button>
-        </div>
-      )}
+            {/* Config Cards Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {configSections.map(({ key, label, icon, color, desc }) => {
+                const items = getItems(key);
+                return (
+                  <div key={key} className="card !p-0 overflow-hidden group hover:shadow-md transition-shadow duration-300">
+                    {/* Card Header */}
+                    <div className={`bg-gradient-to-r ${headerColors[color]} px-4 py-3 flex items-center justify-between`}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{icon}</span>
+                        <div>
+                          <h3 className="font-semibold text-white text-sm">{label}</h3>
+                          <p className="text-white/70 text-[10px]">{desc}</p>
+                        </div>
+                      </div>
+                      <span className="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full">{items.length}</span>
+                    </div>
+
+                    {/* Tags */}
+                    <div className="p-4">
+                      <div className="flex flex-wrap gap-2 min-h-[40px]">
+                        {items.map((item, idx) => (
+                          <span key={idx} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all hover:shadow-sm ${tagColors[color]}`}>
+                            {item}
+                            <button onClick={() => removeItem(key, idx)} className="hover:bg-black/10 dark:hover:bg-white/10 rounded-full w-4 h-4 flex items-center justify-center transition-colors" title="Remove">
+                              <FiX size={10} />
+                            </button>
+                          </span>
+                        ))}
+                        {items.length === 0 && <span className="text-xs text-gray-400 italic">No items yet — add one below</span>}
+                      </div>
+
+                      {/* Add new item */}
+                      <div className="mt-3 flex gap-2">
+                        <input
+                          type="text"
+                          className="input text-sm flex-1 !py-1.5"
+                          placeholder={`Add new ${label.toLowerCase().replace(/s$/, '')}...`}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && e.target.value.trim()) {
+                              addItem(key, e.target.value);
+                              e.target.value = '';
+                            }
+                          }}
+                        />
+                        <button onClick={e => {
+                          const input = e.target.closest('div').querySelector('input');
+                          if (input.value.trim()) { addItem(key, input.value); input.value = ''; }
+                        }} className={`px-3 py-1.5 rounded-lg text-xs font-medium bg-gradient-to-r ${headerColors[color]} text-white hover:opacity-90 transition flex items-center gap-1`}>
+                          <FiPlus size={12} /> Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Bottom Save */}
+            <div className="sticky bottom-4 z-10">
+              <button onClick={saveConfig} disabled={savingConfig}
+                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white py-3.5 rounded-2xl font-bold text-lg transition-all shadow-xl shadow-emerald-500/20 disabled:opacity-50 flex items-center justify-center gap-2">
+                {savingConfig ? <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Saving...</> : '💾 Save All Configuration'}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ═══ PLANS MANAGEMENT ═══ */}
       {tab === 'plans' && (
