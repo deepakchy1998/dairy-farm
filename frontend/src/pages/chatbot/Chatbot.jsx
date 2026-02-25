@@ -202,19 +202,14 @@ export default function Chatbot() {
         </div>
       )}
 
-      {/* Quick actions — collapsible: show 8 initially, expand to show all 20 */}
+      {/* Quick actions — horizontal scroll */}
       {messages.length <= 3 && (
         <div className="mt-3">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wider">⚡ Quick Actions</p>
-            <button onClick={() => setShowAllActions(prev => !prev)} className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium">
-              {showAllActions ? 'Show less ▲' : `Show all (${QUICK_ACTIONS.length}) ▼`}
-            </button>
-          </div>
-          <div className={`flex gap-2 flex-wrap overflow-hidden transition-all duration-300 ${showAllActions ? 'max-h-[500px]' : 'max-h-[76px]'}`}>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 font-medium uppercase tracking-wider">⚡ Quick Actions</p>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin" style={{ WebkitOverflowScrolling: 'touch' }}>
             {QUICK_ACTIONS.map((a, i) => (
               <button key={i} onClick={() => send(a.msg)} disabled={loading}
-                className="text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-full hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 transition border border-gray-200 dark:border-gray-700 disabled:opacity-40 hover:border-emerald-300 dark:hover:border-emerald-700 whitespace-nowrap">
+                className="flex-shrink-0 text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-full hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 transition border border-gray-200 dark:border-gray-700 disabled:opacity-40 hover:border-emerald-300 dark:hover:border-emerald-700 whitespace-nowrap">
                 {a.label}
               </button>
             ))}

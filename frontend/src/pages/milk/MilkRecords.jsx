@@ -452,39 +452,45 @@ export default function MilkRecords() {
         </div>
 
         {/* Filter Bar */}
-        <div className="card space-y-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-600"><FiFilter size={14} /> Filters</div>
+        <div className="card space-y-4">
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-400"><FiFilter size={14} /> Filters</div>
 
-          {/* Period Buttons */}
-          <div className="flex gap-2 flex-wrap">
-            {PERIODS.map(p => (
-              <button key={p.k} onClick={() => handleFilterChange(p.k)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${filterPeriod === p.k ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{p.l}</button>
-            ))}
+          {/* Period + Cattle in a row */}
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+            {/* Period Buttons */}
+            <div className="flex-1">
+              <label className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 block">Period</label>
+              <div className="flex gap-2 flex-wrap">
+                {PERIODS.map(p => (
+                  <button key={p.k} onClick={() => handleFilterChange(p.k)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${filterPeriod === p.k ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'}`}>{p.l}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Cattle Filter */}
+            <div className="sm:w-64 flex-shrink-0">
+              <label className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 block">Cattle</label>
+              <select className="input text-sm w-full" value={filterCattle} onChange={e => handleCattleFilter(e.target.value)}>
+                <option value="">All Cattle</option>
+                {allCattle.map(c => <option key={c._id} value={c._id}>Tag No {c.tagNumber} — {c.breed}</option>)}
+              </select>
+            </div>
           </div>
 
           {/* Custom Date Range */}
           {filterPeriod === 'custom' && (
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-end gap-3 flex-wrap">
               <div>
-                <label className="text-xs text-gray-500">From</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">From</label>
                 <input type="date" className="input text-sm" value={customStart} onChange={e => setCustomStart(e.target.value)} />
               </div>
               <div>
-                <label className="text-xs text-gray-500">To</label>
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">To</label>
                 <input type="date" className="input text-sm" value={customEnd} onChange={e => setCustomEnd(e.target.value)} />
               </div>
-              <button onClick={handleCustomApply} className="btn-primary text-sm mt-4">Apply</button>
+              <button onClick={handleCustomApply} className="btn-primary text-sm">Apply</button>
             </div>
           )}
-
-          {/* Cattle Filter */}
-          <div>
-            <label className="text-xs text-gray-500">Filter by Cattle Tag</label>
-            <select className="input text-sm w-auto" value={filterCattle} onChange={e => handleCattleFilter(e.target.value)}>
-              <option value="">All Cattle</option>
-              {allCattle.map(c => <option key={c._id} value={c._id}>Tag No {c.tagNumber} — {c.breed}</option>)}
-            </select>
-          </div>
         </div>
 
         {/* Summary Stats */}
