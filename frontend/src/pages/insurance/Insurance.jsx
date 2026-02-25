@@ -92,8 +92,8 @@ export default function Insurance() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">🛡️ Insurance</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Track cattle insurance policies & claims</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">🛡️ Insurance</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Track cattle insurance policies & claims</p>
         </div>
         <button onClick={openAdd} className="btn-primary flex items-center gap-2"><FiPlus size={18} /> Add Policy</button>
       </div>

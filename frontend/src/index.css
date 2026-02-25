@@ -69,6 +69,28 @@ input[type="month"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
 }
 
+/* Custom scrollbar for a cleaner look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
 /* Smooth dark mode transitions - only on key elements, not * (performance) */
 body, .card, .btn-primary, .btn-secondary, .btn-danger, .input, .stat-card,
 nav, aside, header, main {

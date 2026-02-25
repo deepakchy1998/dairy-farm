@@ -106,7 +106,7 @@ export default function CattleProfile() {
           />
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-3 mb-2">
-              <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">{c.tagNumber}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{c.tagNumber}</h1>
               <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${statusColor[c.status] || ''}`}>{c.status}</span>
               <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${categoryBadge[c.category] || 'bg-gray-100 text-gray-700'}`}>{c.category}</span>
               <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">{c.gender === 'female' ? '♀ Female' : '♂ Male'}</span>
