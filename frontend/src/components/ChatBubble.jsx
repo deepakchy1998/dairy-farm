@@ -56,18 +56,12 @@ export default function ChatBubble() {
         className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center select-none active:cursor-grabbing"
         title={open ? 'Close chat' : 'Farm Assistant — drag to move'}
       >
-        {open ? (
-          <FiX size={28} />
-        ) : (
-          <>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z" />
-              <path d="M9 22h6" /><path d="M10 22v-1" /><path d="M14 22v-1" />
-              <circle cx="10" cy="9" r="1" fill="currentColor" /><circle cx="14" cy="9" r="1" fill="currentColor" />
-            </svg>
-            <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-20" />
-          </>
-        )}
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z" />
+          <path d="M9 22h6" /><path d="M10 22v-1" /><path d="M14 22v-1" />
+          <circle cx="10" cy="9" r="1" fill="currentColor" /><circle cx="14" cy="9" r="1" fill="currentColor" />
+        </svg>
+        {!open && <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-20" />}
       </div>
 
       {/* Chat panel */}
