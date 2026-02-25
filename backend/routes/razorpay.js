@@ -4,13 +4,10 @@ import crypto from 'crypto';
 import { auth } from '../middleware/auth.js';
 import Payment from '../models/Payment.js';
 import Subscription from '../models/Subscription.js';
-import LandingContent from '../models/LandingContent.js';
+import Plan from '../models/Plan.js';
 
 const router = Router();
 router.use(auth);
-
-const PLAN_DAYS = { monthly: 30, quarterly: 90, halfyearly: 180, yearly: 365 };
-const PLAN_PRICES = { monthly: 499, quarterly: 1299, halfyearly: 2499, yearly: 4499 };
 
 function getRazorpay() {
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
@@ -43,13 +40,16 @@ router.post('/create-order', async (req, res, next) => {
     }
 
     const { plan } = req.body;
-    if (!plan || !PLAN_DAYS[plan]) {
-      return res.status(400).json({ success: false, message: 'Invalid plan selected' });
+    if (!plan) {
+      return res.status(400).json({ success: false, message: 'Plan is required' });
     }
 
-    // Get admin-set price or default
-    const content = await LandingContent.findOne();
-    const amount = content?.pricing?.[plan] || PLAN_PRICES[plan];
+    // Get plan from DB
+    const planDoc = await Plan.findOne({ name: plan, isActive: true });
+    if (!planDoc) {
+      return res.status(400).json({ success: false, message: 'Invalid or inactive plan selected' });
+    }
+    const amount = planDoc.price;
 
     // Check for existing pending Razorpay payment
     const pendingPayment = await Payment.findOne({ userId: req.user._id, status: 'pending', paymentMethod: 'razorpay' });
@@ -154,7 +154,8 @@ router.post('/verify-payment', async (req, res, next) => {
     await payment.save();
 
     // Auto-activate subscription
-    const days = PLAN_DAYS[payment.plan] || 30;
+    const planDoc = await Plan.findOne({ name: payment.plan });
+    const days = planDoc?.days || 30;
     const existing = await Subscription.findOne({
       userId: req.user._id,
       isActive: true,

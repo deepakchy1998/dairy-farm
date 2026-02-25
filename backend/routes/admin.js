@@ -14,10 +14,19 @@ import MilkRecord from '../models/MilkRecord.js';
 import HealthRecord from '../models/HealthRecord.js';
 import Employee from '../models/Employee.js';
 import Customer from '../models/Customer.js';
+import Plan from '../models/Plan.js';
 import crypto from 'crypto';
 
 const router = Router();
 router.use(auth, admin);
+
+// Dynamic plan days lookup
+async function getPlanDays(planName) {
+  const plan = await Plan.findOne({ name: planName });
+  if (plan) return plan.days;
+  const fallback = { monthly: 30, quarterly: 90, halfyearly: 180, yearly: 365 };
+  return fallback[planName] || 30;
+}
 
 const PLAN_DAYS = { monthly: 30, quarterly: 90, halfyearly: 180, yearly: 365 };
 
@@ -89,7 +98,7 @@ router.put('/payments/:id/verify', async (req, res, next) => {
     await payment.save();
 
     // Create/extend subscription
-    const days = PLAN_DAYS[payment.plan] || 30;
+    const days = await getPlanDays(payment.plan);
     const existing = await Subscription.findOne({ userId: payment.userId, isActive: true, endDate: { $gte: new Date() } }).sort('-endDate');
     const startDate = existing ? new Date(existing.endDate) : new Date();
     const endDate = new Date(startDate.getTime() + days * 24 * 60 * 60 * 1000);
@@ -503,6 +512,73 @@ router.get('/payments/:id/screenshot', async (req, res, next) => {
     const payment = await Payment.findById(req.params.id).select('screenshot').lean();
     if (!payment) return res.status(404).json({ success: false, message: 'Not found' });
     res.json({ success: true, data: { screenshot: payment.screenshot } });
+  } catch (err) { next(err); }
+});
+
+// ════════════════════════════════════════
+//  SUBSCRIPTION PLANS MANAGEMENT
+// ════════════════════════════════════════
+
+// List all plans (admin sees all including inactive)
+router.get('/plans', async (req, res, next) => {
+  try {
+    const plans = await Plan.find().sort('sortOrder createdAt');
+    res.json({ success: true, data: plans });
+  } catch (err) { next(err); }
+});
+
+// Create plan
+router.post('/plans', async (req, res, next) => {
+  try {
+    const { name, label, price, days, period, features, isPopular, isActive, sortOrder } = req.body;
+    if (!name || !label || !price || !days) {
+      return res.status(400).json({ success: false, message: 'Name, label, price and days are required' });
+    }
+    const plan = await Plan.create({
+      name: name.toLowerCase().replace(/\s+/g, '_'),
+      label, price, days,
+      period: period || '',
+      features: features || ['All features included', 'Unlimited cattle & records', 'AI Farm Assistant', 'Reports & Analytics'],
+      isPopular: isPopular || false,
+      isActive: isActive !== false,
+      sortOrder: sortOrder || 0,
+    });
+    console.log(`[ADMIN] Plan created: ${plan.name} ₹${plan.price}/${plan.days}d by admin=${req.user._id}`);
+    res.status(201).json({ success: true, data: plan });
+  } catch (err) {
+    if (err.code === 11000) return res.status(400).json({ success: false, message: 'Plan with this name already exists' });
+    next(err);
+  }
+});
+
+// Update plan
+router.put('/plans/:id', async (req, res, next) => {
+  try {
+    const plan = await Plan.findById(req.params.id);
+    if (!plan) return res.status(404).json({ success: false, message: 'Plan not found' });
+    const { label, price, days, period, features, isPopular, isActive, sortOrder } = req.body;
+    if (label !== undefined) plan.label = label;
+    if (price !== undefined) plan.price = price;
+    if (days !== undefined) plan.days = days;
+    if (period !== undefined) plan.period = period;
+    if (features !== undefined) plan.features = features;
+    if (isPopular !== undefined) plan.isPopular = isPopular;
+    if (isActive !== undefined) plan.isActive = isActive;
+    if (sortOrder !== undefined) plan.sortOrder = sortOrder;
+    await plan.save();
+    console.log(`[ADMIN] Plan updated: ${plan.name} by admin=${req.user._id}`);
+    res.json({ success: true, data: plan });
+  } catch (err) { next(err); }
+});
+
+// Delete plan
+router.delete('/plans/:id', async (req, res, next) => {
+  try {
+    const plan = await Plan.findById(req.params.id);
+    if (!plan) return res.status(404).json({ success: false, message: 'Plan not found' });
+    await plan.deleteOne();
+    console.log(`[ADMIN] Plan deleted: ${plan.name} by admin=${req.user._id}`);
+    res.json({ success: true, message: `Plan "${plan.label}" deleted` });
   } catch (err) { next(err); }
 });
 

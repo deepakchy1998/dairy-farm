@@ -4,23 +4,34 @@ import { subscriptionStatus } from '../middleware/subscription.js';
 import Subscription from '../models/Subscription.js';
 import Payment from '../models/Payment.js';
 import LandingContent from '../models/LandingContent.js';
+import Plan from '../models/Plan.js';
 
 const router = Router();
 
-// Plans — public pricing info
+// Plans — public pricing info (dynamic from DB)
 router.get('/plans', async (req, res, next) => {
   try {
     const content = await LandingContent.findOne();
-    const pricing = content?.pricing || { monthly: 499, quarterly: 1299, halfyearly: 2499, yearly: 4499 };
+    let plans = await Plan.find({ isActive: true }).sort('sortOrder createdAt').lean();
+
+    // If no dynamic plans exist, seed defaults (one-time migration)
+    if (plans.length === 0) {
+      const pricing = content?.pricing || { monthly: 499, halfyearly: 2499, yearly: 4499 };
+      const defaults = [
+        { name: 'monthly', label: 'Monthly', price: pricing.monthly, days: 30, period: '/month', sortOrder: 1, features: ['All features included', 'Unlimited cattle & records', 'AI Farm Assistant', 'Reports & Analytics'] },
+        { name: 'halfyearly', label: 'Half Yearly', price: pricing.halfyearly, days: 180, period: '/6 months', sortOrder: 2, isPopular: true, features: ['All features included', 'Unlimited cattle & records', 'AI Farm Assistant', 'Reports & Analytics'] },
+        { name: 'yearly', label: 'Yearly', price: pricing.yearly, days: 365, period: '/year', sortOrder: 3, features: ['All features included', 'Unlimited cattle & records', 'AI Farm Assistant', 'Reports & Analytics'] },
+      ];
+      await Plan.insertMany(defaults);
+      plans = await Plan.find({ isActive: true }).sort('sortOrder createdAt').lean();
+    }
+
     res.json({
       success: true,
       data: {
-        monthly: pricing.monthly,
-        quarterly: pricing.quarterly,
-        halfyearly: pricing.halfyearly,
-        yearly: pricing.yearly,
-        upiId: content?.supportPhone ? `${content.supportPhone}@upi` : 'dairypro@upi',
-        upiName: 'DairyPro',
+        plans,
+        upiId: content?.upiId || (content?.supportPhone ? `${content.supportPhone}@upi` : 'dairypro@upi'),
+        upiName: content?.upiName || 'DairyPro',
       },
     });
   } catch (err) { next(err); }

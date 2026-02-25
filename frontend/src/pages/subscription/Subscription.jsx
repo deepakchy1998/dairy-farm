@@ -135,12 +135,15 @@ export default function Subscription() {
   const isActive = subData?.isActive;
   const sub = subData?.subscription;
 
-  const planCards = [
-    { id: 'monthly', label: 'Monthly', price: plans?.monthly, period: '/month', days: 30, popular: false },
-    { id: 'quarterly', label: 'Quarterly', price: plans?.quarterly, period: '/3 months', days: 90, popular: false },
-    { id: 'halfyearly', label: 'Half Yearly', price: plans?.halfyearly, period: '/6 months', days: 180, popular: true },
-    { id: 'yearly', label: 'Yearly', price: plans?.yearly, period: '/year', days: 365, popular: false },
-  ];
+  const planCards = (plans?.plans || []).map(p => ({
+    id: p.name,
+    label: p.label,
+    price: p.price,
+    period: p.period || '',
+    days: p.days,
+    popular: p.isPopular,
+    features: p.features || ['All features included', 'Unlimited cattle & records', 'AI Farm Assistant', 'Reports & Analytics'],
+  }));
 
   return (
     <div className="space-y-6">
@@ -179,7 +182,7 @@ export default function Subscription() {
       {/* Plan Cards */}
       <div>
         <h2 className="text-lg font-semibold mb-4 dark:text-white">Choose a Plan</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 ${planCards.length >= 4 ? 'lg:grid-cols-4' : planCards.length === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-4`}
           {planCards.map(plan => (
             <div key={plan.id} className={`card relative ${plan.popular ? 'border-2 border-emerald-500 shadow-lg' : ''}`}>
               {plan.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full">BEST VALUE</span>}
@@ -187,10 +190,9 @@ export default function Subscription() {
               <p className="text-3xl font-bold mt-2 dark:text-white">{formatCurrency(plan.price)}<span className="text-sm font-normal text-gray-500">{plan.period}</span></p>
               <p className="text-xs text-gray-400 mt-1">₹{(plan.price / plan.days).toFixed(1)}/day</p>
               <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li className="flex items-center gap-2"><FiCheck className="text-emerald-500" /> All features included</li>
-                <li className="flex items-center gap-2"><FiCheck className="text-emerald-500" /> Unlimited cattle & records</li>
-                <li className="flex items-center gap-2"><FiCheck className="text-emerald-500" /> AI Farm Assistant</li>
-                <li className="flex items-center gap-2"><FiCheck className="text-emerald-500" /> Reports & Analytics</li>
+                {plan.features.map((f, i) => (
+                  <li key={i} className="flex items-center gap-2"><FiCheck className="text-emerald-500" /> {f}</li>
+                ))}
                 <li className="flex items-center gap-2"><FiCheck className="text-emerald-500" /> {plan.days} days access</li>
               </ul>
               <div className="mt-4 space-y-2">

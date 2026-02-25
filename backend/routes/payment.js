@@ -1,12 +1,10 @@
 import { Router } from 'express';
 import { auth } from '../middleware/auth.js';
 import Payment from '../models/Payment.js';
-import LandingContent from '../models/LandingContent.js';
+import Plan from '../models/Plan.js';
 
 const router = Router();
 router.use(auth);
-
-const PLAN_PRICES = { monthly: 499, quarterly: 1299, halfyearly: 2499, yearly: 4499 };
 
 // Create payment with screenshot proof
 router.post('/', async (req, res, next) => {
@@ -22,10 +20,10 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid UPI Transaction ID. Enter only the numeric/alphanumeric transaction ID from your payment receipt (6-35 characters, no spaces or special characters).' });
     }
 
-    // Validate plan exists and get admin-set price
-    const content = await LandingContent.findOne();
-    const amount = content?.pricing?.[plan] || PLAN_PRICES[plan];
-    if (!amount) return res.status(400).json({ success: false, message: 'Invalid plan selected' });
+    // Validate plan exists and get price from DB
+    const planDoc = await Plan.findOne({ name: plan, isActive: true });
+    if (!planDoc) return res.status(400).json({ success: false, message: 'Invalid or inactive plan selected' });
+    const amount = planDoc.price;
 
     // Check for duplicate transaction ID
     const existing = await Payment.findOne({

@@ -32,6 +32,13 @@ export default function AdminPanel() {
   const [paymentsPagination, setPaymentsPagination] = useState({});
   const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', onConfirm: null, variant: 'danger', confirmText: 'Confirm' });
 
+  // Plans management
+  const [adminPlans, setAdminPlans] = useState([]);
+  const [planModal, setPlanModal] = useState(false);
+  const [planForm, setPlanForm] = useState({ name: '', label: '', price: '', days: '', period: '', features: 'All features included\nUnlimited cattle & records\nAI Farm Assistant\nReports & Analytics', isPopular: false, isActive: true, sortOrder: 0 });
+  const [editPlanId, setEditPlanId] = useState(null);
+  const [savingPlan, setSavingPlan] = useState(false);
+
   // New features
   const [searchQuery, setSearchQuery] = useState('');
   const [userStatusFilter, setUserStatusFilter] = useState('');
@@ -51,6 +58,7 @@ export default function AdminPanel() {
     if (tab === 'users') promises.push(api.get('/admin/users', { params: { page: usersPage, limit: 20, search: searchQuery || undefined, status: userStatusFilter || undefined } }));
     if (tab === 'payments') promises.push(api.get('/admin/payments', { params: { page: paymentsPage, limit: 20, status: paymentStatusFilter || undefined } }));
     if (tab === 'settings' || tab === 'website') promises.push(api.get('/admin/settings'));
+    if (tab === 'plans') promises.push(api.get('/admin/plans'));
     if (tab === 'logs') promises.push(api.get('/admin/audit-logs'));
     if (tab === 'system') promises.push(api.get('/admin/system-health'));
 
@@ -59,6 +67,7 @@ export default function AdminPanel() {
       if (tab === 'users') { setUsers(results[1].data.data); setUsersPagination(results[1].data.pagination || {}); }
       if (tab === 'payments') { setPayments(results[1].data.data); setPaymentsPagination(results[1].data.pagination || {}); }
       if (tab === 'settings') { setSettings(results[1].data.data); setSettingsForm(results[1].data.data); }
+      if (tab === 'plans') { setAdminPlans(results[1].data.data); }
       if (tab === 'website') { setSettings(results[1].data.data); setWebsiteForm(results[1].data.data); }
       if (tab === 'logs') { setAuditLogs(results[1].data.data); }
       if (tab === 'system') { setSystemHealth(results[1].data.data); }
@@ -78,8 +87,12 @@ export default function AdminPanel() {
   const viewUserDetail = async (userId) => {
     setDetailLoading(true);
     try {
-      const res = await api.get(`/admin/users/${userId}/detail`);
+      const [res, plansRes] = await Promise.all([
+        api.get(`/admin/users/${userId}/detail`),
+        adminPlans.length ? null : api.get('/admin/plans'),
+      ]);
       setUserDetail(res.data.data);
+      if (plansRes) setAdminPlans(plansRes.data.data);
     } catch { toast.error('Failed to load user details'); }
     finally { setDetailLoading(false); }
   };
@@ -326,8 +339,9 @@ export default function AdminPanel() {
         <Modal isOpen={grantModal} onClose={() => setGrantModal(false)} title="🎁 Grant Subscription" size="md">
           <div className="space-y-4">
             <div><label className="label">Plan</label>
-              <select className="input" value={grantForm.plan} onChange={e => { const days = { monthly: 30, quarterly: 90, halfyearly: 180, yearly: 365, manual: 30 }; setGrantForm({ plan: e.target.value, days: days[e.target.value] || 30 }); }}>
-                <option value="monthly">Monthly (30 days)</option><option value="quarterly">Quarterly (90 days)</option><option value="halfyearly">Half Yearly (180 days)</option><option value="yearly">Yearly (365 days)</option><option value="manual">Custom</option>
+              <select className="input" value={grantForm.plan} onChange={e => { const sel = adminPlans.find(p => p.name === e.target.value); setGrantForm({ plan: e.target.value, days: sel?.days || grantForm.days }); }}>
+                {adminPlans.filter(p => p.isActive).map(p => <option key={p._id} value={p.name}>{p.label} ({p.days} days)</option>)}
+                <option value="manual">Custom</option>
               </select>
             </div>
             <div><label className="label">Days</label><input type="number" className="input" min="1" value={grantForm.days} onChange={e => setGrantForm({ ...grantForm, days: Number(e.target.value) })} /></div>
@@ -347,6 +361,7 @@ export default function AdminPanel() {
     { id: 'overview', label: '📊 Overview' },
     { id: 'users', label: '👥 Users' },
     { id: 'payments', label: '💳 Payments' },
+    { id: 'plans', label: '📦 Plans' },
     { id: 'logs', label: '📝 Audit Logs' },
     { id: 'system', label: '🖥️ System' },
     { id: 'website', label: '🌐 Website' },
@@ -501,6 +516,106 @@ export default function AdminPanel() {
         </div>
       )}
 
+      {/* ═══ PLANS MANAGEMENT ═══ */}
+      {tab === 'plans' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Subscription Plans</h2>
+            <button onClick={() => {
+              setPlanForm({ name: '', label: '', price: '', days: '', period: '', features: 'All features included\nUnlimited cattle & records\nAI Farm Assistant\nReports & Analytics', isPopular: false, isActive: true, sortOrder: adminPlans.length });
+              setEditPlanId(null);
+              setPlanModal(true);
+            }} className="btn-primary text-sm flex items-center gap-2"><FiPlus size={16} /> Add Plan</button>
+          </div>
+
+          {adminPlans.length === 0 ? (
+            <div className="card text-center py-8 text-gray-400">
+              <p className="mb-3">No plans yet. Default plans will be created when users visit the subscription page.</p>
+              <button onClick={() => {
+                setPlanForm({ name: 'monthly', label: 'Monthly', price: 499, days: 30, period: '/month', features: 'All features included\nUnlimited cattle & records\nAI Farm Assistant\nReports & Analytics', isPopular: false, isActive: true, sortOrder: 0 });
+                setEditPlanId(null);
+                setPlanModal(true);
+              }} className="btn-primary text-sm"><FiPlus size={14} className="inline mr-1" /> Create First Plan</button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {adminPlans.map(plan => (
+                <div key={plan._id} className={`card !p-4 relative ${!plan.isActive ? 'opacity-60' : ''} ${plan.isPopular ? 'border-2 border-emerald-500' : ''}`}>
+                  {plan.isPopular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-xs font-bold px-3 py-0.5 rounded-full">POPULAR</span>}
+                  {!plan.isActive && <span className="absolute -top-3 right-3 bg-red-500 text-white text-xs font-bold px-3 py-0.5 rounded-full">INACTIVE</span>}
+                  <h3 className="text-lg font-semibold mt-1">{plan.label}</h3>
+                  <p className="text-xs text-gray-400 font-mono">{plan.name}</p>
+                  <p className="text-2xl font-bold mt-2">{formatCurrency(plan.price)}<span className="text-sm font-normal text-gray-500">{plan.period}</span></p>
+                  <p className="text-xs text-gray-400">{plan.days} days · ₹{(plan.price / plan.days).toFixed(1)}/day</p>
+                  <ul className="mt-3 space-y-1 text-sm text-gray-500">
+                    {plan.features?.map((f, i) => <li key={i} className="flex items-center gap-1.5"><FiCheck size={12} className="text-emerald-500" /> {f}</li>)}
+                  </ul>
+                  <div className="flex gap-2 mt-4">
+                    <button onClick={() => {
+                      setPlanForm({ name: plan.name, label: plan.label, price: plan.price, days: plan.days, period: plan.period || '', features: (plan.features || []).join('\n'), isPopular: plan.isPopular, isActive: plan.isActive, sortOrder: plan.sortOrder || 0 });
+                      setEditPlanId(plan._id);
+                      setPlanModal(true);
+                    }} className="flex-1 btn-secondary text-xs py-1.5">✏️ Edit</button>
+                    <button onClick={() => {
+                      const newStatus = !plan.isActive;
+                      api.put(`/admin/plans/${plan._id}`, { isActive: newStatus }).then(() => {
+                        toast.success(newStatus ? 'Plan activated' : 'Plan deactivated');
+                        loadTab();
+                      }).catch(() => toast.error('Failed'));
+                    }} className={`text-xs py-1.5 px-3 rounded-lg font-medium ${plan.isActive ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}>
+                      {plan.isActive ? '⏸ Deactivate' : '▶ Activate'}
+                    </button>
+                    <button onClick={() => setConfirmDialog({ open: true, title: 'Delete Plan?', message: `Delete "${plan.label}" plan permanently?`, variant: 'danger', confirmText: 'Delete', onConfirm: async () => {
+                      try { await api.delete(`/admin/plans/${plan._id}`); toast.success('Plan deleted'); loadTab(); } catch { toast.error('Failed'); }
+                    }})} className="text-xs py-1.5 px-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"><FiTrash2 size={14} /></button>
+                  </div>
+                  <p className="text-[10px] text-gray-300 mt-2">Sort order: {plan.sortOrder || 0}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Plan Modal */}
+          <Modal isOpen={planModal} onClose={() => setPlanModal(false)} title={editPlanId ? 'Edit Plan' : 'Create New Plan'} size="lg">
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setSavingPlan(true);
+              try {
+                const data = { ...planForm, price: Number(planForm.price), days: Number(planForm.days), sortOrder: Number(planForm.sortOrder), features: planForm.features.split('\n').map(f => f.trim()).filter(Boolean) };
+                if (editPlanId) {
+                  await api.put(`/admin/plans/${editPlanId}`, data);
+                  toast.success('Plan updated');
+                } else {
+                  await api.post('/admin/plans', data);
+                  toast.success('Plan created');
+                }
+                setPlanModal(false);
+                loadTab();
+              } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
+              finally { setSavingPlan(false); }
+            }} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="label">Plan ID (unique) *</label><input className="input" required value={planForm.name} onChange={e => setPlanForm({ ...planForm, name: e.target.value })} placeholder="e.g. monthly, yearly, premium_6mo" disabled={!!editPlanId} /></div>
+                <div><label className="label">Display Name *</label><input className="input" required value={planForm.label} onChange={e => setPlanForm({ ...planForm, label: e.target.value })} placeholder="e.g. Monthly, Yearly" /></div>
+                <div><label className="label">Price (₹) *</label><input type="number" min="1" className="input" required value={planForm.price} onChange={e => setPlanForm({ ...planForm, price: e.target.value })} placeholder="499" /></div>
+                <div><label className="label">Duration (days) *</label><input type="number" min="1" className="input" required value={planForm.days} onChange={e => setPlanForm({ ...planForm, days: e.target.value })} placeholder="30" /></div>
+                <div><label className="label">Period Label</label><input className="input" value={planForm.period} onChange={e => setPlanForm({ ...planForm, period: e.target.value })} placeholder="/month, /year, /6 months" /></div>
+                <div><label className="label">Sort Order</label><input type="number" className="input" value={planForm.sortOrder} onChange={e => setPlanForm({ ...planForm, sortOrder: e.target.value })} /></div>
+              </div>
+              <div><label className="label">Features (one per line)</label><textarea className="input" rows={4} value={planForm.features} onChange={e => setPlanForm({ ...planForm, features: e.target.value })} placeholder="All features included&#10;Unlimited cattle & records" /></div>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={planForm.isPopular} onChange={e => setPlanForm({ ...planForm, isPopular: e.target.checked })} className="rounded border-gray-300" /> Mark as Popular (BEST VALUE badge)</label>
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={planForm.isActive} onChange={e => setPlanForm({ ...planForm, isActive: e.target.checked })} className="rounded border-gray-300" /> Active (visible to users)</label>
+              </div>
+              <div className="flex justify-end gap-3 pt-2 border-t">
+                <button type="button" onClick={() => setPlanModal(false)} className="btn-secondary">Cancel</button>
+                <button type="submit" disabled={savingPlan} className="btn-primary">{savingPlan ? 'Saving...' : editPlanId ? 'Update Plan' : 'Create Plan'}</button>
+              </div>
+            </form>
+          </Modal>
+        </div>
+      )}
+
       {/* ═══ AUDIT LOGS ═══ */}
       {tab === 'logs' && (
         <div className="card p-0">
@@ -614,11 +729,8 @@ export default function AdminPanel() {
           <form onSubmit={saveSettings} className="space-y-4">
             <div><label className="label">UPI ID *</label><input className="input" required value={settingsForm.upiId || ''} onChange={e => setSettingsForm({ ...settingsForm, upiId: e.target.value })} /></div>
             <div><label className="label">UPI Name</label><input className="input" value={settingsForm.upiName || ''} onChange={e => setSettingsForm({ ...settingsForm, upiName: e.target.value })} /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><label className="label">Monthly (₹)</label><input type="number" className="input" value={settingsForm.monthlyPrice || ''} onChange={e => setSettingsForm({ ...settingsForm, monthlyPrice: +e.target.value })} /></div>
-              <div><label className="label">Quarterly (₹)</label><input type="number" className="input" value={settingsForm.quarterlyPrice || ''} onChange={e => setSettingsForm({ ...settingsForm, quarterlyPrice: +e.target.value })} /></div>
-              <div><label className="label">Half Yearly (₹)</label><input type="number" className="input" value={settingsForm.halfyearlyPrice || ''} onChange={e => setSettingsForm({ ...settingsForm, halfyearlyPrice: +e.target.value })} /></div>
-              <div><label className="label">Yearly (₹)</label><input type="number" className="input" value={settingsForm.yearlyPrice || ''} onChange={e => setSettingsForm({ ...settingsForm, yearlyPrice: +e.target.value })} /></div>
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-sm text-blue-700 dark:text-blue-400">
+              💡 <strong>Plan pricing</strong> is now managed from the <button onClick={() => setTab('plans')} className="underline font-semibold">📦 Plans tab</button>. Add, edit, or remove plans there.
             </div>
             <div><label className="label">Free Trial Days</label><input type="number" className="input" value={settingsForm.trialDays || ''} onChange={e => setSettingsForm({ ...settingsForm, trialDays: +e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-4">

@@ -40,8 +40,11 @@ export default function Landing() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
+  const [dynamicPlans, setDynamicPlans] = useState([]);
+
   useEffect(() => {
     api.get('/landing').then(r => setContent(r.data.data)).catch(() => {});
+    api.get('/subscription/plans').then(r => setDynamicPlans(r.data.data?.plans || [])).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -63,11 +66,13 @@ export default function Landing() {
   ];
   const testimonials = content?.testimonials?.length ? content.testimonials : defaultTestimonials;
 
-  const plans = [
-    { name: 'Monthly', price: content?.pricing?.monthly || 499, period: '/month', popular: false },
-    { name: 'Quarterly', price: content?.pricing?.quarterly || 1299, period: '/3 months', popular: true, save: 'Save 13%' },
-    { name: 'Yearly', price: content?.pricing?.yearly || 4499, period: '/year', popular: false, save: 'Save 25%' },
-  ];
+  const plans = dynamicPlans.length > 0
+    ? dynamicPlans.map(p => ({ name: p.label, price: p.price, period: p.period || '', popular: p.isPopular, days: p.days }))
+    : [
+        { name: 'Monthly', price: content?.pricing?.monthly || 499, period: '/month', popular: false },
+        { name: 'Half Yearly', price: content?.pricing?.halfyearly || 2499, period: '/6 months', popular: true },
+        { name: 'Yearly', price: content?.pricing?.yearly || 4499, period: '/year', popular: false },
+      ];
 
   const stats = [
     { num: content?.stats?.activeFarms || '500+', label: 'Active Farms' },
