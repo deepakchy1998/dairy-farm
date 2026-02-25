@@ -42,6 +42,23 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'You already have a pending payment. Please wait for admin verification or contact support.' });
     }
 
+    // Anti-fraud: limit payment submissions (max 5 per day per user)
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+    const dailyPayments = await Payment.countDocuments({ userId: req.user._id, createdAt: { $gte: todayStart } });
+    if (dailyPayments >= 5) {
+      return res.status(429).json({ success: false, message: 'Too many payment attempts today. Please try again tomorrow.' });
+    }
+
+    // Anti-fraud: check if same transaction ID used by different user (cross-user fraud)
+    const crossUserTxn = await Payment.findOne({
+      upiTransactionId: cleanTxnId,
+      userId: { $ne: req.user._id },
+      status: { $in: ['pending', 'verified'] },
+    });
+    if (crossUserTxn) {
+      return res.status(400).json({ success: false, message: 'This transaction ID is associated with another account.' });
+    }
+
     // Auto-expire after 48 hours
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
@@ -49,8 +66,10 @@ router.post('/', async (req, res, next) => {
       userId: req.user._id,
       plan,
       amount,
-      upiTransactionId: upiTransactionId.trim(),
+      upiTransactionId: cleanTxnId,
       screenshot: screenshot || '',
+      ipAddress: req.ip,
+      userAgent: (req.headers['user-agent'] || '').slice(0, 500),
       expiresAt,
     });
 

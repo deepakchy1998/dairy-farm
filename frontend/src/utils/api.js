@@ -67,6 +67,12 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
+    // Blocked account — force logout with message
+    if (error.response?.status === 403 && error.response?.data?.code === 'ACCOUNT_BLOCKED') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login?reason=blocked';
+    }
     // Subscription expired — redirect to subscription page
     if (error.response?.status === 403 && error.response?.data?.code === 'SUBSCRIPTION_EXPIRED') {
       // Don't redirect if already on subscription/settings/payment page

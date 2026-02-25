@@ -6,6 +6,9 @@ import { FiLock, FiCreditCard, FiSettings, FiLogOut, FiClock } from 'react-icons
 // Pages that are accessible even when subscription expired
 const ALLOWED_PATHS = ['/subscription', '/settings', '/admin'];
 
+// Double-check: the real enforcement is on the backend (403 SUBSCRIPTION_EXPIRED).
+// This paywall is UX-only — even if someone bypasses it, the API blocks all data access.
+
 export default function Paywall({ children }) {
   const { user, subscription, subLoading, isSubscriptionActive, logout } = useAuth();
   const navigate = useNavigate();

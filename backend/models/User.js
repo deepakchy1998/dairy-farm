@@ -11,6 +11,8 @@ const userSchema = new mongoose.Schema({
   profilePhoto: { type: String, default: '' }, // base64 data URI
   resetPasswordToken: String,
   resetPasswordExpires: Date,
+  registrationIP: { type: String, default: '' },
+  lastLogin: { type: Date },
   isBlocked: { type: Boolean, default: false },
   lastLogin: { type: Date },
   loginAttempts: { type: Number, default: 0 },

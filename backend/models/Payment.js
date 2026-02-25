@@ -6,6 +6,8 @@ const paymentSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   upiTransactionId: { type: String, required: true },
   screenshot: { type: String, default: '' }, // base64 image
+  ipAddress: { type: String, default: '' },
+  userAgent: { type: String, default: '' },
   status: { type: String, enum: ['pending', 'verified', 'rejected', 'expired'], default: 'pending' },
   verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   adminNote: { type: String, default: '' },

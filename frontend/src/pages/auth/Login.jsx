@@ -9,11 +9,11 @@ export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Show inactivity message if redirected
+  // Show logout reason message
   useEffect(() => {
-    if (searchParams.get('reason') === 'inactive') {
-      toast('You were logged out due to inactivity', { icon: '⏰', duration: 5000 });
-    }
+    const reason = searchParams.get('reason');
+    if (reason === 'inactive') toast('You were logged out due to inactivity', { icon: '⏰', duration: 5000 });
+    if (reason === 'blocked') toast.error('Your account has been suspended. Contact support.', { duration: 8000 });
   }, []);
 
   const [form, setForm] = useState({ email: '', password: '' });

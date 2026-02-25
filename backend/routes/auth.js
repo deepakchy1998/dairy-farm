@@ -32,7 +32,16 @@ router.post('/register', async (req, res, next) => {
     const exists = await User.findOne({ email: email.toLowerCase() });
     if (exists) return res.status(400).json({ success: false, message: 'Email already registered' });
 
-    const user = await User.create({ name, email, password, phone });
+    // Anti-trial-abuse: limit registrations per IP (max 3 accounts per IP per week)
+    const recentFromIP = await User.countDocuments({
+      registrationIP: req.ip,
+      createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+    });
+    if (recentFromIP >= 3) {
+      return res.status(429).json({ success: false, message: 'Too many accounts created. Please try again later or contact support.' });
+    }
+
+    const user = await User.create({ name, email, password, phone, registrationIP: req.ip });
     const farm = await Farm.create({ name: farmName || `${name}'s Farm`, owner: user._id });
     user.farmId = farm._id;
     await user.save();

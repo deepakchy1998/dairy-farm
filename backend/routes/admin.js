@@ -8,7 +8,7 @@ import Payment from '../models/Payment.js';
 import Subscription from '../models/Subscription.js';
 import Revenue from '../models/Revenue.js';
 import LandingContent from '../models/LandingContent.js';
-import { paginate } from '../utils/helpers.js';
+import { paginate, logActivity } from '../utils/helpers.js';
 
 const router = Router();
 router.use(auth, admin);
@@ -94,6 +94,7 @@ router.put('/payments/:id/verify', async (req, res, next) => {
       });
     } catch (err) { console.error('Notification error:', err.message); }
 
+    console.log(`[ADMIN] Payment verified: user=${payment.userId} plan=${payment.plan} amount=₹${payment.amount} txn=${payment.upiTransactionId} by admin=${req.user._id}`);
     res.json({ success: true, data: payment, message: `Subscription activated for ${days} days` });
   } catch (err) { next(err); }
 });
@@ -138,6 +139,7 @@ router.post('/subscription/grant', async (req, res, next) => {
     const endDate = new Date(startDate.getTime() + grantDays * 24 * 60 * 60 * 1000);
 
     const sub = await Subscription.create({ userId, plan: plan || 'manual', startDate, endDate });
+    console.log(`[ADMIN] Subscription granted: user=${userId} plan=${plan || 'manual'} days=${grantDays} by admin=${req.user._id}`);
 
     // Notify user
     try {
@@ -165,6 +167,7 @@ router.post('/subscription/revoke', async (req, res, next) => {
     const { userId } = req.body;
     if (!userId) return res.status(400).json({ success: false, message: 'User ID required' });
     await Subscription.updateMany({ userId, isActive: true }, { isActive: false });
+    console.log(`[ADMIN] Subscription revoked: user=${userId} by admin=${req.user._id}`);
 
     // Notify user
     try {
