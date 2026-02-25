@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dairypro-v2';
+const CACHE_NAME = 'dairypro-v3';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',

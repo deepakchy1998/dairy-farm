@@ -276,8 +276,13 @@ npm run build  # Production build
 - **Duplicate payment prevention** — unique UPI transaction IDs
 - **Payment screenshot proof** — base64 image upload
 - **48-hour payment expiry** — stale payments auto-expire
-- **Rate limiting** via Helmet security headers
-- **CORS** enabled
+- **Rate limiting** — per-IP global rate limiter (100 req/min) + auth-specific limiter
+- **Helmet** security headers (CSP, Permissions-Policy)
+- **CORS** with configurable origins
+- **Request ID tracking** — every request gets a UUID for debugging
+- **NoSQL injection protection** — input sanitization middleware
+- **Graceful shutdown** — clean MongoDB disconnect on SIGTERM/SIGINT
+- **MongoDB connection retry** — auto-retry up to 3 times on startup failure
 
 ---
 

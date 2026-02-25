@@ -3,6 +3,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
+import { randomUUID } from 'crypto';
+import { createServer } from 'http';
 
 import authRoutes from './routes/auth.js';
 import farmRoutes from './routes/farm.js';
@@ -31,6 +33,13 @@ const app = express();
 // Enable trust proxy for proper IP detection behind Render's proxy
 app.set('trust proxy', 1);
 
+// ─── Request ID for tracing & debugging ───
+app.use((req, res, next) => {
+  req.id = req.headers['x-request-id'] || randomUUID();
+  res.setHeader('X-Request-Id', req.id);
+  next();
+});
+
 // Keep-alive for better performance
 app.use((req, res, next) => {
   res.setHeader('Connection', 'keep-alive');
@@ -42,7 +51,7 @@ app.use(helmet());
 app.use(cors({
   origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
   credentials: true,
   maxAge: 86400, // 24 hour preflight cache
 }));
@@ -53,6 +62,7 @@ app.use((req, res, next) => {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   next();
 });
 
@@ -72,15 +82,30 @@ app.use(sanitize);
 // Request timeout (30 seconds)
 app.use((req, res, next) => {
   req.setTimeout(30000, () => {
-    res.status(408).json({ success: false, message: 'Request timeout' });
+    if (!res.headersSent) {
+      res.status(408).json({ success: false, message: 'Request timeout' });
+    }
   });
   next();
 });
 
-// Simple rate limiter for auth routes
+// ─── Rate limiter with automatic cleanup ───
 const authAttempts = new Map();
 const AUTH_LIMIT = 10; // max attempts
 const AUTH_WINDOW = 15 * 60 * 1000; // 15 minutes
+
+// Periodic cleanup every 5 minutes to prevent memory leak
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, attempts] of authAttempts) {
+    const recent = attempts.filter(t => now - t < AUTH_WINDOW);
+    if (recent.length === 0) {
+      authAttempts.delete(key);
+    } else {
+      authAttempts.set(key, recent);
+    }
+  }
+}, 5 * 60 * 1000);
 
 const authRateLimit = (req, res, next) => {
   const key = req.ip + ':' + (req.body?.email || '');
@@ -92,14 +117,35 @@ const authRateLimit = (req, res, next) => {
   }
   recent.push(now);
   authAttempts.set(key, recent);
-  // Cleanup old entries periodically
-  if (authAttempts.size > 10000) {
-    for (const [k, v] of authAttempts) {
-      if (v.every(t => now - t > AUTH_WINDOW)) authAttempts.delete(k);
-    }
-  }
   next();
 };
+
+// ─── Global rate limiter (per IP, 100 req/min) ───
+const globalRequests = new Map();
+const GLOBAL_LIMIT = 100;
+const GLOBAL_WINDOW = 60 * 1000;
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, data] of globalRequests) {
+    if (now - data.start > GLOBAL_WINDOW) globalRequests.delete(key);
+  }
+}, 60 * 1000);
+
+app.use((req, res, next) => {
+  const ip = req.ip;
+  const now = Date.now();
+  let entry = globalRequests.get(ip);
+  if (!entry || now - entry.start > GLOBAL_WINDOW) {
+    entry = { count: 0, start: now };
+  }
+  entry.count++;
+  globalRequests.set(ip, entry);
+  if (entry.count > GLOBAL_LIMIT) {
+    return res.status(429).json({ success: false, message: 'Too many requests. Please slow down.' });
+  }
+  next();
+});
 
 // Public routes
 app.use('/api/auth', authRateLimit, authRoutes);
@@ -123,24 +169,93 @@ app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/insurance', insuranceRoutes);
 
-app.get('/api/health-check', (req, res) => res.json({ success: true, message: 'DairyPro API is running' }));
+app.get('/api/health-check', (req, res) => {
+  const dbState = mongoose.connection.readyState;
+  const dbStatus = ['disconnected', 'connected', 'connecting', 'disconnecting'][dbState] || 'unknown';
+  res.json({
+    success: true,
+    message: 'DairyPro API is running',
+    version: '1.1.0',
+    database: dbStatus,
+    uptime: Math.floor(process.uptime()),
+  });
+});
+
+// 404 handler for unknown API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ success: false, message: `Route not found: ${req.method} ${req.originalUrl}` });
+});
 
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-mongoose.connect(process.env.MONGODB_URI, {
-  maxPoolSize: 10,
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000,
-  autoIndex: process.env.NODE_ENV !== 'production',
-})
-  .then(async () => {
+// ─── Graceful shutdown ───
+let server;
+
+async function shutdown(signal) {
+  console.log(`\n🛑 ${signal} received. Shutting down gracefully...`);
+  if (server) {
+    server.close(() => {
+      console.log('✅ HTTP server closed');
+      mongoose.connection.close(false).then(() => {
+        console.log('✅ MongoDB connection closed');
+        process.exit(0);
+      });
+    });
+    // Force close after 10 seconds
+    setTimeout(() => {
+      console.error('⚠️ Forced shutdown after timeout');
+      process.exit(1);
+    }, 10000);
+  }
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
+// ─── Uncaught error handlers ───
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err.message, err.stack);
+  shutdown('uncaughtException');
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('❌ Unhandled Rejection:', reason);
+});
+
+// ─── MongoDB connection with retry ───
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 5000;
+
+async function connectWithRetry(retries = 0) {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI, {
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      autoIndex: process.env.NODE_ENV !== 'production',
+    });
     console.log('✅ MongoDB connected');
     await ensureIndexes();
-    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-  })
-  .catch(err => {
-    console.error('❌ MongoDB connection error:', err.message);
+    server = app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+    server.keepAliveTimeout = 65000;
+    server.headersTimeout = 66000;
+  } catch (err) {
+    console.error(`❌ MongoDB connection error (attempt ${retries + 1}/${MAX_RETRIES + 1}):`, err.message);
+    if (retries < MAX_RETRIES) {
+      console.log(`⏳ Retrying in ${RETRY_DELAY / 1000}s...`);
+      await new Promise(r => setTimeout(r, RETRY_DELAY));
+      return connectWithRetry(retries + 1);
+    }
+    console.error('❌ All connection attempts failed. Exiting.');
     process.exit(1);
-  });
+  }
+}
+
+// Monitor MongoDB connection events
+mongoose.connection.on('error', (err) => console.error('MongoDB error:', err.message));
+mongoose.connection.on('disconnected', () => console.warn('⚠️ MongoDB disconnected'));
+mongoose.connection.on('reconnected', () => console.log('✅ MongoDB reconnected'));
+
+connectWithRetry();

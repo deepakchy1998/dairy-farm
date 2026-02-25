@@ -7,6 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import InstallPrompt from './components/InstallPrompt';
 import ErrorBoundary from './components/ErrorBoundary';
+import NetworkStatus from './components/NetworkStatus';
 
 // Lazy load all pages — only loaded when user navigates to them
 const Login = lazy(() => import('./pages/auth/Login'));
@@ -28,6 +29,7 @@ const Chatbot = lazy(() => import('./pages/chatbot/Chatbot'));
 const AdminPanel = lazy(() => import('./pages/admin/AdminPanel'));
 const Settings = lazy(() => import('./pages/settings/Settings'));
 const Landing = lazy(() => import('./pages/Landing'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
   return (
@@ -51,6 +53,7 @@ export default function App() {
     <AuthProvider>
       <Router>
         <ErrorBoundary>
+        <NetworkStatus />
         <Toaster position="top-right" toastOptions={{ duration: 3000, style: { borderRadius: '12px', padding: '12px 16px' } }} />
         <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -73,7 +76,7 @@ export default function App() {
           <Route path="/settings" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
           <Route path="/admin" element={<ProtectedLayout adminOnly><AdminPanel /></ProtectedLayout>} />
           <Route path="/" element={<Landing />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>
         <InstallPrompt />

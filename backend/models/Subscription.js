@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const subscriptionSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  plan: { type: String, enum: ['trial', 'monthly', 'quarterly', 'halfyearly', 'yearly'], required: true },
+  plan: { type: String, enum: ['trial', 'monthly', 'quarterly', 'halfyearly', 'yearly', 'manual'], required: true },
   startDate: { type: Date, required: true },
   endDate: { type: Date, required: true },
   isActive: { type: Boolean, default: true },

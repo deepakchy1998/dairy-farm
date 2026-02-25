@@ -1,6 +1,6 @@
 export const errorHandler = (err, req, res, next) => {
-  // Log full error server-side
-  console.error('Error:', err.stack || err.message);
+  // Log full error with request context for debugging
+  console.error(`[${req.id || '-'}] ${req.method} ${req.originalUrl} Error:`, err.stack || err.message);
 
   // Mongoose validation error
   if (err.name === 'ValidationError') {
