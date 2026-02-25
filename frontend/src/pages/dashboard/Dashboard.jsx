@@ -441,8 +441,8 @@ export default function Dashboard() {
             </div>
           </div>
           {stats.upcomingVaccinations?.length > 0 ? (
-            <div className="space-y-1">
-              {stats.upcomingVaccinations.slice(0, 6).map((v, i) => {
+            <div className="space-y-1 max-h-[260px] overflow-y-auto pr-1">
+              {stats.upcomingVaccinations.slice(0, 10).map((v, i) => {
                 const dueDate = new Date(v.nextDueDate);
                 const daysLeft = Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24));
                 const urgencyClass = daysLeft <= 1 ? 'border-l-red-500 bg-red-50/50 dark:bg-red-900/10' :
@@ -487,8 +487,8 @@ export default function Dashboard() {
             </div>
           </div>
           {expensePieData.length > 0 ? (
-            <div className="space-y-3">
-              {expensePieData.sort((a, b) => b.value - a.value).slice(0, 6).map((e, i) => {
+            <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
+              {expensePieData.sort((a, b) => b.value - a.value).slice(0, 8).map((e, i) => {
                 const maxVal = expensePieData[0]?.value || 1;
                 const pct = ((e.value / maxVal) * 100).toFixed(0);
                 return (
@@ -525,7 +525,7 @@ export default function Dashboard() {
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Next 30 days</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[300px] overflow-y-auto pr-1">
             {stats.expectedDeliveries.map((d, i) => {
               const dueDate = new Date(d.expectedDelivery);
               const daysLeft = Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24));
@@ -556,7 +556,7 @@ export default function Dashboard() {
             <h3 className="text-lg font-bold dark:text-white">Recent Activity</h3>
             <span className="text-xs text-gray-400 dark:text-gray-500 ml-auto">Last 48 hours</span>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1 max-h-[300px] overflow-y-auto pr-1">
             {activities.map((a, i) => {
               const typeColor = { milk: 'bg-blue-500', health: 'bg-red-500', breeding: 'bg-pink-500', expense: 'bg-orange-500', revenue: 'bg-emerald-500' };
               return (

@@ -358,7 +358,7 @@ export default function MilkDelivery() {
             <div className="px-4 py-3 border-b dark:border-gray-800">
               <h3 className="font-semibold text-sm">Payments Received</h3>
             </div>
-            <div className="divide-y dark:divide-gray-800">
+            <div className="divide-y dark:divide-gray-800 max-h-[240px] overflow-y-auto">
               {custHistory.payments.map(p => (
                 <div key={p._id} className="p-3 flex items-center justify-between">
                   <div>

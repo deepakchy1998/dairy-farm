@@ -251,8 +251,11 @@ export default function Subscription() {
       {/* Payment History */}
       {payments.length > 0 && (
         <div className="card">
-          <h3 className="text-lg font-semibold mb-4 dark:text-white">Payment History</h3>
-          <div className="space-y-3">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold dark:text-white">Payment History</h3>
+            <span className="text-xs text-gray-400">{payments.length} payments</span>
+          </div>
+          <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1 scrollbar-thin">
             {payments.map(p => (
               <div key={p._id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div>

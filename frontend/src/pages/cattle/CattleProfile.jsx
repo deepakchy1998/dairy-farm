@@ -223,10 +223,10 @@ export default function CattleProfile() {
               </ResponsiveContainer>
             </div>
           )}
-          <div className="card !p-0 overflow-hidden">
+          <div className="card !p-0 overflow-hidden max-h-[350px] overflow-y-auto">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+              <thead className="sticky top-0 z-10">
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                   <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Date</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Morning</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Evening</th>
@@ -251,10 +251,10 @@ export default function CattleProfile() {
 
       {/* Health Tab */}
       {tab === 'health' && (
-        <div className="card !p-0 overflow-hidden animate-fadeIn">
+        <div className="card !p-0 overflow-hidden animate-fadeIn max-h-[400px] overflow-y-auto">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+            <thead className="sticky top-0 z-10">
+              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Date</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Type</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Description</th>
@@ -282,10 +282,10 @@ export default function CattleProfile() {
 
       {/* Breeding Tab */}
       {tab === 'breeding' && (
-        <div className="card !p-0 overflow-hidden animate-fadeIn">
+        <div className="card !p-0 overflow-hidden animate-fadeIn max-h-[400px] overflow-y-auto">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+            <thead className="sticky top-0 z-10">
+              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Breeding Date</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Method</th>
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Bull Details</th>
