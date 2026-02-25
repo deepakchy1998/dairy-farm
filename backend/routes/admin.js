@@ -9,19 +9,36 @@ import Subscription from '../models/Subscription.js';
 import Revenue from '../models/Revenue.js';
 import LandingContent from '../models/LandingContent.js';
 import { paginate, logActivity } from '../utils/helpers.js';
+import Activity from '../models/Activity.js';
+import MilkRecord from '../models/MilkRecord.js';
+import HealthRecord from '../models/HealthRecord.js';
+import Employee from '../models/Employee.js';
+import Customer from '../models/Customer.js';
+import crypto from 'crypto';
 
 const router = Router();
 router.use(auth, admin);
 
 const PLAN_DAYS = { monthly: 30, quarterly: 90, halfyearly: 180, yearly: 365 };
 
-// List users with subscription status
+// Search/filter users
 router.get('/users', async (req, res, next) => {
   try {
+    const { search, status, subscription: subFilter } = req.query;
     const { skip, limit, page } = paginate(req.query.page, req.query.limit);
-    const total = await User.countDocuments();
+    const filter = {};
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
+      ];
+    }
+    if (status === 'blocked') filter.isBlocked = true;
+    if (status === 'active') filter.isBlocked = { $ne: true };
+    const total = await User.countDocuments(filter);
     const pages = Math.ceil(total / limit);
-    const users = await User.find().select('-password').populate('farmId', 'name city state').sort('-createdAt').skip(skip).limit(limit).lean();
+    const users = await User.find(filter).select('-password -profilePhoto').populate('farmId', 'name city state').sort('-createdAt').skip(skip).limit(limit).lean();
     // Attach subscription info
     const userIds = users.map(u => u._id);
     const subs = await Subscription.find({ userId: { $in: userIds }, isActive: true, endDate: { $gte: new Date() } }).sort('-endDate');
@@ -352,6 +369,159 @@ router.put('/users/:id/unblock', async (req, res, next) => {
     user.lockUntil = undefined;
     await user.save();
     res.json({ success: true, message: 'User unblocked' });
+  } catch (err) { next(err); }
+});
+
+// ════════════════════════════════════════
+//  USER DETAIL & MANAGEMENT
+// ════════════════════════════════════════
+
+// Get detailed user info
+router.get('/users/:id/detail', async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password -profilePhoto').populate('farmId').lean();
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const [subscription, payments, cattleCount, milkCount, healthCount, employeeCount, customerCount, activities] = await Promise.all([
+      Subscription.find({ userId: user._id }).sort('-endDate').limit(10).lean(),
+      Payment.find({ userId: user._id }).sort('-createdAt').limit(10).lean(),
+      user.farmId ? Cattle.countDocuments({ farmId: user.farmId._id, status: 'active' }) : 0,
+      user.farmId ? MilkRecord.countDocuments({ farmId: user.farmId._id }) : 0,
+      user.farmId ? HealthRecord.countDocuments({ farmId: user.farmId._id }) : 0,
+      user.farmId ? Employee.countDocuments({ farmId: user.farmId._id }) : 0,
+      user.farmId ? Customer.countDocuments({ farmId: user.farmId._id }) : 0,
+      user.farmId ? Activity.find({ farmId: user.farmId._id }).sort('-timestamp').limit(20).lean() : [],
+    ]);
+
+    const activeSub = subscription.find(s => s.isActive && new Date(s.endDate) >= new Date());
+
+    res.json({
+      success: true,
+      data: {
+        user,
+        subscription: { current: activeSub || null, history: subscription },
+        payments,
+        farmStats: { cattle: cattleCount, milkRecords: milkCount, healthRecords: healthCount, employees: employeeCount, customers: customerCount },
+        recentActivity: activities,
+      },
+    });
+  } catch (err) { next(err); }
+});
+
+// Force password reset — generates new password
+router.post('/users/:id/force-reset', async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (user.role === 'admin') return res.status(400).json({ success: false, message: 'Cannot reset admin password from here' });
+
+    const newPassword = crypto.randomBytes(4).toString('hex'); // 8 char random password
+    user.password = newPassword;
+    user.loginAttempts = 0;
+    user.lockUntil = undefined;
+    await user.save();
+
+    console.log(`[ADMIN] Force password reset: user=${user._id} email=${user.email} by admin=${req.user._id}`);
+    res.json({ success: true, message: `Password reset. New temporary password: ${newPassword}`, tempPassword: newPassword });
+  } catch (err) { next(err); }
+});
+
+// Delete user and all their data
+router.delete('/users/:id', async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (user.role === 'admin') return res.status(400).json({ success: false, message: 'Cannot delete admin account' });
+
+    const farmId = user.farmId;
+
+    // Delete all user data
+    await Promise.all([
+      Subscription.deleteMany({ userId: user._id }),
+      Payment.deleteMany({ userId: user._id }),
+      farmId ? Cattle.deleteMany({ farmId }) : null,
+      farmId ? MilkRecord.deleteMany({ farmId }) : null,
+      farmId ? HealthRecord.deleteMany({ farmId }) : null,
+      farmId ? Employee.deleteMany({ farmId }) : null,
+      farmId ? Customer.deleteMany({ farmId }) : null,
+      farmId ? Activity.deleteMany({ farmId }) : null,
+      farmId ? Farm.findByIdAndDelete(farmId) : null,
+      // Also delete from other models
+      farmId ? (await import('../models/BreedingRecord.js')).default.deleteMany({ farmId }) : null,
+      farmId ? (await import('../models/FeedRecord.js')).default.deleteMany({ farmId }) : null,
+      farmId ? (await import('../models/Expense.js')).default.deleteMany({ farmId }) : null,
+      farmId ? (await import('../models/Revenue.js')).default.deleteMany({ farmId }) : null,
+      farmId ? (await import('../models/Insurance.js')).default.deleteMany({ farmId }) : null,
+      farmId ? (await import('../models/Notification.js')).default.deleteMany({ farmId }) : null,
+      farmId ? (await import('../models/MilkDelivery.js')).default.deleteMany({ farmId }) : null,
+      farmId ? (await import('../models/CustomerPayment.js')).default.deleteMany({ farmId }) : null,
+      farmId ? (await import('../models/Attendance.js')).default.deleteMany({ farmId }) : null,
+      farmId ? (await import('../models/SalaryPayment.js')).default.deleteMany({ farmId }) : null,
+    ].filter(Boolean));
+
+    await User.findByIdAndDelete(user._id);
+
+    console.log(`[ADMIN] User deleted: userId=${user._id} email=${user.email} farm=${farmId} by admin=${req.user._id}`);
+    res.json({ success: true, message: `User "${user.name}" and all their data permanently deleted` });
+  } catch (err) { next(err); }
+});
+
+// Change user role
+router.put('/users/:id/role', async (req, res, next) => {
+  try {
+    const { role } = req.body;
+    if (!['user', 'admin'].includes(role)) return res.status(400).json({ success: false, message: 'Invalid role' });
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    user.role = role;
+    await user.save();
+    console.log(`[ADMIN] Role changed: user=${user._id} newRole=${role} by admin=${req.user._id}`);
+    res.json({ success: true, message: `Role changed to ${role}` });
+  } catch (err) { next(err); }
+});
+
+// ════════════════════════════════════════
+//  AUDIT LOGS
+// ════════════════════════════════════════
+
+router.get('/audit-logs', async (req, res, next) => {
+  try {
+    const { limit: lim = 100 } = req.query;
+    // Get all activities across all farms, most recent first
+    const logs = await Activity.find().sort('-timestamp').limit(Number(lim)).lean();
+    res.json({ success: true, data: logs });
+  } catch (err) { next(err); }
+});
+
+// ════════════════════════════════════════
+//  PAYMENT FILTERS
+// ════════════════════════════════════════
+
+// Payment screenshot viewer (admin only — already behind admin middleware)
+router.get('/payments/:id/screenshot', async (req, res, next) => {
+  try {
+    const payment = await Payment.findById(req.params.id).select('screenshot').lean();
+    if (!payment) return res.status(404).json({ success: false, message: 'Not found' });
+    res.json({ success: true, data: { screenshot: payment.screenshot } });
+  } catch (err) { next(err); }
+});
+
+// System health
+router.get('/system-health', async (req, res, next) => {
+  try {
+    const mongoose = (await import('mongoose')).default;
+    const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState];
+    const memUsage = process.memoryUsage();
+    res.json({
+      success: true,
+      data: {
+        database: dbState,
+        uptime: Math.floor(process.uptime()),
+        memory: { rss: Math.round(memUsage.rss / 1024 / 1024) + 'MB', heap: Math.round(memUsage.heapUsed / 1024 / 1024) + 'MB' },
+        nodeVersion: process.version,
+        environment: process.env.NODE_ENV || 'development',
+      },
+    });
   } catch (err) { next(err); }
 });
 
