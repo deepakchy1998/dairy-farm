@@ -28,7 +28,7 @@ async function getPlanDays(planName) {
   return fallback[planName] || 30;
 }
 
-const PLAN_DAYS = { monthly: 30, quarterly: 90, halfyearly: 180, yearly: 365 };
+
 
 // Search/filter users
 router.get('/users', async (req, res, next) => {
@@ -159,7 +159,7 @@ router.post('/subscription/grant', async (req, res, next) => {
     const { userId, plan, days } = req.body;
     if (!userId) return res.status(400).json({ success: false, message: 'User ID required' });
 
-    const grantDays = days || PLAN_DAYS[plan] || 30;
+    const grantDays = days || await getPlanDays(plan);
     const existing = await Subscription.findOne({ userId, isActive: true, endDate: { $gte: new Date() } }).sort('-endDate');
     const startDate = existing ? new Date(existing.endDate) : new Date();
     const endDate = new Date(startDate.getTime() + grantDays * 24 * 60 * 60 * 1000);
