@@ -97,17 +97,17 @@ export default function Settings() {
   ];
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-2xl w-full overflow-hidden">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings ⚙️</h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your profile, password & farm details</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${tab === t.id ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-200 dark:ring-emerald-800' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700'}`}>
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap ${tab === t.id ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-200 dark:ring-emerald-800' : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700'}`}>
             {t.label}
           </button>
         ))}
@@ -260,12 +260,12 @@ export default function Settings() {
       )}
       {/* Backup Tab */}
       {tab === 'backup' && (
-        <div className="card space-y-6">
+        <div className="card space-y-6 overflow-hidden">
           <div>
             <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">💾 Farm Data Backup</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Download a complete backup of all your farm data. Choose PDF for a printable report or CSV for spreadsheet use.</p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* PDF Export */}
               <button onClick={async () => {
                 try {

@@ -869,6 +869,106 @@ export default function AdminPanel() {
               })}
             </div>
 
+            {/* App Behavior Settings */}
+            <div className="card !p-0 overflow-hidden col-span-1 lg:col-span-2">
+              <div className="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 px-5 py-3 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="font-semibold text-gray-800 dark:text-white flex items-center gap-2">⚙️ App Behavior Settings</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Control app-wide behavior, limits and display options</p>
+              </div>
+              <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="label text-xs">🗑️ Notification Retention (days)</label>
+                  <input type="number" min="1" className="input text-sm" value={appConfigForm.notificationRetentionDays || 30}
+                    onChange={e => setAppConfigForm({ ...appConfigForm, notificationRetentionDays: Number(e.target.value) })} />
+                  <p className="text-[10px] text-gray-400 mt-1">Auto-delete notifications older than this</p>
+                </div>
+                <div>
+                  <label className="label text-xs">💾 Max Backup Records</label>
+                  <input type="number" min="50" className="input text-sm" value={appConfigForm.maxBackupRecords || 500}
+                    onChange={e => setAppConfigForm({ ...appConfigForm, maxBackupRecords: Number(e.target.value) })} />
+                  <p className="text-[10px] text-gray-400 mt-1">Max records per section in exports</p>
+                </div>
+                <div>
+                  <label className="label text-xs">🆓 Free Trial (days)</label>
+                  <input type="number" min="0" className="input text-sm" value={appConfigForm.trialDays || 5}
+                    onChange={e => setAppConfigForm({ ...appConfigForm, trialDays: Number(e.target.value) })} />
+                  <p className="text-[10px] text-gray-400 mt-1">Free trial for new users</p>
+                </div>
+                <div>
+                  <label className="label text-xs">📎 Max Upload Size (MB)</label>
+                  <input type="number" min="1" max="20" className="input text-sm" value={appConfigForm.maxFileUploadMB || 2}
+                    onChange={e => setAppConfigForm({ ...appConfigForm, maxFileUploadMB: Number(e.target.value) })} />
+                  <p className="text-[10px] text-gray-400 mt-1">Photo & file upload limit</p>
+                </div>
+                <div>
+                  <label className="label text-xs">⏰ Session Timeout (hours)</label>
+                  <input type="number" min="1" className="input text-sm" value={appConfigForm.sessionTimeoutHours || 24}
+                    onChange={e => setAppConfigForm({ ...appConfigForm, sessionTimeoutHours: Number(e.target.value) })} />
+                  <p className="text-[10px] text-gray-400 mt-1">Auto-logout after inactivity</p>
+                </div>
+                <div>
+                  <label className="label text-xs">💱 Currency Symbol</label>
+                  <input type="text" className="input text-sm" value={appConfigForm.currencySymbol || '₹'}
+                    onChange={e => setAppConfigForm({ ...appConfigForm, currencySymbol: e.target.value })} />
+                </div>
+                <div>
+                  <label className="label text-xs">📅 Date Format</label>
+                  <select className="input text-sm" value={appConfigForm.dateFormat || 'DD/MM/YYYY'}
+                    onChange={e => setAppConfigForm({ ...appConfigForm, dateFormat: e.target.value })}>
+                    <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                    <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                    <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label text-xs">🥛 Milk Unit</label>
+                  <select className="input text-sm" value={appConfigForm.milkUnit || 'liters'}
+                    onChange={e => setAppConfigForm({ ...appConfigForm, milkUnit: e.target.value })}>
+                    <option value="liters">Liters</option>
+                    <option value="kg">Kilograms</option>
+                    <option value="gallons">Gallons</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label text-xs">⚖️ Weight Unit</label>
+                  <select className="input text-sm" value={appConfigForm.weightUnit || 'kg'}
+                    onChange={e => setAppConfigForm({ ...appConfigForm, weightUnit: e.target.value })}>
+                    <option value="kg">Kilograms (kg)</option>
+                    <option value="lbs">Pounds (lbs)</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <label className="label text-xs">👋 Welcome Message (Dashboard)</label>
+                  <input type="text" className="input text-sm" value={appConfigForm.welcomeMessage || ''}
+                    onChange={e => setAppConfigForm({ ...appConfigForm, welcomeMessage: e.target.value })}
+                    placeholder="e.g. Welcome to DairyPro! 🐄" />
+                  <p className="text-[10px] text-gray-400 mt-1">Custom welcome message shown on user dashboard (leave empty for default)</p>
+                </div>
+                <div className="sm:col-span-2 lg:col-span-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-sm text-amber-800 dark:text-amber-300 flex items-center gap-2">🚧 Maintenance Mode</h4>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">When enabled, users see a maintenance page instead of the app</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked={appConfigForm.maintenanceMode || false}
+                        onChange={e => setAppConfigForm({ ...appConfigForm, maintenanceMode: e.target.checked })}
+                        className="sr-only peer" />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                    </label>
+                  </div>
+                  {appConfigForm.maintenanceMode && (
+                    <div className="mt-3">
+                      <label className="label text-xs">Maintenance Message</label>
+                      <input type="text" className="input text-sm" value={appConfigForm.maintenanceMessage || ''}
+                        onChange={e => setAppConfigForm({ ...appConfigForm, maintenanceMessage: e.target.value })}
+                        placeholder="The app is under maintenance..." />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Bottom Save */}
             <div className="sticky bottom-4 z-10">
               <button onClick={saveConfig} disabled={savingConfig}

@@ -40,6 +40,7 @@ export default function Layout({ children }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedNotif, setSelectedNotif] = useState(null); // notification detail modal
   const notifRef = useRef(null);
   const prevUnreadRef = useRef(0);
   const { user, logout } = useAuth();
@@ -150,6 +151,27 @@ export default function Layout({ children }) {
         </div>
 
         <nav className="p-3 space-y-1 overflow-y-auto h-[calc(100vh-8rem)]">
+          {/* Notification link inside sidebar */}
+          <button
+            onClick={() => { setNotifOpen(!notifOpen); setSidebarOpen(false); }}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800`}
+          >
+            <div className="relative">
+              <FiBell size={18} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </div>
+            Notifications
+            {unreadCount > 0 && (
+              <span className="ml-auto text-xs bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded-full font-bold">{unreadCount}</span>
+            )}
+          </button>
+
+          <div className="border-b border-gray-100 dark:border-gray-800 my-1"></div>
+
           {allItems.map((item) => {
             const Icon = item.icon;
             const active = location.pathname.startsWith(item.path);
@@ -239,7 +261,7 @@ export default function Layout({ children }) {
                       <div
                         key={n._id}
                         className={`flex gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer ${!n.read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
-                        onClick={() => { markRead(n._id); if (n.actionUrl) { navigate(n.actionUrl); setNotifOpen(false); } }}
+                        onClick={() => { markRead(n._id); setSelectedNotif(n); setNotifOpen(false); }}
                       >
                         <div className="shrink-0 mt-0.5">{severityIcon[n.severity] || severityIcon.info}</div>
                         <div className="flex-1 min-w-0">
@@ -287,6 +309,53 @@ export default function Layout({ children }) {
           </div>
         </main>
       </div>
+
+      {/* Notification Detail Modal */}
+      {selectedNotif && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => setSelectedNotif(null)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md max-h-[80vh] overflow-hidden animate-modalSlide" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className={`px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-start gap-3 ${
+              selectedNotif.severity === 'critical' ? 'bg-red-50 dark:bg-red-900/20' :
+              selectedNotif.severity === 'warning' ? 'bg-amber-50 dark:bg-amber-900/20' :
+              'bg-blue-50 dark:bg-blue-900/20'
+            }`}>
+              <div className="mt-0.5">{severityIcon[selectedNotif.severity] || severityIcon.info}</div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-gray-900 dark:text-white text-base">{selectedNotif.title}</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {new Date(selectedNotif.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+              <button onClick={() => setSelectedNotif(null)} className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition text-gray-500 dark:text-gray-400">
+                <FiX size={20} />
+              </button>
+            </div>
+            {/* Body */}
+            <div className="px-5 py-4 overflow-y-auto max-h-[50vh]">
+              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{selectedNotif.message}</p>
+              {selectedNotif.type && (
+                <div className="mt-4">
+                  <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 px-2 py-1 rounded-full uppercase tracking-wider">{selectedNotif.type.replace(/_/g, ' ')}</span>
+                </div>
+              )}
+            </div>
+            {/* Footer */}
+            <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+              {selectedNotif.actionUrl ? (
+                <button onClick={() => { navigate(selectedNotif.actionUrl); setSelectedNotif(null); }}
+                  className="btn-primary text-sm px-4 py-2">
+                  View Details →
+                </button>
+              ) : <div />}
+              <button onClick={() => setSelectedNotif(null)} className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Chat Bubble */}
       <ChatBubble />

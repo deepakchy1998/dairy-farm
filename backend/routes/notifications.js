@@ -10,9 +10,20 @@ import Revenue from '../models/Revenue.js';
 import Subscription from '../models/Subscription.js';
 import User from '../models/User.js';
 import { sendWhatsAppAlert, sendWhatsAppSummary } from '../utils/whatsapp.js';
+import AppConfig from '../models/AppConfig.js';
 
 const router = Router();
 router.use(auth);
+
+// Auto-cleanup old notifications based on admin config
+async function cleanupOldNotifications() {
+  try {
+    const config = await AppConfig.findOne({ key: 'global' }).lean();
+    const retentionDays = config?.notificationRetentionDays || 30;
+    const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+    await Notification.deleteMany({ createdAt: { $lt: cutoff } });
+  } catch (err) { console.error('Notification cleanup error:', err.message); }
+}
 
 // Helper to create notification if not exists
 // Also sends WhatsApp for critical/warning alerts
@@ -33,6 +44,9 @@ async function createIfNew(data, userPhone = null) {
 // Auto-generate smart notifications
 router.post('/generate', async (req, res, next) => {
   try {
+    // Auto-cleanup old notifications
+    await cleanupOldNotifications();
+
     const farmId = req.user.farmId;
     const userId = req.user._id;
     const today = new Date();
