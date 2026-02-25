@@ -285,7 +285,7 @@ export default function Employees() {
         </div>
 
         {/* Attendance Records */}
-        <div className="card p-0">
+        <div className="card p-0 overflow-hidden">
           <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between">
             <h3 className="font-semibold text-sm">Attendance This Month</h3>
             <span className="text-xs text-gray-400">{empHistory?.records?.length || 0} days</span>
@@ -295,7 +295,7 @@ export default function Employees() {
           ) : !empHistory?.records?.length ? (
             <div className="py-8 text-center text-gray-400 text-sm">No attendance records this month</div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-hidden">
               <table className="w-full text-sm">
                 <thead><tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
                   <th className="px-4 py-2 text-left">Date</th>
@@ -473,7 +473,7 @@ export default function Employees() {
             <span className="text-sm text-gray-500">{attSheet.filter(s => s._status === 'present').length} present · {attSheet.filter(s => s._status === 'absent').length} absent</span>
           </div>
 
-          <div className="card p-0">
+          <div className="card p-0 overflow-hidden">
             {attLoading ? (
               <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div></div>
             ) : attSheet.length === 0 ? (
@@ -481,7 +481,7 @@ export default function Employees() {
             ) : (
               <>
                 {/* Desktop */}
-                <div className="hidden md:block overflow-x-auto">
+                <div className="hidden md:block overflow-x-hidden">
                   <table className="w-full text-sm">
                     <thead><tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
                       <th className="px-4 py-2 text-left">Employee</th>
@@ -578,14 +578,14 @@ export default function Employees() {
             </div>
           )}
 
-          <div className="card p-0">
+          <div className="card p-0 overflow-hidden">
             {salaryLoading ? (
               <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div></div>
             ) : !salaryData?.salaries?.length ? (
               <div className="py-8 text-center text-gray-400">No salary data</div>
             ) : (
               <>
-                <div className="hidden md:block overflow-x-auto">
+                <div className="hidden md:block overflow-x-hidden">
                   <table className="w-full text-sm">
                     <thead><tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
                       <th className="px-4 py-2 text-left">Employee</th>

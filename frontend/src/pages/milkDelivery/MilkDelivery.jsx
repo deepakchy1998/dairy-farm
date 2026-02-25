@@ -300,7 +300,7 @@ export default function MilkDelivery() {
         </div>
 
         {/* Deliveries Table */}
-        <div className="card p-0">
+        <div className="card p-0 overflow-hidden">
           <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between">
             <h3 className="font-semibold text-sm">Deliveries</h3>
             <span className="text-xs text-gray-400">{custHistory?.deliveries?.length || 0} records</span>
@@ -311,7 +311,7 @@ export default function MilkDelivery() {
             <div className="py-8 text-center text-gray-400 text-sm">No deliveries this month</div>
           ) : (
             <>
-              <div className="hidden md:block overflow-x-auto">
+              <div className="hidden md:block overflow-x-hidden">
                 <table className="w-full text-sm">
                   <thead><tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
                     <th className="px-4 py-2 text-left">Date</th>
@@ -352,7 +352,7 @@ export default function MilkDelivery() {
 
         {/* Payments */}
         {custHistory?.payments?.length > 0 && (
-          <div className="card p-0">
+          <div className="card p-0 overflow-hidden">
             <div className="px-4 py-3 border-b dark:border-gray-800">
               <h3 className="font-semibold text-sm">Payments Received</h3>
             </div>
@@ -426,7 +426,7 @@ export default function MilkDelivery() {
             </div>
           </div>
 
-          <div className="card p-0">
+          <div className="card p-0 overflow-hidden">
             {sheetLoading ? (
               <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div></div>
             ) : sheet.length === 0 ? (
@@ -437,7 +437,7 @@ export default function MilkDelivery() {
             ) : (
               <>
                 {/* Desktop Table */}
-                <div className="hidden md:block overflow-x-auto">
+                <div className="hidden md:block overflow-x-hidden">
                   <table className="w-full text-sm">
                     <thead><tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
                       <th className="px-4 py-2 text-left">Customer</th>
@@ -621,14 +621,14 @@ export default function MilkDelivery() {
           )}
 
           {/* Ledger Table */}
-          <div className="card p-0">
+          <div className="card p-0 overflow-hidden">
             {ledgerLoading ? (
               <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div></div>
             ) : !ledger?.ledger?.length ? (
               <div className="py-8 text-center text-gray-400">No data for this month</div>
             ) : (
               <>
-                <div className="hidden md:block overflow-x-auto">
+                <div className="hidden md:block overflow-x-hidden">
                   <table className="w-full text-sm">
                     <thead><tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
                       <th className="px-4 py-2 text-left">Customer</th>

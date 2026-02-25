@@ -680,7 +680,7 @@ export default function MilkRecords() {
           <button onClick={() => setAddCattleModal(true)} className="btn-primary"><FiPlus size={16} className="inline mr-1" /> Add Cattle</button>
         </div>
       ) : (
-        <div className="card p-0 overflow-x-auto">
+        <div className="card p-0 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b text-xs text-gray-500 uppercase">
