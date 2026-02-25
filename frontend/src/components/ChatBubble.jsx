@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { FiX, FiSend } from 'react-icons/fi';
 import api from '../utils/api';
@@ -14,10 +14,29 @@ export default function ChatBubble() {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [viewportH, setViewportH] = useState(window.innerHeight);
   const endRef = useRef(null);
   const inputRef = useRef(null);
   const { user } = useAuth();
   const { ref: btnRef, style: btnStyle, handlers: btnHandlers, hasMoved: btnHasMoved } = useDraggable({ x: null, y: null });
+
+  // Track viewport height changes (keyboard open/close on mobile)
+  useEffect(() => {
+    const onResize = () => setViewportH(window.visualViewport?.height || window.innerHeight);
+    const vv = window.visualViewport;
+    if (vv) {
+      vv.addEventListener('resize', onResize);
+      vv.addEventListener('scroll', onResize);
+    }
+    window.addEventListener('resize', onResize);
+    return () => {
+      if (vv) {
+        vv.removeEventListener('resize', onResize);
+        vv.removeEventListener('scroll', onResize);
+      }
+      window.removeEventListener('resize', onResize);
+    };
+  }, []);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
   useEffect(() => { if (open) inputRef.current?.focus(); }, [open]);
@@ -66,10 +85,15 @@ export default function ChatBubble() {
       </div>
       )}
 
-      {/* Chat panel */}
+      {/* Chat panel — adapts to keyboard on mobile */}
       {open && (
-        <div className="fixed bottom-6 right-6 z-[9999] w-[380px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-3rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
-          <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-4 py-3 flex items-center justify-between">
+        <div
+          className="fixed z-[9999] bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden
+            bottom-0 right-0 left-0 rounded-t-2xl
+            sm:bottom-6 sm:right-6 sm:left-auto sm:rounded-2xl sm:w-[380px]"
+          style={{ height: `${Math.min(viewportH, 520)}px`, maxHeight: `${viewportH}px` }}
+        >
+          <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-4 py-3 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center"><span className="text-lg">🤖</span></div>
               <div>
@@ -112,14 +136,14 @@ export default function ChatBubble() {
           </div>
 
           {messages.length <= 2 && (
-            <div className="px-3 py-2 flex gap-1.5 flex-wrap border-t dark:border-gray-700 bg-white dark:bg-gray-900">
+            <div className="px-3 py-2 flex gap-1.5 flex-wrap border-t dark:border-gray-700 bg-white dark:bg-gray-900 flex-shrink-0">
               {SUGGESTIONS.map(s => (
                 <button key={s} onClick={() => send(s)} className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[11px] rounded-full hover:bg-emerald-100 dark:hover:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800">{s}</button>
               ))}
             </div>
           )}
 
-          <div className="p-3 border-t dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center gap-2">
+          <div className="p-3 border-t dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center gap-2 flex-shrink-0">
             <input ref={inputRef} type="text"
               className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-300"
               placeholder="Ask anything..." value={input} onChange={e => setInput(e.target.value)}
