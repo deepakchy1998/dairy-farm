@@ -59,31 +59,40 @@ router.post('/create-order', async (req, res, next) => {
       await pendingPayment.save();
     }
 
-    const order = await razorpay.orders.create({
-      amount: amount * 100, // Razorpay expects paise
-      currency: 'INR',
-      receipt: `dairypro_${req.user._id}_${Date.now()}`,
-      notes: {
-        userId: req.user._id.toString(),
-        plan,
-        userName: req.user.name,
-        userEmail: req.user.email,
-      },
-    });
+    let order;
+    try {
+      order = await razorpay.orders.create({
+        amount: amount * 100, // Razorpay expects paise
+        currency: 'INR',
+        receipt: `dp_${req.user._id.toString().slice(-8)}_${Date.now()}`,
+        notes: {
+          userId: req.user._id.toString(),
+          plan,
+        },
+      });
+    } catch (rzErr) {
+      console.error('Razorpay order creation failed:', rzErr.error || rzErr.message || rzErr);
+      return res.status(502).json({ success: false, message: 'Payment gateway error. Please check Razorpay credentials or try again.' });
+    }
 
     // Store as pending payment
-    await Payment.create({
-      userId: req.user._id,
-      plan,
-      amount,
-      upiTransactionId: order.id, // Store Razorpay order ID here
-      paymentMethod: 'razorpay',
-      razorpayOrderId: order.id,
-      status: 'pending',
-      ipAddress: req.ip,
-      userAgent: (req.headers['user-agent'] || '').slice(0, 500),
-      expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 min expiry for razorpay
-    });
+    try {
+      await Payment.create({
+        userId: req.user._id,
+        plan,
+        amount,
+        upiTransactionId: order.id, // Store Razorpay order ID here
+        paymentMethod: 'razorpay',
+        razorpayOrderId: order.id,
+        status: 'pending',
+        ipAddress: req.ip,
+        userAgent: (req.headers['user-agent'] || '').slice(0, 500),
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 min expiry for razorpay
+      });
+    } catch (dbErr) {
+      console.error('Failed to save razorpay payment record:', dbErr.message);
+      // Still proceed — order was created on Razorpay
+    }
 
     res.json({
       success: true,
