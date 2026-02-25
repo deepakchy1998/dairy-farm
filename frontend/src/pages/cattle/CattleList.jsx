@@ -7,9 +7,8 @@ import DataTable from '../../components/DataTable';
 import Pagination from '../../components/Pagination';
 import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiEye, FiDownload, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import { useAppConfig } from '../../context/AppConfigContext';
 import toast from 'react-hot-toast';
-
-const categories = ['', 'milking', 'dry', 'heifer', 'calf', 'bull', 'pregnant'];
 const statuses = ['', 'active', 'sold', 'dead'];
 const categoryBadge = {
   milking: 'bg-emerald-100 text-emerald-700', dry: 'bg-yellow-100 text-yellow-700',
@@ -30,6 +29,8 @@ const defaultForm = {
 };
 
 export default function CattleList() {
+  const { cattleCategories, cattleBreeds } = useAppConfig();
+  const categories = ['', ...cattleCategories];
   const [cattle, setCattle] = useState([]);
   const [pagination, setPagination] = useState({});
   const [loading, setLoading] = useState(true);
@@ -206,7 +207,7 @@ export default function CattleList() {
           <h3 className="text-sm font-bold text-emerald-700 uppercase tracking-wide">Basic Information</h3>
           <div className="grid grid-cols-2 gap-4">
             <div><label className="label">Tag No *</label><input className="input" required value={form.tagNumber} onChange={set('tagNumber')} placeholder="e.g. 101 or IN081234567" /></div>
-            <div><label className="label">Breed *</label><input className="input" required value={form.breed} onChange={set('breed')} placeholder="Holstein, Gir, Sahiwal" /></div>
+            <div><label className="label">Breed *</label><input className="input" required list="breed-list" value={form.breed} onChange={set('breed')} placeholder="Select or type breed" /><datalist id="breed-list">{cattleBreeds.map(b => <option key={b} value={b} />)}</datalist></div>
             <div><label className="label">Gender *</label><select className="input" value={form.gender} onChange={set('gender')}><option value="female">Female</option><option value="male">Male</option></select></div>
             <div><label className="label">Category *</label><select className="input" value={form.category} onChange={set('category')}>{categories.filter(Boolean).map(c => <option key={c} value={c}>{c}</option>)}</select></div>
             <div><label className="label">Weight (kg)</label><input type="number" className="input" value={form.weight} onChange={set('weight')} /></div>

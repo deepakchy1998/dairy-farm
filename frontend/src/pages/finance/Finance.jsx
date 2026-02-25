@@ -10,14 +10,14 @@ import { FaIndianRupeeSign } from 'react-icons/fa6';
 import DateRangeFilter, { getDateRange } from '../../components/DateRangeFilter';
 import { exportPdf } from '../../utils/exportPdf';
 import { exportCsv } from '../../utils/exportCsv';
+import { useAppConfig } from '../../context/AppConfigContext';
 import toast from 'react-hot-toast';
 
-const expCategories = ['feed', 'medicine', 'equipment', 'salary', 'transport', 'maintenance', 'other'];
-const revCategories = ['milk_sale', 'cattle_sale', 'manure_sale', 'other'];
 const milkSaleTypes = ['retail', 'dairy', 'other'];
 const defaultForm = { date: new Date().toISOString().slice(0, 10), category: '', description: '', amount: '', milkSaleType: '', milkQuantity: '', milkRate: '' };
 
 export default function Finance() {
+  const { expenseCategories: expCategories, revenueCategories: revCategories } = useAppConfig();
   const [tab, setTab] = useState('expense');
   const [records, setRecords] = useState([]);
   const [pagination, setPagination] = useState({});

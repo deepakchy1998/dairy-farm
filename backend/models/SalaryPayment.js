@@ -19,7 +19,7 @@ const salaryPaymentSchema = new mongoose.Schema({
   netSalary: { type: Number, required: true },
   paidAmount: { type: Number, default: 0 },
   paidDate: { type: Date },
-  method: { type: String, enum: ['cash', 'upi', 'bank', 'other'], default: 'cash' },
+  method: { type: String, default: 'cash' },
   status: { type: String, enum: ['pending', 'partial', 'paid'], default: 'pending' },
   notes: { type: String, default: '' },
 }, { timestamps: true });

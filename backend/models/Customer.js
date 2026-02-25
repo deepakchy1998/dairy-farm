@@ -8,7 +8,7 @@ const customerSchema = new mongoose.Schema({
   village: { type: String, default: '', trim: true },
   dailyQuantity: { type: Number, required: true, min: 0 }, // Fixed daily litres
   ratePerLiter: { type: Number, required: true, min: 0 },  // ₹ per liter
-  deliveryTime: { type: String, enum: ['morning', 'evening', 'both'], default: 'morning' },
+  deliveryTime: { type: String, default: 'morning' },
   status: { type: String, enum: ['active', 'paused', 'closed'], default: 'active' },
   startDate: { type: Date, default: Date.now },
   balance: { type: Number, default: 0 }, // Outstanding amount (positive = customer owes)

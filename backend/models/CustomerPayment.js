@@ -5,7 +5,7 @@ const customerPaymentSchema = new mongoose.Schema({
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
   date: { type: Date, required: true },
   amount: { type: Number, required: true, min: 0 },
-  method: { type: String, enum: ['cash', 'upi', 'bank', 'other'], default: 'cash' },
+  method: { type: String, default: 'cash' },
   notes: { type: String, default: '' },
   month: { type: String, default: '' }, // e.g., '2026-02' — which month this payment is for
 }, { timestamps: true });

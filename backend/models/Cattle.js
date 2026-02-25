@@ -6,7 +6,7 @@ const cattleSchema = new mongoose.Schema({
   breed: { type: String, required: true, trim: true },
   gender: { type: String, enum: ['male', 'female'], required: true },
   dateOfBirth: { type: Date },
-  category: { type: String, enum: ['milking', 'dry', 'heifer', 'calf', 'bull', 'pregnant'], required: true },
+  category: { type: String, required: true },
   status: { type: String, enum: ['active', 'sold', 'dead'], default: 'active' },
   purchaseDate: Date,
   purchasePrice: Number,

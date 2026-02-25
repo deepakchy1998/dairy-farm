@@ -32,6 +32,11 @@ export default function AdminPanel() {
   const [paymentsPagination, setPaymentsPagination] = useState({});
   const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', onConfirm: null, variant: 'danger', confirmText: 'Confirm' });
 
+  // App Config management
+  const [appConfig, setAppConfig] = useState(null);
+  const [appConfigForm, setAppConfigForm] = useState({});
+  const [savingConfig, setSavingConfig] = useState(false);
+
   // Plans management
   const [adminPlans, setAdminPlans] = useState([]);
   const [planModal, setPlanModal] = useState(false);
@@ -58,6 +63,7 @@ export default function AdminPanel() {
     if (tab === 'users') promises.push(api.get('/admin/users', { params: { page: usersPage, limit: 20, search: searchQuery || undefined, status: userStatusFilter || undefined } }));
     if (tab === 'payments') promises.push(api.get('/admin/payments', { params: { page: paymentsPage, limit: 20, status: paymentStatusFilter || undefined } }));
     if (tab === 'settings' || tab === 'website') promises.push(api.get('/admin/settings'));
+    if (tab === 'app-config') promises.push(api.get('/app-config'));
     if (tab === 'plans') promises.push(api.get('/admin/plans'));
     if (tab === 'logs') promises.push(api.get('/admin/audit-logs'));
     if (tab === 'system') promises.push(api.get('/admin/system-health'));
@@ -68,6 +74,7 @@ export default function AdminPanel() {
       if (tab === 'payments') { setPayments(results[1].data.data); setPaymentsPagination(results[1].data.pagination || {}); }
       if (tab === 'settings') { setSettings(results[1].data.data); setSettingsForm(results[1].data.data); }
       if (tab === 'plans') { setAdminPlans(results[1].data.data); }
+      if (tab === 'app-config') { setAppConfig(results[1].data.data); setAppConfigForm(results[1].data.data); }
       if (tab === 'website') { setSettings(results[1].data.data); setWebsiteForm(results[1].data.data); }
       if (tab === 'logs') { setAuditLogs(results[1].data.data); }
       if (tab === 'system') { setSystemHealth(results[1].data.data); }
@@ -365,6 +372,7 @@ export default function AdminPanel() {
     { id: 'logs', label: '📝 Audit Logs' },
     { id: 'system', label: '🖥️ System' },
     { id: 'website', label: '🌐 Website' },
+    { id: 'app-config', label: '🎛️ App Config' },
     { id: 'settings', label: '⚙️ Settings' },
   ];
 
@@ -513,6 +521,84 @@ export default function AdminPanel() {
             )}
             <Pagination page={paymentsPagination.page} pages={paymentsPagination.pages} total={paymentsPagination.total} onPageChange={p => setPaymentsPage(p)} />
           </div>
+        </div>
+      )}
+
+      {/* ═══ APP CONFIGURATION ═══ */}
+      {tab === 'app-config' && appConfigForm && (
+        <div className="space-y-6 max-w-3xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">Application Configuration</h2>
+              <p className="text-sm text-gray-500">Manage dropdown options, categories, and lists used across the app</p>
+            </div>
+            <button onClick={async () => {
+              setSavingConfig(true);
+              try {
+                // Convert form strings back to arrays
+                const payload = {};
+                for (const [key, val] of Object.entries(appConfigForm)) {
+                  payload[key] = typeof val === 'string' ? val.split('\n').map(v => v.trim()).filter(Boolean) : val;
+                }
+                await api.put('/app-config', payload);
+                toast.success('Configuration saved! Refresh pages to see changes.');
+                loadTab();
+              } catch (err) { toast.error(err.response?.data?.message || 'Failed to save'); }
+              finally { setSavingConfig(false); }
+            }} disabled={savingConfig} className="btn-primary flex items-center gap-2">
+              {savingConfig ? 'Saving...' : '💾 Save All'}
+            </button>
+          </div>
+
+          {[
+            { key: 'employeeRoles', label: '👷 Employee Roles', desc: 'Roles available when adding/editing employees' },
+            { key: 'cattleCategories', label: '🐄 Cattle Categories', desc: 'Categories for cattle (milking, dry, calf, etc.)' },
+            { key: 'cattleBreeds', label: '🧬 Cattle Breeds', desc: 'Breed suggestions when adding cattle' },
+            { key: 'healthRecordTypes', label: '💉 Health Record Types', desc: 'Types of health records (vaccination, treatment, etc.)' },
+            { key: 'expenseCategories', label: '📉 Expense Categories', desc: 'Expense categories in finance section' },
+            { key: 'revenueCategories', label: '📈 Revenue Categories', desc: 'Revenue categories in finance section' },
+            { key: 'feedTypes', label: '🌾 Feed Types', desc: 'Feed type suggestions in feed records' },
+            { key: 'paymentMethods', label: '💳 Payment Methods', desc: 'Payment methods for salary & customer payments' },
+            { key: 'milkDeliverySessions', label: '🥛 Milk Delivery Sessions', desc: 'Delivery sessions (morning, evening, etc.)' },
+          ].map(({ key, label, desc }) => {
+            const val = appConfigForm[key];
+            const displayVal = Array.isArray(val) ? val.join('\n') : (val || '');
+            return (
+              <div key={key} className="card">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h3 className="font-semibold text-sm">{label}</h3>
+                    <p className="text-xs text-gray-400">{desc}</p>
+                  </div>
+                  <span className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-500 px-2 py-1 rounded-lg">{(Array.isArray(val) ? val : displayVal.split('\n').filter(Boolean)).length} items</span>
+                </div>
+                <textarea
+                  className="input font-mono text-sm"
+                  rows={Math.min(Math.max((Array.isArray(val) ? val.length : displayVal.split('\n').length) + 1, 3), 10)}
+                  value={displayVal}
+                  onChange={e => setAppConfigForm({ ...appConfigForm, [key]: e.target.value })}
+                  placeholder="One item per line"
+                />
+                <p className="text-[10px] text-gray-400 mt-1">One item per line. Changes apply after saving.</p>
+              </div>
+            );
+          })}
+
+          <button onClick={async () => {
+            setSavingConfig(true);
+            try {
+              const payload = {};
+              for (const [key, val] of Object.entries(appConfigForm)) {
+                payload[key] = typeof val === 'string' ? val.split('\n').map(v => v.trim()).filter(Boolean) : val;
+              }
+              await api.put('/app-config', payload);
+              toast.success('Configuration saved! Refresh pages to see changes.');
+              loadTab();
+            } catch (err) { toast.error(err.response?.data?.message || 'Failed to save'); }
+            finally { setSavingConfig(false); }
+          }} disabled={savingConfig} className="btn-primary w-full py-3 text-lg">
+            {savingConfig ? 'Saving...' : '💾 Save All Configuration'}
+          </button>
         </div>
       )}
 

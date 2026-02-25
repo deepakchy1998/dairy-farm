@@ -9,11 +9,13 @@ import { FaIndianRupeeSign } from 'react-icons/fa6';
 import DateRangeFilter, { getDateRange } from '../../components/DateRangeFilter';
 import { exportPdf } from '../../utils/exportPdf';
 import { exportCsv } from '../../utils/exportCsv';
+import { useAppConfig } from '../../context/AppConfigContext';
 import toast from 'react-hot-toast';
 
 const defaultForm = { date: new Date().toISOString().slice(0, 10), feedType: '', quantity: '', unit: 'kg', cost: '', notes: '' };
 
 export default function FeedRecords() {
+  const { feedTypes } = useAppConfig();
   const [records, setRecords] = useState([]);
   const [pagination, setPagination] = useState({});
   const [loading, setLoading] = useState(true);
@@ -157,7 +159,7 @@ export default function FeedRecords() {
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editId ? 'Edit Feed Record' : 'Add Feed Record'}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div><label className="label">Date *</label><input type="date" className="input" required value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>
-          <div><label className="label">Feed Type *</label><input className="input" required value={form.feedType} onChange={e => setForm({ ...form, feedType: e.target.value })} placeholder="e.g. Green Fodder, Dry Hay, Concentrate" /></div>
+          <div><label className="label">Feed Type *</label><input className="input" required list="feedtype-list" value={form.feedType} onChange={e => setForm({ ...form, feedType: e.target.value })} placeholder="Select or type feed" /><datalist id="feedtype-list">{feedTypes.map(f => <option key={f} value={f} />)}</datalist></div>
           <div className="grid grid-cols-3 gap-4">
             <div><label className="label">Quantity *</label><input type="number" step="0.1" className="input" required value={form.quantity} onChange={e => setForm({ ...form, quantity: e.target.value })} /></div>
             <div><label className="label">Unit</label><select className="input" value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })}><option value="kg">Kg</option><option value="quintal">Quintal</option><option value="ton">Ton</option></select></div>

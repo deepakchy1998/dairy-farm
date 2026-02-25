@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { AppConfigProvider } from './context/AppConfigContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import InstallPrompt from './components/InstallPrompt';
@@ -53,6 +54,7 @@ export default function App() {
   return (
     <ThemeProvider>
     <AuthProvider>
+    <AppConfigProvider>
       <Router>
         <ErrorBoundary>
         <NetworkStatus />
@@ -86,6 +88,7 @@ export default function App() {
         <InstallPrompt />
         </ErrorBoundary>
       </Router>
+    </AppConfigProvider>
     </AuthProvider>
     </ThemeProvider>
   );

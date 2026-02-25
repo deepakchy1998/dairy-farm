@@ -11,11 +11,10 @@ import {
   FiCalendar, FiArrowLeft, FiCheck, FiX, FiDownload, FiDollarSign, FiClock,
 } from 'react-icons/fi';
 import { FaIndianRupeeSign } from 'react-icons/fa6';
+import { useAppConfig } from '../../context/AppConfigContext';
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const currentMonth = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
-
-const ROLES = ['Milker', 'Feeder', 'Cleaner', 'Manager', 'Helper', 'Driver', 'Veterinary', 'Other'];
 const ATT_OPTIONS = [
   { value: 'present', label: '✅ Present', color: 'emerald' },
   { value: 'absent', label: '❌ Absent', color: 'red' },
@@ -25,6 +24,7 @@ const ATT_OPTIONS = [
 ];
 
 export default function Employees() {
+  const { employeeRoles: ROLES, paymentMethods } = useAppConfig();
   const [tab, setTab] = useState('overview');
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -696,7 +696,7 @@ export default function Employees() {
             <div><label className="label">Amount to Pay (₹) *</label><input type="number" min="0" className="input" required value={payForm.paidAmount} onChange={e => setPayForm({ ...payForm, paidAmount: e.target.value })} /></div>
             <div><label className="label">Method</label>
               <select className="input" value={payForm.method} onChange={e => setPayForm({ ...payForm, method: e.target.value })}>
-                <option value="cash">💵 Cash</option><option value="upi">📱 UPI</option><option value="bank">🏦 Bank</option><option value="other">Other</option>
+                {paymentMethods.map(m => <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>)}
               </select>
             </div>
             <div><label className="label">Deductions (₹)</label><input type="number" min="0" className="input" value={payForm.deductions} onChange={e => setPayForm({ ...payForm, deductions: e.target.value })} /></div>

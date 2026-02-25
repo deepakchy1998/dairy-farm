@@ -12,11 +12,13 @@ import {
 } from 'react-icons/fi';
 import { GiMilkCarton } from 'react-icons/gi';
 import { FaIndianRupeeSign } from 'react-icons/fa6';
+import { useAppConfig } from '../../context/AppConfigContext';
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const currentMonth = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
 
 export default function MilkDelivery() {
+  const { paymentMethods, milkDeliverySessions } = useAppConfig();
   const [tab, setTab] = useState('daily');
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -411,7 +413,7 @@ export default function MilkDelivery() {
             <div className="flex items-center gap-2">
               <input type="date" className="input text-sm w-auto" value={dailyDate} onChange={e => setDailyDate(e.target.value)} />
               <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700">
-                {['morning', 'evening'].map(s => (
+                {milkDeliverySessions.map(s => (
                   <button key={s} onClick={() => setDailySession(s)}
                     className={`px-3 py-2 text-sm font-medium transition ${dailySession === s ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
                     {s === 'morning' ? '☀️ Morning' : '🌙 Evening'}
@@ -751,7 +753,7 @@ export default function MilkDelivery() {
           <div><label className="label">Date</label><input type="date" className="input" value={payForm.date} onChange={e => setPayForm({ ...payForm, date: e.target.value })} /></div>
           <div><label className="label">Payment Method</label>
             <select className="input" value={payForm.method} onChange={e => setPayForm({ ...payForm, method: e.target.value })}>
-              <option value="cash">💵 Cash</option><option value="upi">📱 UPI</option><option value="bank">🏦 Bank Transfer</option><option value="other">Other</option>
+              {paymentMethods.map(m => <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>)}
             </select>
           </div>
           <div><label className="label">Notes</label><input className="input" value={payForm.notes} onChange={e => setPayForm({ ...payForm, notes: e.target.value })} placeholder="e.g., Partial payment" /></div>

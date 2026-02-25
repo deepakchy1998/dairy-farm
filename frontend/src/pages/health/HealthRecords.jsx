@@ -9,18 +9,16 @@ import { FaIndianRupeeSign } from 'react-icons/fa6';
 import DateRangeFilter, { getDateRange } from '../../components/DateRangeFilter';
 import { exportPdf } from '../../utils/exportPdf';
 import { exportCsv } from '../../utils/exportCsv';
+import { useAppConfig } from '../../context/AppConfigContext';
 import toast from 'react-hot-toast';
 
-const types = ['vaccination', 'treatment', 'checkup', 'deworming'];
-const typeBadge = {
-  vaccination: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
-  treatment: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400',
-  checkup: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400',
-  deworming: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
-};
+const BADGE_COLORS = ['bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400', 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400', 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400', 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400', 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400', 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400', 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-400'];
+
 const defaultForm = { cattleId: '', date: new Date().toISOString().slice(0, 10), type: 'vaccination', description: '', medicine: '', cost: '', nextDueDate: '', vetName: '', notes: '' };
 
 export default function HealthRecords() {
+  const { healthRecordTypes: types } = useAppConfig();
+  const typeBadge = Object.fromEntries(types.map((t, i) => [t, BADGE_COLORS[i % BADGE_COLORS.length]]));
   const [records, setRecords] = useState([]);
   const [pagination, setPagination] = useState({});
   const [upcoming, setUpcoming] = useState([]);

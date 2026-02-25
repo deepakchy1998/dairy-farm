@@ -7,7 +7,7 @@ const milkDeliverySchema = new mongoose.Schema({
   quantity: { type: Number, required: true, min: 0 }, // Litres delivered
   ratePerLiter: { type: Number, required: true, min: 0 },
   amount: { type: Number, required: true }, // quantity × rate
-  session: { type: String, enum: ['morning', 'evening'], default: 'morning' },
+  session: { type: String, default: 'morning' },
   isExtra: { type: Boolean, default: false }, // Extra beyond fixed daily quantity
   notes: { type: String, default: '' },
 }, { timestamps: true });
