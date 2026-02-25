@@ -281,7 +281,7 @@ export default function Layout({ children }) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-6 dark:text-gray-100">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-6 dark:text-gray-100 max-w-full">
           <div className="page-enter">
             <Paywall>{children}</Paywall>
           </div>

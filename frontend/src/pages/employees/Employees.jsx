@@ -295,7 +295,8 @@ export default function Employees() {
           ) : !empHistory?.records?.length ? (
             <div className="py-8 text-center text-gray-400 text-sm">No attendance records this month</div>
           ) : (
-            <div className="overflow-x-hidden">
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-hidden">
               <table className="w-full text-sm">
                 <thead><tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
                   <th className="px-4 py-2 text-left">Date</th>
@@ -322,6 +323,27 @@ export default function Employees() {
                   })}
                 </tbody>
               </table>
+            </div>
+            {/* Mobile Cards */}
+            <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+              {empHistory.records.map(r => {
+                const colors = { present: 'emerald', absent: 'red', 'half-day': 'amber', leave: 'blue', holiday: 'purple' };
+                const c = colors[r.status] || 'gray';
+                return (
+                  <div key={r._id} className="p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{formatDate(r.date)}</span>
+                      <span className={`text-xs bg-${c}-100 dark:bg-${c}-900/30 text-${c}-700 dark:text-${c}-400 px-2 py-0.5 rounded-full font-medium capitalize`}>{r.status}</span>
+                    </div>
+                    <div className="flex gap-3 text-xs text-gray-500 mt-1">
+                      {r.checkIn && <span>In: {r.checkIn}</span>}
+                      {r.checkOut && <span>Out: {r.checkOut}</span>}
+                      {r.overtime > 0 && <span className="text-amber-600 font-medium">OT: {r.overtime}h</span>}
+                    </div>
+                    {r.notes && <p className="text-xs text-gray-400 mt-1">{r.notes}</p>}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
