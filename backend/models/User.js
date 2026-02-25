@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, default: '' },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   farmId: { type: mongoose.Schema.Types.ObjectId, ref: 'Farm' },
+  profilePhoto: { type: String, default: '' }, // base64 data URI
   resetPasswordToken: String,
   resetPasswordExpires: Date,
   isBlocked: { type: Boolean, default: false },

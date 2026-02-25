@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import { formatDate } from '../../utils/helpers';
-import { FiUser, FiLock, FiHome, FiSave, FiDownload } from 'react-icons/fi';
+import { FiUser, FiLock, FiHome, FiSave, FiDownload, FiCamera, FiTrash2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export default function Settings() {
@@ -13,10 +13,12 @@ export default function Settings() {
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [farmForm, setFarmForm] = useState({ name: '', address: '', city: '', state: '', phone: '', description: '' });
   const [saving, setSaving] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState('');
 
   useEffect(() => {
     if (user) {
       setProfileForm({ name: user.name || '', email: user.email || '', phone: user.phone || '' });
+      setPhotoPreview(user.profilePhoto || '');
     }
   }, [user]);
 
@@ -28,12 +30,26 @@ export default function Settings() {
     }).catch(() => {});
   }, []);
 
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Please select an image file'); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error('Photo must be under 2MB'); return; }
+    const reader = new FileReader();
+    reader.onload = () => setPhotoPreview(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = () => setPhotoPreview('');
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await api.put('/auth/profile', profileForm);
+      const payload = { ...profileForm, profilePhoto: photoPreview };
+      const res = await api.put('/auth/profile', payload);
       setUser(res.data.data);
+      localStorage.setItem('user', JSON.stringify(res.data.data));
       toast.success('Profile updated successfully!');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to update profile');
@@ -102,6 +118,38 @@ export default function Settings() {
         <div className="card">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><FiUser /> Profile Information</h2>
           <form onSubmit={handleProfileUpdate} className="space-y-4">
+            {/* Profile Photo */}
+            <div className="flex items-center gap-5">
+              <div className="relative group">
+                {photoPreview ? (
+                  <img src={photoPreview} alt="Profile" className="w-20 h-20 rounded-full object-cover border-2 border-emerald-200 dark:border-emerald-800" />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                    <FiUser size={32} className="text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                )}
+                <label className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer">
+                  <FiCamera size={20} className="text-white" />
+                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                </label>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Profile Photo</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">JPG, PNG under 2MB</p>
+                <div className="flex gap-2">
+                  <label className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer font-medium">
+                    Upload
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                  </label>
+                  {photoPreview && (
+                    <button type="button" onClick={handleRemovePhoto} className="text-xs text-red-500 hover:underline font-medium flex items-center gap-1">
+                      <FiTrash2 size={12} /> Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="label">Full Name</label>
               <input className="input" required value={profileForm.name}

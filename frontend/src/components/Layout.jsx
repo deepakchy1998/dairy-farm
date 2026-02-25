@@ -169,9 +169,13 @@ export default function Layout({ children }) {
 
         <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
           <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-              <FiUser size={16} className="text-emerald-700" />
-            </div>
+            {user?.profilePhoto ? (
+              <img src={user.profilePhoto} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
+            ) : (
+              <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                <FiUser size={16} className="text-emerald-700" />
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{user?.name}</p>
               <p className="text-xs text-gray-500 truncate">{user?.role}</p>

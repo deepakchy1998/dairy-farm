@@ -43,7 +43,7 @@ router.post('/register', async (req, res, next) => {
     await Subscription.create({ userId: user._id, plan: 'trial', startDate: now, endDate: trialEnd });
 
     const token = signToken(user);
-    const userData = { _id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, farmId: user.farmId, createdAt: user.createdAt };
+    const userData = { _id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, farmId: user.farmId, profilePhoto: user.profilePhoto || "", createdAt: user.createdAt };
     res.status(201).json({ success: true, data: { token, user: userData } });
   } catch (err) { next(err); }
 });
@@ -87,7 +87,7 @@ router.post('/login', async (req, res, next) => {
     await user.save();
 
     const token = signToken(user);
-    const userData = { _id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, farmId: user.farmId, createdAt: user.createdAt };
+    const userData = { _id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, farmId: user.farmId, profilePhoto: user.profilePhoto || "", createdAt: user.createdAt };
     res.json({ success: true, data: { token, user: userData } });
   } catch (err) { next(err); }
 });
@@ -122,14 +122,17 @@ router.post('/reset-password', async (req, res, next) => {
 });
 
 // Get me
-router.get('/me', auth, (req, res) => {
-  res.json({ success: true, data: req.user });
+router.get('/me', auth, async (req, res, next) => {
+  try {
+    const user = await (await import('../models/User.js')).default.findById(req.user._id).select('-password').lean();
+    res.json({ success: true, data: user });
+  } catch (err) { next(err); }
 });
 
 // Update profile
 router.put('/profile', auth, async (req, res, next) => {
   try {
-    const { name, email, phone } = req.body;
+    const { name, email, phone, profilePhoto } = req.body;
     const user = await User.findById(req.user._id);
     if (email && email !== user.email) {
       const exists = await User.findOne({ email: email.toLowerCase(), _id: { $ne: user._id } });
@@ -138,8 +141,19 @@ router.put('/profile', auth, async (req, res, next) => {
     if (name) user.name = name;
     if (email) user.email = email;
     if (phone !== undefined) user.phone = phone;
+    if (profilePhoto !== undefined) {
+      // Validate: must be a data URI or empty string to remove
+      if (profilePhoto && !profilePhoto.startsWith('data:image/')) {
+        return res.status(400).json({ success: false, message: 'Invalid image format' });
+      }
+      // Limit size ~2MB in base64
+      if (profilePhoto && profilePhoto.length > 2 * 1024 * 1024 * 1.37) {
+        return res.status(400).json({ success: false, message: 'Profile photo must be under 2MB' });
+      }
+      user.profilePhoto = profilePhoto;
+    }
     await user.save();
-    const userData = { _id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, farmId: user.farmId, createdAt: user.createdAt };
+    const userData = { _id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, farmId: user.farmId, profilePhoto: user.profilePhoto, createdAt: user.createdAt };
     res.json({ success: true, data: userData });
   } catch (err) { next(err); }
 });

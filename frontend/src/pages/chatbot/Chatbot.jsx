@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import api from '../../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { FiSend, FiMessageSquare, FiUser, FiTrash2, FiCopy, FiCheck, FiZap, FiClock, FiX } from 'react-icons/fi';
+import { useAuth } from '../../context/AuthContext';
 
 const QUICK_ACTIONS = [
   { label: '🥛 Today\'s Milk', msg: 'Aaj ka dudh kitna hai? Give detailed breakdown with morning/evening split' },
@@ -50,6 +51,7 @@ function detectContext(lastReply) {
 
 export default function Chatbot() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [messages, setMessages] = useState([
     { role: 'assistant', content: "Namaste! 🐄 I'm your **DairyPro AI Assistant** — powered by Google Gemini.\n\nI have real-time access to all your farm data. Ask me anything in **Hindi** or **English**!\n\n**Quick commands:**\n- `/alerts` — Instant farm alerts\n- `/milk` — Today's milk summary\n\nOr tap a quick action below 👇", ts: Date.now() },
   ]);
@@ -139,8 +141,8 @@ export default function Chatbot() {
       <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 space-y-4">
         {messages.map((msg, i) => (
           <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''} group`}>
-            <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm ${msg.role === 'user' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30'}`}>
-              {msg.role === 'user' ? <FiUser className="text-blue-600 dark:text-blue-400" size={15} /> : '🐄'}
+            <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm overflow-hidden ${msg.role === 'user' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30'}`}>
+              {msg.role === 'user' ? (user?.profilePhoto ? <img src={user.profilePhoto} alt="" className="w-full h-full object-cover" /> : <FiUser className="text-blue-600 dark:text-blue-400" size={15} />) : '🐄'}
             </div>
             <div className="relative max-w-[80%]">
               {msg.role === 'user' ? (
