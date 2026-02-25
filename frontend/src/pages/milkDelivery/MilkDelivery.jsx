@@ -295,7 +295,7 @@ export default function MilkDelivery() {
 
         {/* Month selector */}
         <div className="flex items-center gap-3">
-          <input type="month" className="input w-auto text-sm" value={ledgerMonth} onChange={e => { setLedgerMonth(e.target.value); }} />
+          <input type="month" className="input w-auto text-sm" value={ledgerMonth} onChange={e => setLedgerMonth(e.target.value || currentMonth())} />
           <button onClick={() => loadCustomerHistory(viewCustomer._id)} className="btn-secondary text-sm">Load</button>
         </div>
 
@@ -409,7 +409,7 @@ export default function MilkDelivery() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <div className="flex items-center gap-2">
-              <input type="date" className="input text-sm w-auto" value={dailyDate} onChange={e => setDailyDate(e.target.value)} />
+              <input type="date" className="input text-sm w-auto" value={dailyDate} onChange={e => setDailyDate(e.target.value || todayStr())} />
               <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700">
                 {['morning', 'evening'].map(s => (
                   <button key={s} onClick={() => setDailySession(s)}
@@ -589,7 +589,7 @@ export default function MilkDelivery() {
       {tab === 'ledger' && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <input type="month" className="input w-auto text-sm" value={ledgerMonth} onChange={e => setLedgerMonth(e.target.value)} />
+            <input type="month" className="input w-auto text-sm" value={ledgerMonth} onChange={e => setLedgerMonth(e.target.value || currentMonth())} />
             <div className="flex gap-2">
               <button onClick={exportLedgerCsv} className="btn-secondary text-xs flex items-center gap-1"><FiDownload size={14} /> CSV</button>
               <button onClick={exportLedgerPdf} className="btn-secondary text-xs flex items-center gap-1"><FiDownload size={14} /> PDF</button>
@@ -750,7 +750,7 @@ export default function MilkDelivery() {
       <Modal isOpen={payModal} onClose={() => setPayModal(false)} title="💰 Record Payment" size="md">
         <form onSubmit={savePayment} className="space-y-4">
           <div><label className="label">Amount (₹) *</label><input type="number" min="1" className="input" required value={payForm.amount} onChange={e => setPayForm({ ...payForm, amount: e.target.value })} placeholder="Amount received" /></div>
-          <div><label className="label">Date</label><input type="date" className="input" value={payForm.date} onChange={e => setPayForm({ ...payForm, date: e.target.value })} /></div>
+          <div><label className="label">Date</label><input type="date" className="input" value={payForm.date} onChange={e => setPayForm({ ...payForm, date: e.target.value || todayStr() })} /></div>
           <div><label className="label">Payment Method</label>
             <select className="input" value={payForm.method} onChange={e => setPayForm({ ...payForm, method: e.target.value })}>
               <option value="cash">💵 Cash</option><option value="upi">📱 UPI</option><option value="bank">🏦 Bank Transfer</option><option value="other">Other</option>

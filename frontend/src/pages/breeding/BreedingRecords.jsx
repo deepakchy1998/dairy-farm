@@ -107,17 +107,20 @@ export default function BreedingRecords() {
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Breeding Records 🐣</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Track breeding, pregnancy & deliveries</p>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Breeding Records 🐣</h1>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Track breeding, pregnancy & deliveries</p>
+          </div>
+          <button onClick={() => { setForm(defaultForm); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2"><FiPlus size={16} /> Add Record</button>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           <button onClick={() => exportCsv({
             filename: 'breeding_records',
             headers: ['Cattle', 'Breeding Date', 'Method', 'Bull Details', 'Expected Delivery', 'Status'],
             rows: records.map(r => [r.cattleId?.tagNumber || '-', formatDate(r.breedingDate), r.method, r.bullDetails || '', formatDate(r.expectedDelivery), r.status]),
-          })} className="btn-secondary flex items-center gap-2 text-sm"><FiFileText size={15} /> CSV</button>
+          })} className="btn-secondary flex items-center gap-2 text-sm"><FiFileText size={15} /> Export CSV</button>
           <button onClick={() => exportPdf({
             title: 'Breeding Records Report',
             period: `${filters.startDate || 'All'} to ${filters.endDate || 'Now'}`,
@@ -125,7 +128,6 @@ export default function BreedingRecords() {
             tableHeaders: ['Cattle', 'Breeding Date', 'Method', 'Bull Details', 'Expected Delivery', 'Status'],
             tableRows: records.map(r => [r.cattleId?.tagNumber || '-', formatDate(r.breedingDate), r.method === 'artificial' ? 'AI' : 'Natural', r.bullDetails || '-', formatDate(r.expectedDelivery), r.status]),
           })} className="btn-secondary flex items-center gap-2 text-sm"><FiDownload size={15} /> Export PDF</button>
-          <button onClick={() => { setForm(defaultForm); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2 text-sm"><FiPlus size={16} /> Add Record</button>
         </div>
       </div>
 

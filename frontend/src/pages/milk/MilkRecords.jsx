@@ -429,26 +429,30 @@ export default function MilkRecords() {
     const totalPages = Math.ceil(recordsTotal / 50);
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <button onClick={() => setShowRecords(false)} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white"><FiArrowLeft size={20} /></button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold">📋 All Milk Records</h1>
-            <p className="text-gray-500 text-sm">Filter and view entire milk production data</p>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setShowRecords(false)} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white"><FiArrowLeft size={20} /></button>
+            <div>
+              <h1 className="text-2xl font-bold">📋 All Milk Records</h1>
+              <p className="text-gray-500 text-sm">Filter and view entire milk production data</p>
+            </div>
           </div>
-          <button onClick={() => {
-            if (!filteredRecords.length) { toast.error('No records to export'); return; }
-            exportCsv({
-              filename: 'milk-records-filtered',
-              headers: ['Date', 'Tag No', 'Breed', 'Morning (L)', 'Morning Fat%', 'Afternoon (L)', 'Evening (L)', 'Evening Fat%', 'Total (L)'],
-              rows: filteredRecords.map(r => [
-                formatDate(r.date), r.cattleId?.tagNumber || '-', r.cattleId?.breed || '-',
-                r.morningYield || 0, r.morningFat || '', r.afternoonYield || 0,
-                r.eveningYield || 0, r.eveningFat || '', r.totalYield || 0,
-              ]),
-            });
-            toast.success('CSV downloaded');
-          }} className="btn-secondary flex items-center gap-2 text-sm"><FiDownload size={14} /> CSV</button>
-          <button onClick={handleDownloadReport} className="btn-primary flex items-center gap-2 text-sm"><FiDownload size={14} /> PDF</button>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => {
+              if (!filteredRecords.length) { toast.error('No records to export'); return; }
+              exportCsv({
+                filename: 'milk-records-filtered',
+                headers: ['Date', 'Tag No', 'Breed', 'Morning (L)', 'Morning Fat%', 'Afternoon (L)', 'Evening (L)', 'Evening Fat%', 'Total (L)'],
+                rows: filteredRecords.map(r => [
+                  formatDate(r.date), r.cattleId?.tagNumber || '-', r.cattleId?.breed || '-',
+                  r.morningYield || 0, r.morningFat || '', r.afternoonYield || 0,
+                  r.eveningYield || 0, r.eveningFat || '', r.totalYield || 0,
+                ]),
+              });
+              toast.success('CSV downloaded');
+            }} className="btn-secondary flex items-center gap-2 text-sm"><FiDownload size={14} /> Export CSV</button>
+            <button onClick={handleDownloadReport} className="btn-primary flex items-center gap-2 text-sm"><FiDownload size={14} /> Export PDF</button>
+          </div>
         </div>
 
         {/* Filter Bar */}
@@ -586,10 +590,13 @@ export default function MilkRecords() {
   // ─── MAIN VIEW ───
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">🥛 Milk Records</h1>
-          <p className="text-gray-500 text-sm">Manage daily milk production</p>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">🥛 Milk Records</h1>
+            <p className="text-gray-500 text-sm">Manage daily milk production</p>
+          </div>
+          <button onClick={() => setAddCattleModal(true)} className="btn-primary flex items-center gap-2"><FiPlus size={18} /> Add Cattle</button>
         </div>
         <div className="flex gap-2 flex-wrap">
           <button onClick={() => {
@@ -636,7 +643,6 @@ export default function MilkRecords() {
           }} className="btn-secondary flex items-center gap-1 text-xs">📄 PDF</button>
           <button onClick={() => setCalcModal(true)} className="btn-secondary flex items-center gap-2 text-sm">💰 Rate Calculator</button>
           <button onClick={openRecordsView} className="btn-secondary flex items-center gap-2 text-sm"><FiFilter size={16} /> All Records</button>
-          <button onClick={() => setAddCattleModal(true)} className="btn-primary flex items-center gap-2"><FiPlus size={18} /> Add Cattle</button>
         </div>
       </div>
 

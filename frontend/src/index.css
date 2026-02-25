@@ -42,6 +42,33 @@
   }
 }
 
+/* Date inputs: always show format, prevent blank display */
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  color: inherit;
+}
+input[type="date"]:invalid::-webkit-datetime-edit {
+  color: #9ca3af;
+}
+input[type="date"] {
+  min-height: 38px;
+}
+input[type="month"] {
+  min-height: 38px;
+}
+/* Ensure date/month picker icon is visible in dark mode */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+}
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="month"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
 /* Smooth dark mode transitions - only on key elements, not * (performance) */
 body, .card, .btn-primary, .btn-secondary, .btn-danger, .input, .stat-card,
 nav, aside, header, main {

@@ -90,17 +90,20 @@ export default function FeedRecords() {
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Feed Management 🌾</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Track feed usage, types & costs</p>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Feed Management 🌾</h1>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Track feed usage, types & costs</p>
+          </div>
+          <button onClick={() => { setForm(defaultForm); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2"><FiPlus size={16} /> Add Record</button>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           <button onClick={() => exportCsv({
             filename: 'feed_records',
             headers: ['Date', 'Feed Type', 'Quantity', 'Unit', 'Cost', 'Notes'],
             rows: records.map(r => [formatDate(r.date), r.feedType, r.quantity, r.unit || 'kg', r.cost || 0, r.notes || '']),
-          })} className="btn-secondary flex items-center gap-2 text-sm"><FiFileText size={15} /> CSV</button>
+          })} className="btn-secondary flex items-center gap-2 text-sm"><FiFileText size={15} /> Export CSV</button>
           <button onClick={() => exportPdf({
             title: 'Feed Records Report',
             period: `${filters.startDate || 'All'} to ${filters.endDate || 'Now'}`,
@@ -108,7 +111,6 @@ export default function FeedRecords() {
             tableHeaders: ['Date', 'Feed Type', 'Quantity', 'Cost', 'Notes'],
             tableRows: records.map(r => [formatDate(r.date), r.feedType, `${r.quantity} ${r.unit || 'kg'}`, formatCurrency(r.cost), r.notes || '-']),
           })} className="btn-secondary flex items-center gap-2 text-sm"><FiDownload size={15} /> Export PDF</button>
-          <button onClick={() => { setForm(defaultForm); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2 text-sm"><FiPlus size={16} /> Add Record</button>
         </div>
       </div>
 
