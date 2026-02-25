@@ -69,18 +69,41 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Check token every 5 min
+  // Check token every 5 min + inactivity auto-logout (30 min)
   useEffect(() => {
+    let lastActivity = Date.now();
+    const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+
+    const resetActivity = () => { lastActivity = Date.now(); };
+    window.addEventListener('mousemove', resetActivity, { passive: true });
+    window.addEventListener('keydown', resetActivity, { passive: true });
+    window.addEventListener('touchstart', resetActivity, { passive: true });
+    window.addEventListener('scroll', resetActivity, { passive: true });
+
     const interval = setInterval(() => {
       const token = localStorage.getItem(TOKEN_KEY);
       if (token && !isTokenValid(token)) {
         clearSession();
         window.location.href = '/login';
+        return;
       }
-      // Also refresh subscription status
+      // Auto-logout on inactivity
+      if (user && Date.now() - lastActivity > INACTIVITY_TIMEOUT) {
+        clearSession();
+        window.location.href = '/login?reason=inactive';
+        return;
+      }
+      // Refresh subscription status
       if (user) fetchSubscription();
     }, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('mousemove', resetActivity);
+      window.removeEventListener('keydown', resetActivity);
+      window.removeEventListener('touchstart', resetActivity);
+      window.removeEventListener('scroll', resetActivity);
+    };
   }, [user]);
 
   const clearSession = () => {

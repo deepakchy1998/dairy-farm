@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { FiEye, FiEyeOff, FiMail, FiLock } from 'react-icons/fi';
@@ -7,6 +7,14 @@ import { FiEye, FiEyeOff, FiMail, FiLock } from 'react-icons/fi';
 export default function Login() {
   const { login, getSavedEmail, isRemembered } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Show inactivity message if redirected
+  useEffect(() => {
+    if (searchParams.get('reason') === 'inactive') {
+      toast('You were logged out due to inactivity', { icon: '⏰', duration: 5000 });
+    }
+  }, []);
 
   const [form, setForm] = useState({ email: '', password: '' });
   const [rememberMe, setRememberMe] = useState(false);

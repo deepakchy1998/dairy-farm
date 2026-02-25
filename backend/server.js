@@ -65,6 +65,8 @@ app.use((req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.onrender.com https://*.vercel.app");
   next();
 });
 
@@ -149,8 +151,23 @@ app.use((req, res, next) => {
   next();
 });
 
+// ─── Forgot password rate limiter (3 req / 15 min per IP) ───
+const forgotAttempts = new Map();
+const forgotRateLimit = (req, res, next) => {
+  if (!req.path.includes('forgot-password')) return next();
+  const key = req.ip;
+  const now = Date.now();
+  const attempts = (forgotAttempts.get(key) || []).filter(t => now - t < 15 * 60 * 1000);
+  if (attempts.length >= 3) {
+    return res.status(429).json({ success: false, message: 'Too many password reset requests. Try again later.' });
+  }
+  attempts.push(now);
+  forgotAttempts.set(key, attempts);
+  next();
+};
+
 // Public routes
-app.use('/api/auth', authRateLimit, authRoutes);
+app.use('/api/auth', forgotRateLimit, authRateLimit, authRoutes);
 app.use('/api/landing', landingRoutes);
 
 // Protected routes

@@ -132,6 +132,17 @@ router.post('/', async (req, res, next) => {
     const { cattleId, date, morningYield, morningFat, morningSNF, afternoonYield, afternoonFat, afternoonSNF, eveningYield, eveningFat, eveningSNF } = req.body;
     if (!cattleId || !date) return res.status(400).json({ success: false, message: 'Cattle and date required' });
 
+    // Validate yields (max 100L per session is extreme but safe upper bound)
+    const yields = [morningYield, afternoonYield, eveningYield].filter(y => y != null);
+    if (yields.some(y => y < 0 || y > 100)) {
+      return res.status(400).json({ success: false, message: 'Milk yield must be between 0 and 100 litres' });
+    }
+    // Validate fat% (0-15 is realistic range)
+    const fats = [morningFat, afternoonFat, eveningFat].filter(f => f != null && f !== '');
+    if (fats.some(f => f < 0 || f > 15)) {
+      return res.status(400).json({ success: false, message: 'Fat percentage must be between 0 and 15%' });
+    }
+
     const recordDate = new Date(date); recordDate.setHours(0, 0, 0, 0);
     let record = await MilkRecord.findOne({ farmId, cattleId, date: recordDate });
     if (record) {

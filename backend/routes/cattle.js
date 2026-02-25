@@ -183,6 +183,7 @@ router.post('/:id/weight', async (req, res, next) => {
   try {
     const { date, weight, notes } = req.body;
     if (!date || !weight) return res.status(400).json({ success: false, message: 'Date and weight required' });
+    if (weight <= 0 || weight > 2000) return res.status(400).json({ success: false, message: 'Weight must be between 0 and 2000 kg' });
     
     const cattle = await Cattle.findOneAndUpdate(
       { _id: req.params.id, farmId: req.user.farmId },

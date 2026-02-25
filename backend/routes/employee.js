@@ -4,6 +4,7 @@ import { checkSubscription } from '../middleware/subscription.js';
 import Employee from '../models/Employee.js';
 import Attendance from '../models/Attendance.js';
 import SalaryPayment from '../models/SalaryPayment.js';
+import { logActivity } from '../utils/helpers.js';
 
 const router = express.Router();
 router.use(auth, checkSubscription);
@@ -52,6 +53,7 @@ router.post('/', async (req, res, next) => {
       joinDate: joinDate ? new Date(joinDate) : new Date(),
       emergencyContact, aadhar, bankAccount, ifsc, notes,
     });
+    await logActivity(req.user.farmId, 'employee', '👷', `New employee added: ${name} (${role})`);
     res.status(201).json({ success: true, data: emp });
   } catch (err) { next(err); }
 });
@@ -73,6 +75,7 @@ router.delete('/:id', async (req, res, next) => {
     if (!emp) return res.status(404).json({ success: false, message: 'Employee not found' });
     await Attendance.deleteMany({ employeeId: emp._id });
     await SalaryPayment.deleteMany({ employeeId: emp._id });
+    await logActivity(req.user.farmId, 'employee', '🗑️', `Employee deleted: ${emp.name} (${emp.role})`);
     res.json({ success: true, message: 'Employee and all records deleted' });
   } catch (err) { next(err); }
 });
@@ -280,6 +283,7 @@ router.post('/salary/pay', async (req, res, next) => {
       await emp.save();
     }
 
+    await logActivity(req.user.farmId, 'salary', '💰', `Salary paid to ${emp.name}: ₹${paid} for ${month}`);
     res.json({ success: true, data: salary });
   } catch (err) { next(err); }
 });

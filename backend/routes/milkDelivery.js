@@ -4,6 +4,7 @@ import { checkSubscription } from '../middleware/subscription.js';
 import Customer from '../models/Customer.js';
 import MilkDelivery from '../models/MilkDelivery.js';
 import CustomerPayment from '../models/CustomerPayment.js';
+import { logActivity } from '../utils/helpers.js';
 
 const router = express.Router();
 router.use(auth, checkSubscription);
@@ -82,6 +83,7 @@ router.post('/customers', async (req, res, next) => {
       dailyQuantity: Number(dailyQuantity), ratePerLiter: Number(ratePerLiter),
       deliveryTime: deliveryTime || 'morning', notes,
     });
+    await logActivity(req.user.farmId, 'customer', '🏘️', `New milk customer added: ${name} (${dailyQuantity}L/day)`);
     res.status(201).json({ success: true, data: customer });
   } catch (err) { next(err); }
 });
@@ -105,9 +107,9 @@ router.delete('/customers/:id', async (req, res, next) => {
   try {
     const customer = await Customer.findOneAndDelete({ _id: req.params.id, farmId: req.user.farmId });
     if (!customer) return res.status(404).json({ success: false, message: 'Customer not found' });
-    // Also delete related deliveries and payments
     await MilkDelivery.deleteMany({ customerId: customer._id });
     await CustomerPayment.deleteMany({ customerId: customer._id });
+    await logActivity(req.user.farmId, 'customer', '🗑️', `Customer deleted: ${customer.name}`);
     res.json({ success: true, message: 'Customer and all related records deleted' });
   } catch (err) { next(err); }
 });
