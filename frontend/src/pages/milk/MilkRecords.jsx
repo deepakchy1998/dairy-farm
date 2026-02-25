@@ -6,6 +6,8 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { FiPlus, FiArrowLeft, FiDownload, FiFilter } from 'react-icons/fi';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import toast from 'react-hot-toast';
+import { exportCsv } from '../../utils/exportCsv';
+import { exportPdf } from '../../utils/exportPdf';
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
@@ -433,7 +435,20 @@ export default function MilkRecords() {
             <h1 className="text-2xl font-bold">📋 All Milk Records</h1>
             <p className="text-gray-500 text-sm">Filter and view entire milk production data</p>
           </div>
-          <button onClick={handleDownloadReport} className="btn-primary flex items-center gap-2 text-sm"><FiDownload size={14} /> Share PDF</button>
+          <button onClick={() => {
+            if (!filteredRecords.length) { toast.error('No records to export'); return; }
+            exportCsv({
+              filename: 'milk-records-filtered',
+              headers: ['Date', 'Tag No', 'Breed', 'Morning (L)', 'Morning Fat%', 'Afternoon (L)', 'Evening (L)', 'Evening Fat%', 'Total (L)'],
+              rows: filteredRecords.map(r => [
+                formatDate(r.date), r.cattleId?.tagNumber || '-', r.cattleId?.breed || '-',
+                r.morningYield || 0, r.morningFat || '', r.afternoonYield || 0,
+                r.eveningYield || 0, r.eveningFat || '', r.totalYield || 0,
+              ]),
+            });
+            toast.success('CSV downloaded');
+          }} className="btn-secondary flex items-center gap-2 text-sm"><FiDownload size={14} /> CSV</button>
+          <button onClick={handleDownloadReport} className="btn-primary flex items-center gap-2 text-sm"><FiDownload size={14} /> PDF</button>
         </div>
 
         {/* Filter Bar */}
@@ -572,23 +587,46 @@ export default function MilkRecords() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <button onClick={() => {
-            if (!milkCattle?.length) return;
-            const rows = milkCattle.map(c => {
-              const rec = lastRecords[c._id];
-              return `"${c.tagNumber}","${c.breed}","${rec?.morningYield || ''}","${rec?.eveningYield || ''}","${rec?.totalYield || ''}"`;
+            if (!milkCattle?.length) { toast.error('No cattle to export'); return; }
+            exportCsv({
+              filename: 'milk-records-today',
+              headers: ['Tag No', 'Breed', 'Morning (L)', 'Morning Fat%', 'Morning SNF%', 'Evening (L)', 'Evening Fat%', 'Evening SNF%', 'Total (L)'],
+              rows: milkCattle.map(c => {
+                const rec = lastRecords[c._id];
+                return [
+                  c.tagNumber, c.breed,
+                  rec?.morningYield || 0, rec?.morningFat || '', rec?.morningSNF || '',
+                  rec?.eveningYield || 0, rec?.eveningFat || '', rec?.eveningSNF || '',
+                  rec?.totalYield || 0,
+                ];
+              }),
             });
-            const csv = '\ufeff' + 'Tag,Breed,Morning(L),Evening(L),Total(L)\n' + rows.join('\n');
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'milk-records.csv'; a.click();
+            toast.success('CSV downloaded');
           }} className="btn-secondary flex items-center gap-1 text-xs">📊 CSV</button>
           <button onClick={() => {
-            if (!milkCattle?.length) return;
-            const rows = milkCattle.map(c => {
-              const rec = lastRecords[c._id];
-              return `<tr><td>${c.tagNumber}</td><td>${c.breed}</td><td>${rec?.morningYield || '-'}</td><td>${rec?.eveningYield || '-'}</td><td><strong>${rec?.totalYield || '-'}</strong></td></tr>`;
-            }).join('');
-            const html = `<!DOCTYPE html><html><head><title>Milk Records</title><style>body{font-family:Arial;padding:20px}h1{color:#059669}table{width:100%;border-collapse:collapse}th{background:#ecfdf5;padding:8px;text-align:left}td{padding:8px;border-bottom:1px solid #e5e7eb}@media print{body{padding:10px}}</style></head><body><h1>🥛 Milk Records</h1><p>Exported: ${new Date().toLocaleDateString('en-IN')}</p><table><tr><th>Tag</th><th>Breed</th><th>Morning</th><th>Evening</th><th>Total</th></tr>${rows}</table></body></html>`;
-            const w = window.open('', '_blank'); w.document.write(html); w.document.close(); setTimeout(() => w.print(), 500);
+            if (!milkCattle?.length) { toast.error('No cattle to export'); return; }
+            const totalMilk = milkCattle.reduce((s, c) => s + (lastRecords[c._id]?.totalYield || 0), 0);
+            const recorded = milkCattle.filter(c => lastRecords[c._id]).length;
+            exportPdf({
+              title: "Today's Milk Records",
+              period: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
+              summaryCards: [
+                { label: 'Total Yield', value: totalMilk.toFixed(1) + ' L' },
+                { label: 'Cattle Recorded', value: `${recorded}/${milkCattle.length}` },
+                { label: 'Avg per Cattle', value: (recorded > 0 ? (totalMilk / recorded).toFixed(1) : '0') + ' L' },
+              ],
+              tableHeaders: ['Tag No', 'Breed', 'Morning (L)', 'Fat%', 'Evening (L)', 'Fat%', 'Total (L)', 'Status'],
+              tableRows: milkCattle.map(c => {
+                const rec = lastRecords[c._id];
+                return [
+                  c.tagNumber, c.breed,
+                  rec?.morningYield?.toFixed(1) || '-', rec?.morningFat || '-',
+                  rec?.eveningYield?.toFixed(1) || '-', rec?.eveningFat || '-',
+                  rec?.totalYield?.toFixed(1) || '-',
+                  rec ? '✓ Done' : 'Pending',
+                ];
+              }),
+            });
           }} className="btn-secondary flex items-center gap-1 text-xs">📄 PDF</button>
           <button onClick={() => setCalcModal(true)} className="btn-secondary flex items-center gap-2 text-sm">💰 Rate Calculator</button>
           <button onClick={openRecordsView} className="btn-secondary flex items-center gap-2 text-sm"><FiFilter size={16} /> All Records</button>

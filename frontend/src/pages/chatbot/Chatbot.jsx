@@ -5,26 +5,14 @@ import { useNavigate } from 'react-router-dom';
 import { FiSend, FiMessageSquare, FiUser, FiTrash2, FiCopy, FiCheck, FiZap, FiClock, FiX } from 'react-icons/fi';
 
 const QUICK_ACTIONS = [
+  { label: '📋 Daily Summary', msg: 'Give me a complete daily summary of my farm — milk, health, breeding, finance, alerts — everything' },
   { label: '🥛 Today\'s Milk', msg: 'Aaj ka dudh kitna hai? Give detailed breakdown with morning/evening split' },
-  { label: '🐄 Cattle Status', msg: 'Give me complete cattle summary with all categories, breeds, and health status' },
   { label: '💰 Profit & Loss', msg: 'Show this month profit loss with comparison to last month and cost per liter' },
   { label: '💉 Health Alerts', msg: 'Any overdue or upcoming vaccinations? List all with dates and cattle tags' },
-  { label: '🐣 Breeding Status', msg: 'Show all active breeding records, expected deliveries, and heat predictions' },
-  { label: '📊 Weekly Analysis', msg: 'Analyze my farm performance this week with trends and actionable recommendations' },
-  { label: '🌾 Feed Cost', msg: 'Show feed expenses this month by type and suggest optimization' },
-  { label: '💡 Improve Profit', msg: 'Analyze my farm data and give me 5 actionable tips to improve profitability' },
   { label: '⚠️ Alerts', msg: '/alerts' },
-  { label: '🏆 Top Producers', msg: 'Which cattle are producing the most milk? Show rankings with daily averages' },
-  { label: '📉 Low Producers', msg: 'Which cattle have low milk yield? Should I check their health or change feed?' },
-  { label: '🔮 Predictions', msg: 'Based on current trends, predict my end-of-month milk production and revenue' },
-  { label: '🛡️ Insurance', msg: 'Show my insurance status — any policies expiring soon? Suggest govt schemes I should apply for' },
-  { label: '🔥 Heat Calendar', msg: 'Which cattle are due for heat soon? Show predicted heat dates and best breeding windows' },
-  { label: '⚖️ Weight Check', msg: 'Show cattle weight status — any underweight or overweight animals that need attention?' },
-  { label: '🍼 Lactation', msg: 'Show lactation status of milking cattle — days in milk, who needs dry off, lactation curves' },
-  { label: '💊 Disease Risk', msg: 'Based on current season and my cattle health records, what diseases should I watch for?' },
-  { label: '📋 Daily Summary', msg: 'Give me a complete daily summary of my farm — milk, health, breeding, finance, alerts — everything' },
-  { label: '💵 Milk Rate', msg: 'Calculate my milk payment — what should I get from dairy cooperative based on fat% and SNF%?' },
-  { label: '🏥 Vet Schedule', msg: 'Create a vaccination and health checkup schedule for next 30 days for all my cattle' },
+  { label: '🐄 Cattle Status', msg: 'Give me complete cattle summary with all categories, breeds, and health status' },
+  { label: '📊 Weekly Analysis', msg: 'Analyze my farm performance this week with trends and actionable recommendations' },
+  { label: '💡 Improve Profit', msg: 'Analyze my farm data and give me 5 actionable tips to improve profitability' },
 ];
 
 const FOLLOW_UPS = {
@@ -201,14 +189,14 @@ export default function Chatbot() {
         </div>
       )}
 
-      {/* Quick action grid (shown initially or when few messages) */}
+      {/* Quick action chips (shown initially, compact horizontal scroll) */}
       {messages.length <= 3 && (
         <div className="mt-3">
           <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 font-medium uppercase tracking-wider">⚡ Quick Actions</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+          <div className="flex gap-2 flex-wrap">
             {QUICK_ACTIONS.map((a, i) => (
               <button key={i} onClick={() => send(a.msg)} disabled={loading}
-                className="text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2.5 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 transition border border-gray-200 dark:border-gray-700 text-left disabled:opacity-40 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-sm">
+                className="text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-full hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 transition border border-gray-200 dark:border-gray-700 disabled:opacity-40 hover:border-emerald-300 dark:hover:border-emerald-700 whitespace-nowrap">
                 {a.label}
               </button>
             ))}
