@@ -18,16 +18,90 @@ export default function Subscription() {
   const [saving, setSaving] = useState(false);
   const fileRef = useRef(null);
 
+  // Razorpay state
+  const [razorpayEnabled, setRazorpayEnabled] = useState(false);
+  const [razorpayKeyId, setRazorpayKeyId] = useState('');
+  const [razorpayLoading, setRazorpayLoading] = useState(false);
+
   useEffect(() => {
     Promise.all([
       api.get('/subscription/plans'),
       api.get('/payment/my'),
-    ]).then(([p, pay]) => {
+      api.get('/razorpay/config').catch(() => ({ data: { data: { enabled: false } } })),
+    ]).then(([p, pay, rz]) => {
       setPlans(p.data.data);
       setPayments(pay.data.data);
+      setRazorpayEnabled(rz.data.data?.enabled || false);
+      setRazorpayKeyId(rz.data.data?.keyId || '');
     }).catch(() => toast.error('Failed to load'))
     .finally(() => setLoading(false));
   }, []);
+
+  // Load Razorpay script
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]')) {
+        return resolve(true);
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  // Handle Razorpay payment
+  const handleRazorpayPayment = async (plan) => {
+    setRazorpayLoading(true);
+    try {
+      const loaded = await loadRazorpayScript();
+      if (!loaded) { toast.error('Failed to load payment gateway'); return; }
+
+      const res = await api.post('/razorpay/create-order', { plan });
+      const { orderId, amount, currency, keyId, name, description, prefill } = res.data.data;
+
+      const options = {
+        key: keyId,
+        amount,
+        currency,
+        name,
+        description,
+        order_id: orderId,
+        prefill,
+        theme: { color: '#059669' },
+        handler: async (response) => {
+          try {
+            toast.loading('Verifying payment...', { id: 'rzp-verify' });
+            await api.post('/razorpay/verify-payment', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            toast.success('Payment successful! Subscription activated instantly! 🎉', { id: 'rzp-verify', duration: 5000 });
+            fetchSubscription();
+            const pay = await api.get('/payment/my');
+            setPayments(pay.data.data);
+          } catch (err) {
+            toast.error(err.response?.data?.message || 'Payment verification failed', { id: 'rzp-verify' });
+          }
+        },
+        modal: {
+          ondismiss: () => toast('Payment cancelled', { icon: '⚠️' }),
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (response) => {
+        toast.error(`Payment failed: ${response.error.description}`);
+      });
+      rzp.open();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to initiate payment');
+    } finally {
+      setRazorpayLoading(false);
+    }
+  };
 
   const handleScreenshot = (e) => {
     const file = e.target.files?.[0];
@@ -119,30 +193,56 @@ export default function Subscription() {
                 <li className="flex items-center gap-2"><FiCheck className="text-emerald-500" /> Reports & Analytics</li>
                 <li className="flex items-center gap-2"><FiCheck className="text-emerald-500" /> {plan.days} days access</li>
               </ul>
-              <button
-                onClick={() => setPayModal(plan.id)}
-                disabled={subData?.hasPendingPayment}
-                className={`w-full mt-4 ${plan.popular ? 'btn-primary' : 'btn-secondary'} disabled:opacity-50`}
-              >
-                {subData?.hasPendingPayment ? 'Payment Pending' : 'Subscribe Now'}
-              </button>
+              <div className="mt-4 space-y-2">
+                {razorpayEnabled && (
+                  <button
+                    onClick={() => handleRazorpayPayment(plan.id)}
+                    disabled={razorpayLoading || subData?.hasPendingPayment}
+                    className={`w-full ${plan.popular ? 'btn-primary' : 'btn-secondary'} disabled:opacity-50 flex items-center justify-center gap-2`}
+                  >
+                    {razorpayLoading ? 'Processing...' : '💳 Pay Online'}
+                  </button>
+                )}
+                <button
+                  onClick={() => setPayModal(plan.id)}
+                  disabled={subData?.hasPendingPayment}
+                  className={`w-full ${!razorpayEnabled && plan.popular ? 'btn-primary' : 'btn-secondary'} disabled:opacity-50`}
+                >
+                  {subData?.hasPendingPayment ? 'Payment Pending' : razorpayEnabled ? '📱 Pay via UPI (Manual)' : 'Subscribe Now'}
+                </button>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Payment Instructions */}
-      {plans?.upiId && (
+      {(razorpayEnabled || plans?.upiId) && (
         <div className="card bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
           <h3 className="font-semibold text-blue-800 dark:text-blue-400 mb-2">💰 How to Pay</h3>
-          <ol className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-decimal pl-4">
-            <li>Open any UPI app (PhonePe, GPay, Paytm, etc.)</li>
-            <li>Pay the exact plan amount to: <strong className="text-lg">{plans.upiId}</strong></li>
-            <li>Note your <strong>UPI Transaction ID</strong> from the payment receipt</li>
-            <li>Click "Subscribe Now" above and enter the Transaction ID</li>
-            <li>Upload a <strong>screenshot</strong> of your payment for faster verification</li>
-            <li>Admin will verify and activate within 24 hours</li>
-          </ol>
+          {razorpayEnabled && (
+            <div className="mb-3">
+              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 mb-1">Option 1: Pay Online (Instant Activation) ⚡</p>
+              <ol className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-decimal pl-4">
+                <li>Click <strong>"💳 Pay Online"</strong> on your preferred plan</li>
+                <li>Pay via <strong>UPI, QR Code, Debit/Credit Card, Wallets, or Net Banking</strong></li>
+                <li>Subscription activates <strong>instantly</strong> after payment!</li>
+              </ol>
+            </div>
+          )}
+          {plans?.upiId && (
+            <div>
+              <p className="text-sm font-semibold text-blue-800 dark:text-blue-400 mb-1">{razorpayEnabled ? 'Option 2: Manual UPI Transfer' : 'How to Pay'}</p>
+              <ol className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-decimal pl-4">
+                <li>Open any UPI app (PhonePe, GPay, Paytm, etc.)</li>
+                <li>Pay the exact plan amount to: <strong className="text-lg">{plans.upiId}</strong></li>
+                <li>Note your <strong>UPI Transaction ID</strong> from the payment receipt</li>
+                <li>Click "{razorpayEnabled ? '📱 Pay via UPI (Manual)' : 'Subscribe Now'}" and enter the Transaction ID</li>
+                <li>Upload a <strong>screenshot</strong> of your payment for faster verification</li>
+                <li>Admin will verify and activate within 24 hours</li>
+              </ol>
+            </div>
+          )}
         </div>
       )}
 
@@ -155,7 +255,7 @@ export default function Subscription() {
               <div key={p._id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div>
                   <p className="font-medium capitalize dark:text-white">{p.plan} Plan</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">TXN: {p.upiTransactionId} • {formatDate(p.createdAt)}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{p.paymentMethod === 'razorpay' ? '💳 Razorpay' : '📱 UPI'} • TXN: {p.razorpayPaymentId || p.upiTransactionId} • {formatDate(p.createdAt)}</p>
                   {p.adminNote && <p className="text-xs text-gray-400 mt-0.5">Note: {p.adminNote}</p>}
                 </div>
                 <div className="text-right">

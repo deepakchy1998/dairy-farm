@@ -6,6 +6,10 @@ const paymentSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   upiTransactionId: { type: String, required: true },
   screenshot: { type: String, default: '' }, // base64 image
+  paymentMethod: { type: String, enum: ['upi_manual', 'razorpay'], default: 'upi_manual' },
+  razorpayOrderId: { type: String, default: '' },
+  razorpayPaymentId: { type: String, default: '' },
+  razorpaySignature: { type: String, default: '' },
   ipAddress: { type: String, default: '' },
   userAgent: { type: String, default: '' },
   status: { type: String, enum: ['pending', 'verified', 'rejected', 'expired'], default: 'pending' },
