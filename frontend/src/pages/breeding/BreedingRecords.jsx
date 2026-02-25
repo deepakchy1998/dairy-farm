@@ -115,7 +115,7 @@ export default function BreedingRecords() {
           </div>
           <button onClick={() => { setForm(defaultForm); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2"><FiPlus size={16} /> Add Record</button>
         </div>
-        <div className="flex gap-2 justify-end">
+        <div className="flex gap-2 justify-center">
           <button onClick={() => exportCsv({
             filename: 'breeding_records',
             headers: ['Cattle', 'Breeding Date', 'Method', 'Bull Details', 'Expected Delivery', 'Status'],

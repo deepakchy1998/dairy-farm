@@ -437,7 +437,7 @@ export default function MilkRecords() {
               <p className="text-gray-500 text-sm">Filter and view entire milk production data</p>
             </div>
           </div>
-          <div className="flex gap-2 justify-end">
+          <div className="flex gap-2 justify-center">
             <button onClick={() => {
               if (!filteredRecords.length) { toast.error('No records to export'); return; }
               exportCsv({

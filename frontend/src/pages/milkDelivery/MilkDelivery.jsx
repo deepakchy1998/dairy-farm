@@ -588,12 +588,10 @@ export default function MilkDelivery() {
       {/* ═══ MONTHLY LEDGER TAB ═══ */}
       {tab === 'ledger' && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <input type="month" className="input w-auto text-sm" value={ledgerMonth} onChange={e => setLedgerMonth(e.target.value || currentMonth())} />
-            <div className="flex gap-2">
-              <button onClick={exportLedgerCsv} className="btn-secondary text-xs flex items-center gap-1"><FiDownload size={14} /> CSV</button>
-              <button onClick={exportLedgerPdf} className="btn-secondary text-xs flex items-center gap-1"><FiDownload size={14} /> PDF</button>
-            </div>
+            <button onClick={exportLedgerCsv} className="btn-secondary text-xs flex items-center gap-1"><FiDownload size={14} /> CSV</button>
+            <button onClick={exportLedgerPdf} className="btn-secondary text-xs flex items-center gap-1"><FiDownload size={14} /> PDF</button>
           </div>
 
           {/* Summary Cards */}

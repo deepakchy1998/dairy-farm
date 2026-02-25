@@ -136,7 +136,7 @@ export default function Finance() {
           </div>
           <button onClick={() => { setForm({ ...defaultForm, category: cats[0] }); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2"><FiPlus size={16} /> Add {tab === 'expense' ? 'Expense' : 'Revenue'}</button>
         </div>
-        <div className="flex gap-2 justify-end">
+        <div className="flex gap-2 justify-center">
           <button onClick={() => exportCsv({
             filename: tab === 'expense' ? 'expenses' : 'revenue',
             headers: ['Date', 'Category', 'Description', 'Amount'],

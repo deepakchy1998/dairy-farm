@@ -467,10 +467,9 @@ export default function Employees() {
       {/* ═══ ATTENDANCE TAB ═══ */}
       {tab === 'attendance' && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <input type="date" className="input text-sm w-auto" value={attDate} onChange={e => setAttDate(e.target.value || todayStr())} />
             <button onClick={markAllPresent} className="btn-secondary text-xs flex items-center gap-1"><FiCheck size={14} /> Mark All Present</button>
-            <div className="flex-1" />
             <span className="text-sm text-gray-500">{attSheet.filter(s => s._status === 'present').length} present · {attSheet.filter(s => s._status === 'absent').length} absent</span>
           </div>
 
@@ -552,12 +551,10 @@ export default function Employees() {
       {/* ═══ SALARY TAB ═══ */}
       {tab === 'salary' && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <input type="month" className="input w-auto text-sm" value={salaryMonth} onChange={e => setSalaryMonth(e.target.value || currentMonth())} />
-            <div className="flex gap-2">
-              <button onClick={exportSalaryCsv} className="btn-secondary text-xs flex items-center gap-1"><FiDownload size={14} /> CSV</button>
-              <button onClick={exportSalaryPdf} className="btn-secondary text-xs flex items-center gap-1"><FiDownload size={14} /> PDF</button>
-            </div>
+            <button onClick={exportSalaryCsv} className="btn-secondary text-xs flex items-center gap-1"><FiDownload size={14} /> CSV</button>
+            <button onClick={exportSalaryPdf} className="btn-secondary text-xs flex items-center gap-1"><FiDownload size={14} /> PDF</button>
           </div>
 
           {salaryData?.totals && (
