@@ -48,7 +48,30 @@ export default function Subscription() {
       const options = {
         key: keyId, amount, currency, name, description,
         order_id: orderId, prefill,
-        theme: { color: '#059669' },
+        theme: { color: '#059669', backdrop_color: 'rgba(0,0,0,0.6)' },
+        config: {
+          display: {
+            blocks: {
+              upi: { name: 'UPI / QR Code', instruments: [{ method: 'upi', flows: ['qr', 'collect', 'intent'] }] },
+              wallets: { name: 'Wallets', instruments: [{ method: 'wallet', wallets: ['paytm', 'phonepe', 'freecharge', 'mobikwik', 'airtelmoney', 'jiomoney'] }] },
+              cards: { name: 'Cards', instruments: [{ method: 'card' }] },
+              netbanking: { name: 'Net Banking', instruments: [{ method: 'netbanking' }] },
+              emi: { name: 'EMI', instruments: [{ method: 'emi' }, { method: 'cardless_emi' }] },
+              paylater: { name: 'Pay Later', instruments: [{ method: 'paylater' }] },
+            },
+            sequence: ['block.upi', 'block.wallets', 'block.cards', 'block.netbanking', 'block.emi', 'block.paylater'],
+            preferences: { show_default_blocks: true },
+          },
+        },
+        method: {
+          upi: true,
+          card: true,
+          netbanking: true,
+          wallet: true,
+          emi: true,
+          paylater: true,
+          qr: true,
+        },
         handler: async (response) => {
           try {
             toast.loading('Verifying payment...', { id: 'rzp-verify' });
@@ -131,12 +154,25 @@ export default function Subscription() {
 
       {/* Payment Info */}
       <div className="card bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800">
-        <h3 className="font-semibold text-emerald-800 dark:text-emerald-400 mb-2 flex items-center gap-2"><FiShield size={16} /> Secure Payment</h3>
-        <div className="text-sm text-emerald-700 dark:text-emerald-400 space-y-1">
-          <p>✅ Payments are processed securely via <strong>Razorpay</strong></p>
-          <p>✅ Pay via <strong>UPI, QR Code, Debit/Credit Card, Wallets, or Net Banking</strong></p>
-          <p>✅ Subscription activates <strong>instantly</strong> after successful payment</p>
-          <p>✅ Your payment data is encrypted and never stored on our servers</p>
+        <h3 className="font-semibold text-emerald-800 dark:text-emerald-400 mb-3 flex items-center gap-2"><FiShield size={16} /> Secure Payment via Razorpay</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+          {[
+            { icon: '📱', label: 'UPI (GPay, PhonePe, BHIM)' },
+            { icon: '📷', label: 'QR Code Scan & Pay' },
+            { icon: '💳', label: 'Debit / Credit Card' },
+            { icon: '👛', label: 'Paytm, PhonePe Wallet' },
+            { icon: '🏦', label: 'Net Banking' },
+            { icon: '🔄', label: 'EMI & Pay Later' },
+          ].map((m, i) => (
+            <div key={i} className="flex items-center gap-2 bg-white/60 dark:bg-gray-800/40 rounded-lg px-3 py-2">
+              <span className="text-lg">{m.icon}</span>
+              <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">{m.label}</span>
+            </div>
+          ))}
+        </div>
+        <div className="text-xs text-emerald-600 dark:text-emerald-500 space-y-0.5">
+          <p>✅ Subscription activates <strong>instantly</strong> after payment</p>
+          <p>✅ 256-bit encrypted • PCI DSS compliant • RBI regulated</p>
         </div>
       </div>
 
