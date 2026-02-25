@@ -290,9 +290,64 @@ router.get('/revenue-dashboard', async (req, res, next) => {
       { $group: { _id: '$plan', count: { $sum: 1 } } },
     ]);
 
+    // User growth (last 12 months)
+    const userGrowth = await User.aggregate([
+      { $match: { role: 'user', createdAt: { $gte: new Date(Date.now() - 365 * 86400000) } } },
+      { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } }, count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Payment status breakdown
+    const paymentStatusBreakdown = await Payment.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 }, total: { $sum: '$amount' } } },
+    ]);
+
+    // Payment method breakdown (razorpay vs manual)
+    const paymentMethodBreakdown = await Payment.aggregate([
+      { $match: { status: 'verified' } },
+      { $group: { _id: { $ifNull: ['$paymentMethod', 'upi_manual'] }, count: { $sum: 1 }, total: { $sum: '$amount' } } },
+    ]);
+
+    // Daily revenue (last 30 days)
+    const dailyRevenue = await Payment.aggregate([
+      { $match: { status: 'verified', createdAt: { $gte: new Date(Date.now() - 30 * 86400000) } } },
+      { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, total: { $sum: '$amount' }, count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Subscriptions expiring soon (next 7 days)
+    const expiringSoon = await Subscription.countDocuments({
+      isActive: true,
+      endDate: { $gte: new Date(), $lte: new Date(Date.now() + 7 * 86400000) },
+    });
+
+    // Recent signups (last 7 days)
+    const recentSignups = await User.countDocuments({
+      role: 'user',
+      createdAt: { $gte: new Date(Date.now() - 7 * 86400000) },
+    });
+
+    // Top plans by revenue
+    const topPlansByRevenue = await Payment.aggregate([
+      { $match: { status: 'verified' } },
+      { $group: { _id: '$plan', totalRevenue: { $sum: '$amount' }, count: { $sum: 1 } } },
+      { $sort: { totalRevenue: -1 } },
+    ]);
+
+    // Conversion rate: users with active sub / total users
+    const conversionRate = totalUsers > 0 ? Math.round((activeSubscriptions / totalUsers) * 100) : 0;
+
+    // Average revenue per user (ARPU)
+    const arpu = activeSubscriptions > 0 ? Math.round(totalRevenue / activeSubscriptions) : 0;
+
     res.json({
       success: true,
-      data: { totalUsers, totalFarms, activeSubscriptions, pendingPayments, totalRevenue, monthlyRevenue, planDistribution },
+      data: {
+        totalUsers, totalFarms, activeSubscriptions, pendingPayments, totalRevenue,
+        monthlyRevenue, planDistribution, userGrowth, paymentStatusBreakdown,
+        paymentMethodBreakdown, dailyRevenue, expiringSoon, recentSignups,
+        topPlansByRevenue, conversionRate, arpu,
+      },
     });
   } catch (err) { next(err); }
 });

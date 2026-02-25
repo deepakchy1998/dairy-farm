@@ -12,7 +12,7 @@ import {
   FiRefreshCw, FiDownload, FiServer, FiLock, FiUnlock, FiKey, FiActivity,
 } from 'react-icons/fi';
 import { FaIndianRupeeSign } from 'react-icons/fa6';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area, LineChart, Line, Legend } from 'recharts';
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -412,24 +412,196 @@ export default function AdminPanel() {
 
       {/* ═══ OVERVIEW ═══ */}
       {tab === 'overview' && dashboard && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-center"><p className="text-xs text-blue-500">Total Users</p><p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{dashboard.totalUsers}</p></div>
-            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 text-center"><p className="text-xs text-emerald-500">Active Subs</p><p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{dashboard.activeSubscriptions}</p></div>
-            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 text-center"><p className="text-xs text-amber-500">Pending Pay</p><p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{dashboard.pendingPayments}</p></div>
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 text-center"><p className="text-xs text-green-500">Revenue</p><p className="text-2xl font-bold text-green-700 dark:text-green-300">{formatCurrency(dashboard.totalRevenue)}</p></div>
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 text-center"><p className="text-xs text-purple-500">Farms</p><p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{dashboard.totalFarms}</p></div>
+        <div className="space-y-5">
+          {/* KPI Cards Row 1 */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {[
+              { label: 'Total Users', value: dashboard.totalUsers, icon: '👥', color: 'blue' },
+              { label: 'Active Subs', value: dashboard.activeSubscriptions, icon: '✅', color: 'emerald' },
+              { label: 'Pending Pay', value: dashboard.pendingPayments, icon: '⏳', color: 'amber' },
+              { label: 'Total Revenue', value: formatCurrency(dashboard.totalRevenue), icon: '💰', color: 'green' },
+              { label: 'Farms', value: dashboard.totalFarms, icon: '🏠', color: 'purple' },
+              { label: 'Conversion', value: `${dashboard.conversionRate || 0}%`, icon: '📊', color: 'indigo' },
+            ].map((kpi, i) => (
+              <div key={i} className={`bg-${kpi.color}-50 dark:bg-${kpi.color}-900/20 rounded-xl p-4 text-center border border-${kpi.color}-100 dark:border-${kpi.color}-900/30`}>
+                <span className="text-lg">{kpi.icon}</span>
+                <p className={`text-[10px] text-${kpi.color}-500 mt-1 uppercase font-medium tracking-wide`}>{kpi.label}</p>
+                <p className={`text-xl font-bold text-${kpi.color}-700 dark:text-${kpi.color}-300 mt-0.5`}>{kpi.value}</p>
+              </div>
+            ))}
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="card"><h3 className="font-semibold mb-4">Monthly Revenue</h3>
-              {dashboard.monthlyRevenue?.length > 0 ? (
-                <ResponsiveContainer width="100%" height={250}><BarChart data={dashboard.monthlyRevenue}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" /><XAxis dataKey="_id" tick={{ fontSize: 11 }} /><YAxis tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} tick={{ fontSize: 11 }} /><Tooltip formatter={v => formatCurrency(v)} /><Bar dataKey="total" fill="#10b981" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>
-              ) : <p className="text-gray-400 text-center py-8">No revenue data</p>}
+
+          {/* Quick Insights */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="card !p-3 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-lg">🆕</div>
+              <div><p className="text-xs text-gray-500">New Users (7d)</p><p className="text-lg font-bold dark:text-white">{dashboard.recentSignups || 0}</p></div>
             </div>
-            <div className="card"><h3 className="font-semibold mb-4">Plan Distribution</h3>
-              {dashboard.planDistribution?.length > 0 ? (
-                <ResponsiveContainer width="100%" height={250}><PieChart><Pie data={dashboard.planDistribution.map(d => ({ name: d._id, value: d.count }))} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>{dashboard.planDistribution.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer>
+            <div className="card !p-3 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-lg">⚠️</div>
+              <div><p className="text-xs text-gray-500">Expiring (7d)</p><p className="text-lg font-bold dark:text-white">{dashboard.expiringSoon || 0}</p></div>
+            </div>
+            <div className="card !p-3 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-lg">💵</div>
+              <div><p className="text-xs text-gray-500">ARPU</p><p className="text-lg font-bold dark:text-white">{formatCurrency(dashboard.arpu || 0)}</p></div>
+            </div>
+            <div className="card !p-3 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-lg">📈</div>
+              <div><p className="text-xs text-gray-500">Conversion Rate</p><p className="text-lg font-bold dark:text-white">{dashboard.conversionRate || 0}%</p></div>
+            </div>
+          </div>
+
+          {/* Charts Row 1: Revenue */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Monthly Revenue Bar Chart */}
+            <div className="card">
+              <h3 className="font-semibold mb-1 dark:text-white">📊 Monthly Revenue</h3>
+              <p className="text-xs text-gray-400 mb-4">Last 12 months</p>
+              {dashboard.monthlyRevenue?.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={dashboard.monthlyRevenue}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="_id" tick={{ fontSize: 10 }} tickFormatter={v => v?.slice(5) || v} />
+                    <YAxis tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
+                    <Tooltip formatter={v => formatCurrency(v)} labelFormatter={l => `Month: ${l}`} />
+                    <Bar dataKey="total" fill="#10b981" radius={[6, 6, 0, 0]} name="Revenue" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : <p className="text-gray-400 text-center py-12">No revenue data yet</p>}
+            </div>
+
+            {/* Daily Revenue Trend (Area Chart) */}
+            <div className="card">
+              <h3 className="font-semibold mb-1 dark:text-white">📈 Daily Revenue Trend</h3>
+              <p className="text-xs text-gray-400 mb-4">Last 30 days</p>
+              {dashboard.dailyRevenue?.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <AreaChart data={dashboard.dailyRevenue}>
+                    <defs>
+                      <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="_id" tick={{ fontSize: 9 }} tickFormatter={v => v?.slice(5) || v} />
+                    <YAxis tickFormatter={v => `₹${v}`} tick={{ fontSize: 10 }} />
+                    <Tooltip formatter={(v, name) => name === 'total' ? formatCurrency(v) : v} labelFormatter={l => `Date: ${l}`} />
+                    <Area type="monotone" dataKey="total" stroke="#10b981" fill="url(#revenueGrad)" strokeWidth={2} name="Revenue" />
+                    <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={1.5} dot={false} name="Transactions" yAxisId={0} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : <p className="text-gray-400 text-center py-12">No recent transactions</p>}
+            </div>
+          </div>
+
+          {/* Charts Row 2: Users & Plans */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* User Growth Line Chart */}
+            <div className="card">
+              <h3 className="font-semibold mb-1 dark:text-white">👥 User Growth</h3>
+              <p className="text-xs text-gray-400 mb-4">Monthly signups</p>
+              {dashboard.userGrowth?.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart data={dashboard.userGrowth}>
+                    <defs>
+                      <linearGradient id="userGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="_id" tick={{ fontSize: 10 }} tickFormatter={v => v?.slice(5) || v} />
+                    <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                    <Tooltip labelFormatter={l => `Month: ${l}`} />
+                    <Area type="monotone" dataKey="count" stroke="#3b82f6" fill="url(#userGrad)" strokeWidth={2} name="New Users" />
+                  </AreaChart>
+                </ResponsiveContainer>
               ) : <p className="text-gray-400 text-center py-8">No data</p>}
+            </div>
+
+            {/* Plan Distribution Pie */}
+            <div className="card">
+              <h3 className="font-semibold mb-1 dark:text-white">🎯 Active Plans</h3>
+              <p className="text-xs text-gray-400 mb-4">Current distribution</p>
+              {dashboard.planDistribution?.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie data={dashboard.planDistribution.map(d => ({ name: d._id, value: d.count }))} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
+                      {dashboard.planDistribution.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : <p className="text-gray-400 text-center py-8">No subscriptions</p>}
+            </div>
+
+            {/* Payment Status Pie */}
+            <div className="card">
+              <h3 className="font-semibold mb-1 dark:text-white">💳 Payment Status</h3>
+              <p className="text-xs text-gray-400 mb-4">All-time breakdown</p>
+              {dashboard.paymentStatusBreakdown?.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie data={dashboard.paymentStatusBreakdown.map(d => ({ name: d._id, value: d.count }))} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
+                      {dashboard.paymentStatusBreakdown.map((d, i) => {
+                        const statusColors = { verified: '#10b981', pending: '#f59e0b', rejected: '#ef4444', expired: '#9ca3af' };
+                        return <Cell key={i} fill={statusColors[d._id] || COLORS[i % COLORS.length]} />;
+                      })}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : <p className="text-gray-400 text-center py-8">No payments</p>}
+            </div>
+          </div>
+
+          {/* Charts Row 3: Revenue by Plan & Payment Methods */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Top Plans by Revenue */}
+            <div className="card">
+              <h3 className="font-semibold mb-1 dark:text-white">🏆 Revenue by Plan</h3>
+              <p className="text-xs text-gray-400 mb-4">Which plans earn the most</p>
+              {dashboard.topPlansByRevenue?.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={dashboard.topPlansByRevenue} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis type="number" tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
+                    <YAxis type="category" dataKey="_id" tick={{ fontSize: 11 }} width={80} />
+                    <Tooltip formatter={(v, name) => name === 'totalRevenue' ? formatCurrency(v) : v} />
+                    <Bar dataKey="totalRevenue" fill="#8b5cf6" radius={[0, 6, 6, 0]} name="Revenue" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : <p className="text-gray-400 text-center py-8">No data</p>}
+            </div>
+
+            {/* Payment Methods */}
+            <div className="card">
+              <h3 className="font-semibold mb-1 dark:text-white">💳 Payment Methods</h3>
+              <p className="text-xs text-gray-400 mb-4">Razorpay vs Manual UPI</p>
+              {dashboard.paymentMethodBreakdown?.length > 0 ? (
+                <div className="space-y-4 pt-4">
+                  {dashboard.paymentMethodBreakdown.map((m, i) => {
+                    const totalPayments = dashboard.paymentMethodBreakdown.reduce((s, x) => s + x.count, 0);
+                    const pct = totalPayments > 0 ? Math.round((m.count / totalPayments) * 100) : 0;
+                    const isRazorpay = m._id === 'razorpay';
+                    return (
+                      <div key={i}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-sm font-medium dark:text-white flex items-center gap-2">
+                            {isRazorpay ? '💳' : '📱'} {isRazorpay ? 'Razorpay' : 'Manual UPI'}
+                          </span>
+                          <span className="text-sm text-gray-500">{m.count} payments · {formatCurrency(m.total)}</span>
+                        </div>
+                        <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-3 overflow-hidden">
+                          <div className={`h-3 rounded-full transition-all ${isRazorpay ? 'bg-indigo-500' : 'bg-emerald-500'}`} style={{ width: `${pct}%` }}></div>
+                        </div>
+                        <p className="text-[10px] text-gray-400 mt-1">{pct}% of total payments</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : <p className="text-gray-400 text-center py-8">No verified payments</p>}
             </div>
           </div>
         </div>
