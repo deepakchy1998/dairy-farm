@@ -121,6 +121,25 @@ router.get('/dashboard', checkSubscription, async (req, res, next) => {
     const revenuePerLiter = totalMilkPeriod > 0 ? (monthlyRevenue / totalMilkPeriod) : 0;
     const profitPerLiter = revenuePerLiter - costPerLiter;
 
+    // Employees & Customers quick stats (non-blocking)
+    let employeeStats = { active: 0, presentToday: 0, totalSalary: 0 };
+    let customerStats = { active: 0, totalDue: 0, dailyDelivery: 0 };
+    try {
+      const Employee = (await import('../models/Employee.js')).default;
+      const Attendance = (await import('../models/Attendance.js')).default;
+      const Customer = (await import('../models/Customer.js')).default;
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const [empCount, todayAtt, salBill, custCount, custDue] = await Promise.all([
+        Employee.countDocuments({ farmId, status: 'active' }),
+        Attendance.countDocuments({ farmId, date: today, status: 'present' }),
+        Employee.aggregate([{ $match: { farmId, status: 'active' } }, { $group: { _id: null, total: { $sum: '$monthlySalary' } } }]),
+        Customer.countDocuments({ farmId, status: 'active' }),
+        Customer.aggregate([{ $match: { farmId, status: 'active' } }, { $group: { _id: null, totalDue: { $sum: '$balance' }, dailyQty: { $sum: '$dailyQuantity' } } }]),
+      ]);
+      employeeStats = { active: empCount, presentToday: todayAtt, totalSalary: salBill[0]?.total || 0 };
+      customerStats = { active: custCount, totalDue: custDue[0]?.totalDue || 0, dailyDelivery: custDue[0]?.dailyQty || 0 };
+    } catch {}
+
     res.json({
       success: true,
       data: {
@@ -128,6 +147,7 @@ router.get('/dashboard', checkSubscription, async (req, res, next) => {
         cattleByCategory, milkTrend, topCattle, expenseBreakdown,
         upcomingVaccinations, expectedDeliveries,
         analytics: { costPerLiter, revenuePerLiter, profitPerLiter, totalMilkPeriod },
+        employeeStats, customerStats,
       },
     });
   } catch (err) { next(err); }

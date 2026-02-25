@@ -10,7 +10,7 @@ const SUGGESTIONS = ["How is my farm doing?", 'Analyze milk production', 'Which 
 export default function ChatBubble() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Hello! 🐄 I'm your AI farm advisor with full access to your farm data. Ask me anything — milk analysis, health advice, financial insights, breeding tips — no limits!" },
+    { role: 'assistant', content: "Namaste! 🐄 I have full access to your farm — cattle, milk, health, finance, staff & customers. Ask anything!" },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

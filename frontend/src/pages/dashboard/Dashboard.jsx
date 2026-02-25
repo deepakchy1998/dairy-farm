@@ -267,6 +267,40 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* Quick Links — Employees & Dudh Khata */}
+      {(stats.employeeStats?.active > 0 || stats.customerStats?.active > 0) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {stats.employeeStats?.active > 0 && (
+            <Link to="/employees" className="card !p-4 flex items-center gap-4 hover:shadow-md transition group">
+              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl"><span className="text-2xl">👷</span></div>
+              <div className="flex-1">
+                <p className="font-bold text-gray-900 dark:text-white">Employees</p>
+                <p className="text-sm text-gray-500">{stats.employeeStats.active} active · {stats.employeeStats.presentToday} present today</p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-blue-600">₹{(stats.employeeStats.totalSalary || 0).toLocaleString('en-IN')}</p>
+                <p className="text-[10px] text-gray-400">monthly salary</p>
+              </div>
+              <FiArrowRight className="text-gray-300 group-hover:text-emerald-500 transition" />
+            </Link>
+          )}
+          {stats.customerStats?.active > 0 && (
+            <Link to="/milk-delivery" className="card !p-4 flex items-center gap-4 hover:shadow-md transition group">
+              <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-xl"><span className="text-2xl">🏘️</span></div>
+              <div className="flex-1">
+                <p className="font-bold text-gray-900 dark:text-white">Dudh Khata</p>
+                <p className="text-sm text-gray-500">{stats.customerStats.active} customers · {stats.customerStats.dailyDelivery?.toFixed(1) || 0}L/day</p>
+              </div>
+              <div className="text-right">
+                <p className={`text-lg font-bold ${stats.customerStats.totalDue > 0 ? 'text-red-600' : 'text-green-600'}`}>₹{(stats.customerStats.totalDue || 0).toLocaleString('en-IN')}</p>
+                <p className="text-[10px] text-gray-400">outstanding</p>
+              </div>
+              <FiArrowRight className="text-gray-300 group-hover:text-emerald-500 transition" />
+            </Link>
+          )}
+        </div>
+      )}
+
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Milk Trend — Area Chart */}

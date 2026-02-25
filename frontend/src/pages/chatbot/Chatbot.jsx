@@ -35,6 +35,8 @@ const FOLLOW_UPS = {
   health: ['Schedule next vaccinations', 'Common diseases this season', 'Medicine cost analysis', 'Insurance status check'],
   breeding: ['Heat calendar for this week', 'Expected deliveries', 'Breeding success rate', 'Best time for AI'],
   insurance: ['Expiring policies', 'Govt schemes available', 'Claim process help', 'Coverage recommendations'],
+  delivery: ['Who has highest dues?', 'This month collection rate', 'Customer wise breakdown', 'Payment reminders to send'],
+  employee: ['Who is absent today?', 'Salary due this month', 'Overtime analysis', 'Staff performance review'],
   default: ['Tell me more', 'Give recommendations', 'Compare with last month', 'Create action plan'],
 };
 
@@ -46,6 +48,8 @@ function detectContext(lastReply) {
   if (lower.includes('vaccine') || lower.includes('health') || lower.includes('treatment')) return 'health';
   if (lower.includes('breed') || lower.includes('heat') || lower.includes('deliver') || lower.includes('pregnan')) return 'breeding';
   if (lower.includes('insurance') || lower.includes('bima') || lower.includes('policy')) return 'insurance';
+  if (lower.includes('customer') || lower.includes('delivery') || lower.includes('khata') || lower.includes('due')) return 'delivery';
+  if (lower.includes('employee') || lower.includes('staff') || lower.includes('salary') || lower.includes('attendance')) return 'employee';
   return 'default';
 }
 
@@ -53,7 +57,7 @@ export default function Chatbot() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Namaste! 🐄 I'm your **DairyPro AI Assistant** — powered by Google Gemini.\n\nI have real-time access to all your farm data. Ask me anything in **Hindi** or **English**!\n\n**Quick commands:**\n- `/alerts` — Instant farm alerts\n- `/milk` — Today's milk summary\n\nOr tap a quick action below 👇", ts: Date.now() },
+    { role: 'assistant', content: "Namaste! 🐄 I'm your **DairyPro AI Assistant** — powered by Google Gemini.\n\nI have real-time access to all your farm data — cattle, milk, health, finance, employees, and Dudh Khata. Ask me anything in **Hindi** or **English**!\n\n**Quick commands:**\n- `/alerts` — Farm alerts\n- `/milk` — Today's milk\n- `/staff` — Employee status\n- `/dues` — Customer dues\n\nOr tap a quick action below 👇", ts: Date.now() },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

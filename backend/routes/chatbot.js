@@ -9,6 +9,11 @@ import Expense from '../models/Expense.js';
 import Revenue from '../models/Revenue.js';
 import FeedRecord from '../models/FeedRecord.js';
 import Farm from '../models/Farm.js';
+import Customer from '../models/Customer.js';
+import MilkDelivery from '../models/MilkDelivery.js';
+import CustomerPayment from '../models/CustomerPayment.js';
+import Employee from '../models/Employee.js';
+import Attendance from '../models/Attendance.js';
 
 const router = Router();
 router.use(auth, checkSubscription);
@@ -52,6 +57,8 @@ function detectTopics(message) {
     lactation: ['lactation', 'dim', 'days in milk', 'dry off', 'calving'],
     weight: ['weight', 'wajan', 'vajan', 'kg', 'kilo'],
     finance: ['finance', 'money', 'paise', 'hisab', 'balance', 'profit', 'loss'],
+    delivery: ['delivery', 'customer', 'grahak', 'khata', 'dudh khata', 'household', 'village', 'gaon', 'payment', 'due', 'collection'],
+    employee: ['employee', 'karmchari', 'staff', 'worker', 'salary', 'tankhwah', 'attendance', 'hajri', 'advance'],
   };
 
   for (const [topic, keywords] of Object.entries(map)) {
@@ -61,7 +68,7 @@ function detectTopics(message) {
   // General/overview queries fetch everything
   const overviewWords = ['summary', 'overview', 'status', 'haal', 'report', 'dashboard', 'sab', 'everything', 'farm', 'all'];
   if (overviewWords.some(w => lower.includes(w)) || topics.size === 0) {
-    return ['milk', 'cattle', 'health', 'breeding', 'expense', 'revenue', 'feed', 'insurance'];
+    return ['milk', 'cattle', 'health', 'breeding', 'expense', 'revenue', 'feed', 'insurance', 'delivery', 'employee'];
   }
 
   // Finance = expense + revenue
@@ -196,6 +203,41 @@ async function buildFarmContext(farmId, topics) {
     ]);
   }
 
+  // Milk Delivery (Dudh Khata)
+  if (topics.includes('delivery')) {
+    queries.activeCustomers = Customer.countDocuments({ farmId, status: 'active' });
+    queries.totalCustomerDue = Customer.aggregate([
+      { $match: { farmId, status: 'active' } },
+      { $group: { _id: null, totalBalance: { $sum: '$balance' }, totalDailyQty: { $sum: '$dailyQuantity' } } },
+    ]);
+    queries.monthDeliveries = MilkDelivery.aggregate([
+      { $match: { farmId, date: { $gte: monthStart } } },
+      { $group: { _id: null, totalQty: { $sum: '$quantity' }, totalAmt: { $sum: '$amount' }, count: { $sum: 1 } } },
+    ]);
+    queries.monthCustPayments = CustomerPayment.aggregate([
+      { $match: { farmId, date: { $gte: monthStart } } },
+      { $group: { _id: null, totalPaid: { $sum: '$amount' } } },
+    ]);
+    queries.topDueCustomers = Customer.find({ farmId, status: 'active', balance: { $gt: 0 } }).sort('-balance').limit(5).select('name balance dailyQuantity').lean();
+  }
+
+  // Employees
+  if (topics.includes('employee')) {
+    queries.activeEmployees = Employee.countDocuments({ farmId, status: 'active' });
+    queries.totalSalaryBill = Employee.aggregate([
+      { $match: { farmId, status: 'active' } },
+      { $group: { _id: null, totalSalary: { $sum: '$monthlySalary' }, totalAdvance: { $sum: '$totalAdvance' } } },
+    ]);
+    queries.todayAttendance = Attendance.aggregate([
+      { $match: { farmId, date: today } },
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]);
+    queries.employeeRoles = Employee.aggregate([
+      { $match: { farmId, status: 'active' } },
+      { $group: { _id: '$role', count: { $sum: 1 }, avgSalary: { $avg: '$monthlySalary' } } },
+    ]);
+  }
+
   // Insurance
   try {
     const Insurance = (await import('../models/Insurance.js')).default;
@@ -312,9 +354,40 @@ async function buildFarmContext(farmId, topics) {
   const totalExp = data.monthExpenses?.reduce((s, e) => s + e.total, 0) || 0;
   const totalRev = data.monthRevenue?.reduce((s, r) => s + r.total, 0) || 0;
   if (totalExp > totalRev && totalExp > 0) alerts.push(`📉 Expenses (₹${totalExp}) exceeding revenue (₹${totalRev}) this month`);
+  const custDue = data.totalCustomerDue?.[0]?.totalBalance || 0;
+  if (custDue > 5000) alerts.push(`💸 ₹${custDue.toLocaleString('en-IN')} outstanding from milk customers — consider collecting`);
+  const attAbsent = (data.todayAttendance || []).find(a => a._id === 'absent')?.count || 0;
+  if (attAbsent > 0) alerts.push(`👷 ${attAbsent} employee(s) absent today`);
 
   if (alerts.length) {
     lines.push(`\n⚡ ALERTS: ${alerts.join(' | ')}`);
+  }
+
+  // Milk Delivery context
+  if (topics.includes('delivery') && (data.activeCustomers > 0 || data.monthDeliveries?.[0])) {
+    const custDue = data.totalCustomerDue?.[0] || { totalBalance: 0, totalDailyQty: 0 };
+    const mDel = data.monthDeliveries?.[0] || { totalQty: 0, totalAmt: 0, count: 0 };
+    const mPay = data.monthCustPayments?.[0] || { totalPaid: 0 };
+    lines.push(`\n🏘️ DUDH KHATA (Milk Delivery):`);
+    lines.push(`Active Customers: ${data.activeCustomers || 0} | Daily Delivery: ${custDue.totalDailyQty.toFixed(1)}L`);
+    lines.push(`This Month: ${mDel.totalQty.toFixed(1)}L delivered | ₹${mDel.totalAmt.toFixed(0)} billed | ₹${mPay.totalPaid.toFixed(0)} collected`);
+    lines.push(`Outstanding Due: ₹${custDue.totalBalance.toFixed(0)}`);
+    if (data.topDueCustomers?.length) {
+      lines.push(`Top Dues: ${data.topDueCustomers.map(c => `${c.name}: ₹${c.balance.toFixed(0)}`).join(', ')}`);
+    }
+  }
+
+  // Employee context
+  if (topics.includes('employee') && (data.activeEmployees > 0)) {
+    const sal = data.totalSalaryBill?.[0] || { totalSalary: 0, totalAdvance: 0 };
+    const attMap = {};
+    (data.todayAttendance || []).forEach(a => { attMap[a._id] = a.count; });
+    lines.push(`\n👷 EMPLOYEES:`);
+    lines.push(`Active Staff: ${data.activeEmployees || 0} | Monthly Salary Bill: ₹${sal.totalSalary.toLocaleString('en-IN')} | Outstanding Advance: ₹${sal.totalAdvance.toLocaleString('en-IN')}`);
+    lines.push(`Today: ${attMap.present || 0} present, ${attMap.absent || 0} absent, ${attMap['half-day'] || 0} half-day, ${attMap.leave || 0} on leave`);
+    if (data.employeeRoles?.length) {
+      lines.push(`Roles: ${data.employeeRoles.map(r => `${r._id}: ${r.count} (avg ₹${Math.round(r.avgSalary)})`).join(', ')}`);
+    }
   }
 
   // Insurance context
@@ -353,6 +426,8 @@ RULES:
 - Always give exact numbers, percentages, and comparisons — never vague answers.
 - When recommending actions, be step-by-step and practical for rural Indian dairy farmers.
 
+MODULES AVAILABLE: Cattle, Milk Records, Health, Breeding, Feed, Finance (Expense/Revenue), Insurance, Dudh Khata (Milk Delivery to customers), Employees (staff, attendance, salary).
+
 SMART FEATURES you should proactively do:
 - 📊 Spot trends (milk going up/down, expenses increasing)
 - ⚠️ Flag problems (low yield cattle, overdue vaccinations, losses)
@@ -366,6 +441,9 @@ SMART FEATURES you should proactively do:
 - 🛡️ Insurance awareness — remind about expiring policies, suggest govt schemes like Pashu Dhan Bima Yojana
 - 💰 Milk rate calculation — help with fat/SNF based payment (Indian cooperative formula: quantity × fat% × rate per fat)
 - 📋 Data backup — remind farmers to periodically backup data from Settings
+- 🏘️ Dudh Khata analysis — track customer deliveries, outstanding dues, collection rate
+- 👷 Employee management — attendance patterns, salary due, overtime, staff efficiency
+- 💸 Payment collection reminders — flag customers with high outstanding dues
 
 INDIAN DAIRY EXPERTISE:
 - Know common Indian breeds: Gir, Sahiwal, Murrah, HF, Jersey, Crossbred and their typical yields
@@ -399,9 +477,9 @@ ${farmContext}`;
         system_instruction: { parts: [{ text: systemPrompt }] },
         contents,
         generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 1200,
-          topP: 0.8,
+          temperature: 0.3,
+          maxOutputTokens: 2000,
+          topP: 0.85,
           topK: 40,
         },
         safetySettings: [
@@ -438,6 +516,15 @@ function handleQuickCommand(message, farmContext) {
   if (lower === '/milk' || lower === 'aaj ka dudh') {
     const milkMatch = farmContext.match(/Today: (.+?)(?:\n|$)/);
     return milkMatch ? `🥛 **Today's Milk:** ${milkMatch[1]}` : '🥛 No milk data recorded today. Add records from Milk section.';
+  }
+
+  if (lower === '/staff' || lower === '/employees') {
+    const staffMatch = farmContext.match(/👷 EMPLOYEES:\n(.+?)(?:\n[^A-Za-z]|$)/s);
+    return staffMatch ? `👷 **Employees:**\n${staffMatch[1]}` : '👷 No employee data. Add employees from the Employees section.';
+  }
+  if (lower === '/dues' || lower === '/khata') {
+    const khataMatch = farmContext.match(/🏘️ DUDH KHATA[^:]*:\n([\s\S]+?)(?:\n[^A-Za-z]|\n⚡|\n===|$)/);
+    return khataMatch ? `🏘️ **Dudh Khata:**\n${khataMatch[1].trim()}` : '🏘️ No milk delivery data. Add customers from Dudh Khata section.';
   }
 
   return null; // Not a quick command
