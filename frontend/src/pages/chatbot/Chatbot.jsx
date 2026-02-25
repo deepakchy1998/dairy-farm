@@ -57,7 +57,7 @@ export default function Chatbot() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Namaste! 🐄 I'm your **DairyPro AI Assistant** — powered by Google Gemini.\n\nI have real-time access to all your farm data — cattle, milk, health, finance, employees, and Dudh Khata. Ask me anything in **Hindi** or **English**!\n\n**Quick commands:**\n- `/alerts` — Farm alerts\n- `/milk` — Today's milk\n- `/staff` — Employee status\n- `/dues` — Customer dues\n\nOr tap a quick action below 👇", ts: Date.now() },
+    { role: 'assistant', content: "Namaste! 🐄 I'm your **DairyPro AI Assistant** — powered by Google Gemini 2.5.\n\nI have **real-time access** to all 12 modules of your farm:\n🥛 Milk Records • 🐄 Cattle • 💉 Health • 🐣 Breeding • 💰 Finance • 🌾 Feed • 🏘️ Dudh Khata • 👷 Employees • 🛡️ Insurance • 📊 Reports\n\nAsk me anything in **Hindi** or **English**! Examples:\n- \"aaj ka dudh kitna hai?\"\n- \"show breeding status\"\n- \"kiska payment baki hai?\"\n- \"which cattle need vaccination?\"\n\n**Quick commands:** `/alerts` `/milk` `/staff` `/dues`\n\nOr tap a quick action below 👇", ts: Date.now() },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

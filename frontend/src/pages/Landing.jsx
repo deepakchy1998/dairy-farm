@@ -22,14 +22,18 @@ function FadeIn({ children, delay = 0, direction = 'up', className = '' }) {
 }
 
 const features = [
-  { icon: '🐄', title: 'Cattle Management', desc: 'Track every animal — breed, age, health, genetics, purchase history. Tag-based search with full lineage tracking.' },
-  { icon: '🥛', title: 'Milk Recording', desc: 'Morning & evening yield, fat %, SNF % — per animal, per session. Daily, weekly, monthly reports with PDF export.' },
-  { icon: '🤖', title: 'Smart Farm Assistant', desc: 'Ask anything about your farm in Hindi or English — get instant insights from your real data.' },
-  { icon: '💉', title: 'Health & Vaccination', desc: 'Schedule vaccinations, track treatments, set reminders. Never miss a due date with smart alerts.' },
-  { icon: '🐣', title: 'Breeding Tracker', desc: 'Natural/artificial insemination records, expected delivery dates, pregnancy tracking. Full reproductive management.' },
-  { icon: '💰', title: 'Finance & Revenue', desc: 'Track milk sales (retail/dairy), expenses by category, profit/loss analysis. Complete financial overview.' },
-  { icon: '🌾', title: 'Feed Management', desc: 'Record feed types, quantities, costs. Optimize feed expenses with detailed analytics and trends.' },
-  { icon: '📊', title: 'Reports & Analytics', desc: 'Beautiful dashboards, filterable reports (daily to yearly), PDF downloads. Data-driven farm decisions.' },
+  { icon: '🐄', title: 'Cattle Management', desc: 'Track every animal — breed, age, health, genetics, weight, purchase history. Tag-based search with full profiles and lineage.' },
+  { icon: '🥛', title: 'Milk Recording', desc: 'Morning, afternoon & evening yield, fat %, SNF % — per animal, per session. Daily, weekly, monthly reports with CSV/PDF export.' },
+  { icon: '🤖', title: 'AI Farm Assistant', desc: 'Powered by Google Gemini — ask anything in Hindi or English. Get instant insights, alerts, predictions from your real-time farm data.' },
+  { icon: '💉', title: 'Health & Vaccination', desc: 'Schedule vaccinations, track treatments, set reminders. Smart alerts for overdue and upcoming health events.' },
+  { icon: '🐣', title: 'Breeding Tracker', desc: 'AI/natural insemination, pregnancy tracking, expected deliveries, heat prediction. Complete reproductive management.' },
+  { icon: '💰', title: 'Finance & Accounting', desc: 'Track milk sales, expenses by category, profit/loss analysis. Revenue breakdown with monthly comparisons.' },
+  { icon: '🏘️', title: 'Dudh Khata (दूध खाता)', desc: 'Manage milk delivery to households — customer ledgers, daily delivery tracking, payment collection, outstanding dues.' },
+  { icon: '👷', title: 'Employee Management', desc: 'Staff records, role-based management, salary tracking, attendance (present/absent/half-day/leave), advance payments.' },
+  { icon: '🌾', title: 'Feed Management', desc: 'Record feed types, quantities, costs per animal/group. Optimize feed expenses with detailed analytics and trends.' },
+  { icon: '🛡️', title: 'Insurance Tracking', desc: 'Track cattle insurance policies, premiums, coverage periods. Get alerts before policies expire. Govt scheme info included.' },
+  { icon: '📊', title: '10+ Report Dashboards', desc: 'Milk trends, health analytics, employee performance, feed costs, customer analytics, revenue breakdown — all with interactive charts.' },
+  { icon: '💳', title: 'Secure Payments', desc: 'Pay via UPI, QR code, cards, Paytm, PhonePe, net banking, EMI. Powered by Razorpay with instant activation.' },
 ];
 
 export default function Landing() {
@@ -166,7 +170,7 @@ export default function Landing() {
               <p className="mt-4 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">From cattle management to smart insights, DairyPro gives you complete control of your farm.</p>
             </div>
           </FadeIn>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {features.map((f, i) => (
               <FadeIn key={f.title} delay={i * 0.08}>
                 <motion.div whileHover={{ y: -8, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }}
@@ -175,6 +179,42 @@ export default function Landing() {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mt-4 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition">{f.title}</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">{f.desc}</p>
                 </motion.div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── App Modules Detail ─── */}
+      <section className="py-20 px-4 bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto">
+          <FadeIn>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">12 Powerful Modules, One App</h2>
+              <p className="mt-4 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">Every tool you need to run a modern dairy farm — from daily milk recording to AI-powered insights.</p>
+            </div>
+          </FadeIn>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {[
+              { icon: '🏘️', title: 'Dudh Khata (दूध खाता)', points: ['Customer-wise milk delivery ledger', 'Daily quantity & rate tracking', 'Payment collection with balance', 'Outstanding dues dashboard', 'Customer-wise monthly statements'] },
+              { icon: '👷', title: 'Employee Management', points: ['Staff profiles with roles & salary', 'Daily attendance marking', 'Present / Absent / Half-day / Leave', 'Advance payment tracking', 'Performance analytics in Reports'] },
+              { icon: '🤖', title: 'AI Farm Assistant', points: ['Google Gemini 2.5 Flash powered', 'Hindi + English + Hinglish support', 'Real-time farm data analysis', '20+ quick action buttons', 'Predictions, alerts & recommendations'] },
+              { icon: '📊', title: '10+ Report Dashboards', points: ['Milk production trends & quality', 'Health & vaccination analytics', 'Feed cost optimization', 'Employee performance charts', 'Customer analytics & revenue breakdown'] },
+            ].map((mod, i) => (
+              <FadeIn key={mod.title} delay={i * 0.1}>
+                <div className="flex gap-4 p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow">
+                  <span className="text-4xl flex-shrink-0">{mod.icon}</span>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{mod.title}</h3>
+                    <ul className="mt-3 space-y-1.5">
+                      {mod.points.map((p, j) => (
+                        <li key={j} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+                          <FiCheckCircle size={14} className="text-emerald-500 mt-0.5 flex-shrink-0" /> {p}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               </FadeIn>
             ))}
           </div>
@@ -193,10 +233,10 @@ export default function Landing() {
           </FadeIn>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { icon: <FiSmartphone size={28} />, title: 'Mobile Friendly', desc: 'Works perfectly on phone, tablet, or desktop. Manage your farm from anywhere.' },
-              { icon: <FiShield size={28} />, title: 'Secure & Private', desc: 'Your farm data is encrypted and private. We never share your information.' },
-              { icon: <FiTrendingUp size={28} />, title: 'Data Insights', desc: 'Beautiful charts, trends, and analysis to help you make better decisions.' },
-              { icon: '🇮🇳', title: 'Hindi Support', desc: 'Our farm assistant understands Hindi. Ask "aaj ka dudh kitna hai?" and get instant answers.' },
+              { icon: <FiSmartphone size={28} />, title: 'Mobile First', desc: 'PWA app — install on phone like an app. Works on any device, even with slow internet.' },
+              { icon: <FiShield size={28} />, title: 'Bank-Level Security', desc: 'Encrypted data, Razorpay payments (PCI DSS), farm-isolated storage. Your data stays yours.' },
+              { icon: <FiTrendingUp size={28} />, title: '20+ Analytics Charts', desc: 'Milk trends, health patterns, feed costs, revenue breakdown, employee analytics — all visual.' },
+              { icon: '🇮🇳', title: 'Hindi + English AI', desc: 'Ask "aaj ka dudh kitna hai?" or "show breeding status" — our Gemini AI understands both languages.' },
             ].map((item, i) => (
               <FadeIn key={item.title} delay={i * 0.1}>
                 <div className="text-center">
@@ -232,7 +272,7 @@ export default function Landing() {
                   <h3 className={`text-lg font-semibold ${plan.popular ? '' : 'text-gray-900 dark:text-white'}`}>{plan.name}</h3>
                   <p className="mt-4"><span className="text-4xl font-bold">₹{plan.price.toLocaleString('en-IN')}</span><span className={`text-sm ${plan.popular ? 'text-emerald-100' : 'text-gray-500 dark:text-gray-400'}`}>{plan.period}</span></p>
                   <ul className={`mt-6 space-y-3 text-sm text-left ${plan.popular ? 'text-emerald-50' : 'text-gray-600 dark:text-gray-400'}`}>
-                    {['All features included', 'Unlimited cattle', 'Farm assistant access', 'PDF reports', 'Priority support'].map(f => (
+                    {['All 12 modules included', 'Unlimited cattle & records', 'AI Farm Assistant (Gemini)', 'Dudh Khata + Employee Mgmt', '10+ Report dashboards', 'CSV & PDF exports'].map(f => (
                       <li key={f} className="flex items-center gap-2"><FiCheckCircle size={16} className={plan.popular ? 'text-emerald-200' : 'text-emerald-500'} /> {f}</li>
                     ))}
                   </ul>
@@ -367,14 +407,18 @@ export default function Landing() {
           </FadeIn>
           <div className="space-y-4">
             {[
-              { q: 'Is DairyPro free to try?', a: 'Yes! You get a 5-day free trial with full access to all features. No credit card required.' },
-              { q: 'Can I use it on my phone?', a: 'Absolutely! DairyPro is a Progressive Web App (PWA). You can install it on your phone like a regular app from the browser. Works offline too!' },
-              { q: 'Does it support Hindi?', a: 'Yes! Our AI Farm Assistant (chatbot) understands both Hindi and English. You can ask questions in Hinglish too — "Aaj ka dudh kitna hai?" works perfectly!' },
-              { q: 'How does the AI chatbot work?', a: 'Our chatbot is powered by Google Gemini AI and has real-time access to your farm data. It can answer questions, analyze trends, give recommendations, and flag problems automatically.' },
-              { q: 'Is my data safe?', a: 'Your data is stored securely on MongoDB Atlas with encryption. Each farm\'s data is isolated — no one else can see your records.' },
-              { q: 'How do I pay for subscription?', a: 'We accept all payment methods via Razorpay — UPI, QR Code, debit/credit cards, wallets (PhonePe, GPay, Paytm), and net banking. Your subscription activates instantly after payment.' },
-              { q: 'Can I export my records?', a: 'Yes! You can export milk records, reports, and financial data as PDF or CSV from the dashboard and reports pages.' },
-              { q: 'How many cattle can I track?', a: 'There\'s no limit! Track as many cattle as you have — milking, dry, heifers, calves, bulls. All included in every plan.' },
+              { q: 'Is DairyPro free to try?', a: `Yes! You get a ${trialDays}-day free trial with full access to all 12 modules. No credit card required.` },
+              { q: 'Can I use it on my phone?', a: 'Absolutely! DairyPro is a Progressive Web App (PWA) — install it on your phone like a regular app. Works on Android, iOS, tablet, and desktop.' },
+              { q: 'Does it support Hindi?', a: 'Yes! Our AI Farm Assistant understands Hindi, English, and Hinglish. Ask "aaj ka dudh kitna hai?" or "show breeding status" — both work perfectly!' },
+              { q: 'How does the AI chatbot work?', a: 'Powered by Google Gemini 2.5 Flash with real-time access to your farm data. It analyzes milk trends, flags health alerts, predicts deliveries, tracks customer dues, monitors employee attendance — and gives actionable recommendations.' },
+              { q: 'What is Dudh Khata?', a: 'Dudh Khata (दूध खाता) is our milk delivery management module. Track daily deliveries to households, maintain customer ledgers, record payments, and see outstanding dues at a glance.' },
+              { q: 'Can I manage employees?', a: 'Yes! Add staff with roles and salaries, track daily attendance (present/absent/half-day/leave), manage advance payments, and analyze workforce performance through reports.' },
+              { q: 'Is my data safe?', a: 'Your data is stored on encrypted MongoDB Atlas. Payments are processed via Razorpay (PCI DSS compliant, RBI regulated). Each farm\'s data is completely isolated.' },
+              { q: 'How do I pay for subscription?', a: 'We accept UPI, QR Code scan, debit/credit cards, Paytm, PhonePe, net banking, EMI, and Pay Later — all via Razorpay. Subscription activates instantly after payment.' },
+              { q: 'What reports are available?', a: '10+ report dashboards: Milk production trends, health analytics, breeding status, feed cost analysis, employee performance, customer analytics, revenue breakdown, and more. All with interactive charts and CSV/PDF export.' },
+              { q: 'Can I track cattle insurance?', a: 'Yes! Record insurance policies with coverage dates, premiums, and provider details. Get alerts before policies expire. The AI chatbot also knows about govt schemes like Pashu Dhan Bima Yojana.' },
+              { q: 'How many cattle can I track?', a: 'No limits! Track unlimited cattle — milking, dry, heifers, calves, bulls. Unlimited records across all modules. Every plan includes everything.' },
+              { q: 'Can I export my records?', a: 'Yes! Export from any module as CSV or PDF — milk records, health history, employee attendance, financial reports, customer ledgers, and more.' },
             ].map((faq, i) => (
               <FadeIn key={i} delay={i * 0.05}>
                 <details className="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -411,12 +455,14 @@ export default function Landing() {
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-4">Services</h4>
+              <h4 className="text-white font-semibold mb-4">Modules</h4>
               <ul className="space-y-2 text-sm">
-                <li><a href="#features" className="hover:text-white transition">Cattle Management</a></li>
-                <li><a href="#features" className="hover:text-white transition">Milk Recording</a></li>
-                <li><a href="#features" className="hover:text-white transition">Farm Assistant</a></li>
-                <li><a href="#features" className="hover:text-white transition">Finance Tracking</a></li>
+                <li><a href="#features" className="hover:text-white transition">Cattle & Milk</a></li>
+                <li><a href="#features" className="hover:text-white transition">Dudh Khata (दूध खाता)</a></li>
+                <li><a href="#features" className="hover:text-white transition">Employees & Attendance</a></li>
+                <li><a href="#features" className="hover:text-white transition">AI Farm Assistant</a></li>
+                <li><a href="#features" className="hover:text-white transition">Health & Insurance</a></li>
+                <li><a href="#features" className="hover:text-white transition">Reports & Analytics</a></li>
               </ul>
             </div>
             <div>
