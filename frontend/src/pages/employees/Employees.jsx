@@ -297,7 +297,7 @@ export default function Employees() {
           ) : (
             <div className="overflow-x-hidden">
               <table className="w-full text-sm">
-                <thead><tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
+                <thead className="sticky top-0 z-10"><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
                   <th className="px-4 py-2 text-left">Date</th>
                   <th className="px-3 py-2 text-center">Status</th>
                   <th className="px-3 py-2 text-center">Check In</th>
@@ -481,9 +481,9 @@ export default function Employees() {
             ) : (
               <>
                 {/* Desktop */}
-                <div className="hidden md:block overflow-x-hidden">
+                <div className="hidden md:block overflow-x-hidden max-h-[60vh] overflow-y-auto">
                   <table className="w-full text-sm">
-                    <thead><tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
+                    <thead className="sticky top-0 z-10"><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
                       <th className="px-4 py-2 text-left">Employee</th>
                       <th className="px-3 py-2 text-left">Role</th>
                       <th className="px-3 py-2 text-center">Status</th>
@@ -585,9 +585,9 @@ export default function Employees() {
               <div className="py-8 text-center text-gray-400">No salary data</div>
             ) : (
               <>
-                <div className="hidden md:block overflow-x-hidden">
+                <div className="hidden md:block overflow-x-hidden max-h-[60vh] overflow-y-auto">
                   <table className="w-full text-sm">
-                    <thead><tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
+                    <thead className="sticky top-0 z-10"><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
                       <th className="px-4 py-2 text-left">Employee</th>
                       <th className="px-3 py-2 text-center">Days</th>
                       <th className="px-3 py-2 text-center">OT</th>

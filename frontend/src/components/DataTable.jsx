@@ -11,10 +11,10 @@ export default function DataTable({ columns, data, onRowClick, emptyMessage = 'N
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-auto max-h-[60vh]">
       <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+        <thead className="sticky top-0 z-10">
+          <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
             {columns.map((col) => (
               <th key={col.key} className="text-left py-3.5 px-4 font-semibold text-gray-500 dark:text-gray-400 uppercase text-xs tracking-wider">
                 {col.label}

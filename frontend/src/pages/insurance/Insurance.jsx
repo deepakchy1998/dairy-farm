@@ -131,7 +131,7 @@ export default function Insurance() {
       </div>
 
       {/* Table */}
-      <div className="card p-0 overflow-x-auto">
+      <div className="card p-0 overflow-auto max-h-[60vh]">
         {loading ? (
           <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div></div>
         ) : records.length === 0 ? (
@@ -141,7 +141,7 @@ export default function Insurance() {
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead>
+            <thead className="sticky top-0 z-10">
               <tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
                 <th className="px-4 py-3 text-left">Cattle</th>
                 <th className="px-3 py-3 text-left">Provider</th>

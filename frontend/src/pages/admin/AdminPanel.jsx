@@ -624,9 +624,9 @@ export default function AdminPanel() {
           </div>
           <div className="card p-0">
             {users.length === 0 ? <div className="py-8 text-center text-gray-400">No users found</div> : (
-              <div className="overflow-x-auto">
+              <div className="overflow-auto max-h-[60vh]">
                 <table className="w-full text-sm">
-                  <thead><tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
+                  <thead className="sticky top-0 z-10"><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
                     <th className="px-4 py-2 text-left">User</th>
                     <th className="px-3 py-2 text-left">Farm</th>
                     <th className="px-3 py-2 text-center">Role</th>
@@ -676,9 +676,9 @@ export default function AdminPanel() {
           </div>
           <div className="card p-0">
             {payments.length === 0 ? <div className="py-8 text-center text-gray-400">No payments</div> : (
-              <div className="overflow-x-auto">
+              <div className="overflow-auto max-h-[60vh]">
                 <table className="w-full text-sm">
-                  <thead><tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
+                  <thead className="sticky top-0 z-10"><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
                     <th className="px-4 py-2 text-left">User</th>
                     <th className="px-3 py-2">Plan</th>
                     <th className="px-3 py-2">Amount</th>
