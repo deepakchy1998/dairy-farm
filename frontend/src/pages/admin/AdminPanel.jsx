@@ -549,9 +549,36 @@ export default function AdminPanel() {
           cyan: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-800',
         };
         const headerColors = {
-          blue: 'from-blue-500 to-blue-600', emerald: 'from-emerald-500 to-emerald-600', purple: 'from-purple-500 to-purple-600',
-          red: 'from-red-500 to-red-600', amber: 'from-amber-500 to-amber-600', green: 'from-green-500 to-green-600',
-          yellow: 'from-yellow-500 to-yellow-600', indigo: 'from-indigo-500 to-indigo-600', cyan: 'from-cyan-500 to-cyan-600',
+          blue: 'from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-900/20',
+          emerald: 'from-emerald-100 to-emerald-50 dark:from-emerald-900/40 dark:to-emerald-900/20',
+          purple: 'from-purple-100 to-purple-50 dark:from-purple-900/40 dark:to-purple-900/20',
+          red: 'from-red-100 to-red-50 dark:from-red-900/40 dark:to-red-900/20',
+          amber: 'from-amber-100 to-amber-50 dark:from-amber-900/40 dark:to-amber-900/20',
+          green: 'from-green-100 to-green-50 dark:from-green-900/40 dark:to-green-900/20',
+          yellow: 'from-yellow-100 to-yellow-50 dark:from-yellow-900/40 dark:to-yellow-900/20',
+          indigo: 'from-indigo-100 to-indigo-50 dark:from-indigo-900/40 dark:to-indigo-900/20',
+          cyan: 'from-cyan-100 to-cyan-50 dark:from-cyan-900/40 dark:to-cyan-900/20',
+        };
+        const headerTextColors = {
+          blue: 'text-blue-800 dark:text-blue-300', emerald: 'text-emerald-800 dark:text-emerald-300', purple: 'text-purple-800 dark:text-purple-300',
+          red: 'text-red-800 dark:text-red-300', amber: 'text-amber-800 dark:text-amber-300', green: 'text-green-800 dark:text-green-300',
+          yellow: 'text-yellow-800 dark:text-yellow-300', indigo: 'text-indigo-800 dark:text-indigo-300', cyan: 'text-cyan-800 dark:text-cyan-300',
+        };
+        const badgeColors = {
+          blue: 'bg-blue-200/60 text-blue-700 dark:bg-blue-800/40 dark:text-blue-300',
+          emerald: 'bg-emerald-200/60 text-emerald-700 dark:bg-emerald-800/40 dark:text-emerald-300',
+          purple: 'bg-purple-200/60 text-purple-700 dark:bg-purple-800/40 dark:text-purple-300',
+          red: 'bg-red-200/60 text-red-700 dark:bg-red-800/40 dark:text-red-300',
+          amber: 'bg-amber-200/60 text-amber-700 dark:bg-amber-800/40 dark:text-amber-300',
+          green: 'bg-green-200/60 text-green-700 dark:bg-green-800/40 dark:text-green-300',
+          yellow: 'bg-yellow-200/60 text-yellow-700 dark:bg-yellow-800/40 dark:text-yellow-300',
+          indigo: 'bg-indigo-200/60 text-indigo-700 dark:bg-indigo-800/40 dark:text-indigo-300',
+          cyan: 'bg-cyan-200/60 text-cyan-700 dark:bg-cyan-800/40 dark:text-cyan-300',
+        };
+        const btnColors = {
+          blue: 'bg-blue-500 hover:bg-blue-600', emerald: 'bg-emerald-500 hover:bg-emerald-600', purple: 'bg-purple-500 hover:bg-purple-600',
+          red: 'bg-red-500 hover:bg-red-600', amber: 'bg-amber-500 hover:bg-amber-600', green: 'bg-green-500 hover:bg-green-600',
+          yellow: 'bg-yellow-500 hover:bg-yellow-600', indigo: 'bg-indigo-500 hover:bg-indigo-600', cyan: 'bg-cyan-500 hover:bg-cyan-600',
         };
         const getItems = (key) => {
           const val = appConfigForm[key];
@@ -573,15 +600,15 @@ export default function AdminPanel() {
         return (
           <div className="space-y-5">
             {/* Header */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 dark:from-gray-800 dark:to-gray-900 p-6">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl"></div>
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 border border-emerald-100 dark:border-gray-700 p-6">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-200/30 dark:bg-emerald-500/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl"></div>
               <div className="relative flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-white flex items-center gap-2">🎛️ App Configuration</h2>
-                  <p className="text-gray-400 text-sm mt-1">Customize every dropdown, category & option in your app — no code needed</p>
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">🎛️ App Configuration</h2>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Customize every dropdown, category & option in your app — no code needed</p>
                   <div className="flex gap-3 mt-3">
-                    <span className="text-xs bg-white/10 text-gray-300 px-3 py-1 rounded-full">{configSections.length} sections</span>
-                    <span className="text-xs bg-white/10 text-gray-300 px-3 py-1 rounded-full">{configSections.reduce((sum, s) => sum + getItems(s.key).length, 0)} total items</span>
+                    <span className="text-xs bg-white/70 dark:bg-white/10 text-gray-600 dark:text-gray-300 px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700">{configSections.length} sections</span>
+                    <span className="text-xs bg-white/70 dark:bg-white/10 text-gray-600 dark:text-gray-300 px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700">{configSections.reduce((sum, s) => sum + getItems(s.key).length, 0)} total items</span>
                   </div>
                 </div>
                 <button onClick={saveConfig} disabled={savingConfig}
@@ -598,15 +625,15 @@ export default function AdminPanel() {
                 return (
                   <div key={key} className="card !p-0 overflow-hidden group hover:shadow-md transition-shadow duration-300">
                     {/* Card Header */}
-                    <div className={`bg-gradient-to-r ${headerColors[color]} px-4 py-3 flex items-center justify-between`}>
+                    <div className={`bg-gradient-to-r ${headerColors[color]} px-4 py-3 flex items-center justify-between border-b border-gray-100 dark:border-gray-800`}>
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{icon}</span>
                         <div>
-                          <h3 className="font-semibold text-white text-sm">{label}</h3>
-                          <p className="text-white/70 text-[10px]">{desc}</p>
+                          <h3 className={`font-semibold text-sm ${headerTextColors[color]}`}>{label}</h3>
+                          <p className="text-gray-500 dark:text-gray-400 text-[10px]">{desc}</p>
                         </div>
                       </div>
-                      <span className="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full">{items.length}</span>
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${badgeColors[color]}`}>{items.length}</span>
                     </div>
 
                     {/* Tags */}
@@ -639,7 +666,7 @@ export default function AdminPanel() {
                         <button onClick={e => {
                           const input = e.target.closest('div').querySelector('input');
                           if (input.value.trim()) { addItem(key, input.value); input.value = ''; }
-                        }} className={`px-3 py-1.5 rounded-lg text-xs font-medium bg-gradient-to-r ${headerColors[color]} text-white hover:opacity-90 transition flex items-center gap-1`}>
+                        }} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${btnColors[color]} text-white transition flex items-center gap-1`}>
                           <FiPlus size={12} /> Add
                         </button>
                       </div>
@@ -652,7 +679,7 @@ export default function AdminPanel() {
             {/* Bottom Save */}
             <div className="sticky bottom-4 z-10">
               <button onClick={saveConfig} disabled={savingConfig}
-                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white py-3.5 rounded-2xl font-bold text-lg transition-all shadow-xl shadow-emerald-500/20 disabled:opacity-50 flex items-center justify-center gap-2">
+                className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3.5 rounded-2xl font-bold text-lg transition-all shadow-lg shadow-emerald-200 dark:shadow-emerald-900/30 disabled:opacity-50 flex items-center justify-center gap-2">
                 {savingConfig ? <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Saving...</> : '💾 Save All Configuration'}
               </button>
             </div>
