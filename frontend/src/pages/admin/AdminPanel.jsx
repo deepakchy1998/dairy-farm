@@ -57,28 +57,49 @@ export default function AdminPanel() {
   const [systemHealth, setSystemHealth] = useState(null);
 
   // ─── LOAD DATA ───
-  const loadTab = () => {
+  const loadTab = async () => {
     setLoading(true);
-    const promises = [api.get('/admin/revenue-dashboard')];
-    if (tab === 'users') promises.push(api.get('/admin/users', { params: { page: usersPage, limit: 20, search: searchQuery || undefined, status: userStatusFilter || undefined } }));
-    if (tab === 'payments') promises.push(api.get('/admin/payments', { params: { page: paymentsPage, limit: 20, status: paymentStatusFilter || undefined } }));
-    if (tab === 'settings' || tab === 'website') promises.push(api.get('/admin/settings'));
-    if (tab === 'app-config') promises.push(api.get('/app-config'));
-    if (tab === 'plans') promises.push(api.get('/admin/plans'));
-    if (tab === 'logs') promises.push(api.get('/admin/audit-logs'));
-    if (tab === 'system') promises.push(api.get('/admin/system-health'));
+    try {
+      // Load dashboard only if not cached or on overview tab
+      if (!dashboard || tab === 'overview') {
+        api.get('/admin/revenue-dashboard').then(r => setDashboard(r.data.data)).catch(() => {});
+      }
 
-    Promise.all(promises).then(results => {
-      setDashboard(results[0].data.data);
-      if (tab === 'users') { setUsers(results[1].data.data); setUsersPagination(results[1].data.pagination || {}); }
-      if (tab === 'payments') { setPayments(results[1].data.data); setPaymentsPagination(results[1].data.pagination || {}); }
-      if (tab === 'settings') { setSettings(results[1].data.data); setSettingsForm(results[1].data.data); }
-      if (tab === 'plans') { setAdminPlans(results[1].data.data); }
-      if (tab === 'app-config') { setAppConfig(results[1].data.data); setAppConfigForm(results[1].data.data); }
-      if (tab === 'website') { setSettings(results[1].data.data); setWebsiteForm(results[1].data.data); }
-      if (tab === 'logs') { setAuditLogs(results[1].data.data); }
-      if (tab === 'system') { setSystemHealth(results[1].data.data); }
-    }).catch(() => toast.error('Failed to load')).finally(() => setLoading(false));
+      // Load tab-specific data
+      if (tab === 'users') {
+        const r = await api.get('/admin/users', { params: { page: usersPage, limit: 20, search: searchQuery || undefined, status: userStatusFilter || undefined } });
+        setUsers(r.data.data); setUsersPagination(r.data.pagination || {});
+      }
+      if (tab === 'payments') {
+        const r = await api.get('/admin/payments', { params: { page: paymentsPage, limit: 20, status: paymentStatusFilter || undefined } });
+        setPayments(r.data.data); setPaymentsPagination(r.data.pagination || {});
+      }
+      if (tab === 'settings' || tab === 'website') {
+        const r = await api.get('/admin/settings');
+        if (tab === 'settings') { setSettings(r.data.data); setSettingsForm(r.data.data); }
+        if (tab === 'website') { setSettings(r.data.data); setWebsiteForm(r.data.data); }
+      }
+      if (tab === 'app-config') {
+        const r = await api.get('/app-config');
+        setAppConfig(r.data.data); setAppConfigForm(r.data.data);
+      }
+      if (tab === 'plans') {
+        const r = await api.get('/admin/plans');
+        setAdminPlans(r.data.data);
+      }
+      if (tab === 'logs') {
+        const r = await api.get('/admin/audit-logs');
+        setAuditLogs(r.data.data);
+      }
+      if (tab === 'system') {
+        const r = await api.get('/admin/system-health');
+        setSystemHealth(r.data.data);
+      }
+    } catch (err) {
+      toast.error('Failed to load. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { loadTab(); }, [tab, usersPage, paymentsPage, paymentStatusFilter]);
