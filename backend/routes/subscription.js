@@ -94,7 +94,15 @@ router.post('/custom-plan', async (req, res, next) => {
 
     // Calculate monthly price
     let monthlyPrice = 0;
-    const modulePrices = config.modulePrices || {};
+    const rawPrices = config.modulePrices || {};
+
+    // AI Farm Assistant price = median of all other module prices
+    const otherPrices = Object.entries(rawPrices).filter(([k]) => k !== 'chatbot').map(([, v]) => v).sort((a, b) => a - b);
+    const mid = Math.floor(otherPrices.length / 2);
+    const chatbotPrice = otherPrices.length % 2 === 0
+      ? Math.round((otherPrices[mid - 1] + otherPrices[mid]) / 2)
+      : otherPrices[mid];
+    const modulePrices = { ...rawPrices, chatbot: chatbotPrice };
     
     for (const module of modules) {
       if (modulePrices[module]) {

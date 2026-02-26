@@ -55,11 +55,23 @@ function CustomPlanBuilder({ content }) {
     { id: 'chatbot', icon: '🤖', name: 'AI Farm Assistant' },
   ];
 
-  const modulePrices = content?.customPlanConfig?.modulePrices || {
+  const rawModulePrices = content?.customPlanConfig?.modulePrices || {
     cattle: 50, milk: 50, health: 40, breeding: 40, feed: 30, finance: 40,
-    milkDelivery: 50, employees: 40, insurance: 30, reports: 40, chatbot: 60
+    milkDelivery: 50, employees: 40, insurance: 30, reports: 40, chatbot: 0
   };
   const minMonthlyPrice = content?.customPlanConfig?.minMonthlyPrice || 200;
+
+  // AI Farm Assistant price = median of all other module prices (never highest, never lowest)
+  const otherPrices = Object.entries(rawModulePrices)
+    .filter(([k]) => k !== 'chatbot')
+    .map(([, v]) => v)
+    .sort((a, b) => a - b);
+  const mid = Math.floor(otherPrices.length / 2);
+  const chatbotPrice = otherPrices.length % 2 === 0
+    ? Math.round((otherPrices[mid - 1] + otherPrices[mid]) / 2)
+    : otherPrices[mid];
+
+  const modulePrices = { ...rawModulePrices, chatbot: chatbotPrice };
 
   const toggleModule = (moduleId) => {
     const newSet = new Set(selectedModules);

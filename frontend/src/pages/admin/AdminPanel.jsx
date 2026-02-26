@@ -1501,7 +1501,6 @@ export default function AdminPanel() {
                     { id: 'employees', name: 'Employee Management', icon: '👷' },
                     { id: 'insurance', name: 'Insurance Tracking', icon: '🛡️' },
                     { id: 'reports', name: 'Reports & Analytics', icon: '📊' },
-                    { id: 'chatbot', name: 'AI Farm Assistant', icon: '🤖' }
                   ].map(module => (
                     <div key={module.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-2 rounded">
                       <span className="text-lg">{module.icon}</span>
@@ -1521,6 +1520,24 @@ export default function AdminPanel() {
                     </div>
                   ))}
                 </div>
+                {/* AI chatbot price - auto calculated */}
+                {(() => {
+                  const prices = ['cattle','milk','health','breeding','feed','finance','milkDelivery','employees','insurance','reports']
+                    .map(k => websiteForm[`customPlan${k.charAt(0).toUpperCase() + k.slice(1)}Price`] || { cattle:50, milk:50, health:40, breeding:40, feed:30, finance:40, milkDelivery:50, employees:40, insurance:30, reports:40 }[k])
+                    .sort((a, b) => a - b);
+                  const m = Math.floor(prices.length / 2);
+                  const median = prices.length % 2 === 0 ? Math.round((prices[m-1] + prices[m]) / 2) : prices[m];
+                  return (
+                    <div className="mt-3 flex items-center gap-2 bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <span className="text-lg">🤖</span>
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-purple-800 dark:text-purple-300">AI Farm Assistant</p>
+                        <p className="text-[10px] text-purple-600 dark:text-purple-400">Auto-calculated as median of other module prices</p>
+                      </div>
+                      <span className="text-lg font-bold text-purple-700 dark:text-purple-300">₹{median}/mo</span>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
