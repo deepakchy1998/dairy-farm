@@ -215,7 +215,7 @@ export default function CattleList() {
                     <th className="text-left py-3 px-4 font-semibold text-gray-500 dark:text-gray-400 uppercase text-xs">Source</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-500 dark:text-gray-400 uppercase text-xs">Generation</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-500 dark:text-gray-400 uppercase text-xs">Lactation</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-500 dark:text-gray-400 uppercase text-xs">Actions</th>
+                    <th className="text-center py-3 px-4 font-semibold text-gray-500 dark:text-gray-400 uppercase text-xs">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">

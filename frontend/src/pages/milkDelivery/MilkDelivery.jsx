@@ -677,7 +677,7 @@ export default function MilkDelivery() {
                       <th className="px-3 py-2 text-center">Amount</th>
                       <th className="px-3 py-2 text-center">Paid</th>
                       <th className="px-3 py-2 text-center">Due</th>
-                      <th className="px-3 py-2">Actions</th>
+                      <th className="px-3 py-2 text-center">Actions</th>
                     </tr></thead>
                     <tbody>
                       {ledger.ledger.map((c, i) => (
@@ -692,7 +692,7 @@ export default function MilkDelivery() {
                           <td className="px-3 py-2 text-center text-green-600">₹{c.totalPaid.toFixed(0)}</td>
                           <td className={`px-3 py-2 text-center font-bold ${c.due > 0 ? 'text-red-600' : 'text-green-600'}`}>₹{c.due.toFixed(0)}</td>
                           <td className="px-3 py-2" onClick={e => e.stopPropagation()}>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 justify-center">
                               <button onClick={() => openPayment(c)} className="text-xs text-emerald-600 hover:underline font-medium">💰 Pay</button>
                               <button onClick={() => {
                                 const [y, m] = ledgerMonth.split('-');

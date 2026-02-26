@@ -166,7 +166,7 @@ export default function Insurance() {
                     <th className="px-3 py-3 text-center">Period</th>
                     <th className="px-3 py-3 text-center">Status</th>
                     <th className="px-3 py-3 text-center">Scheme</th>
-                    <th className="px-3 py-3">Actions</th>
+                    <th className="px-3 py-3 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -183,9 +183,11 @@ export default function Insurance() {
                         <td className="px-3 py-3 text-center text-xs">{formatDate(r.startDate)}<br/>to {formatDate(r.endDate)}{r.status === 'active' && daysLeft <= 30 && <span className="block text-orange-500 font-medium">{daysLeft}d left</span>}</td>
                         <td className="px-3 py-3 text-center"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[r.status] || ''}`}>{r.status}</span></td>
                         <td className="px-3 py-3 text-xs text-center">{r.govtScheme || '-'}</td>
-                        <td className="px-3 py-3 whitespace-nowrap">
-                          <button onClick={() => openEdit(r)} className="text-blue-500 hover:text-blue-700 mr-2"><FiEdit2 size={14} /></button>
-                          <button onClick={() => handleDelete(r._id)} className="text-red-400 hover:text-red-600"><FiTrash2 size={14} /></button>
+                        <td className="px-3 py-3">
+                          <div className="flex gap-1.5 justify-center">
+                            <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"><FiEdit2 size={14} /></button>
+                            <button onClick={() => handleDelete(r._id)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"><FiTrash2 size={14} /></button>
+                          </div>
                         </td>
                       </tr>
                     );

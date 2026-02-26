@@ -186,7 +186,7 @@ export default function HealthRecords() {
                   <th className="px-3 py-2 text-left">Medicine</th>
                   <th className="px-3 py-2 text-left">Cost</th>
                   <th className="px-3 py-2 text-left">Next Due</th>
-                  <th className="px-3 py-2">Actions</th>
+                  <th className="px-3 py-2 text-center">Actions</th>
                 </tr></thead>
                 <tbody>
                   {records.map((r, i) => (
@@ -217,7 +217,7 @@ export default function HealthRecords() {
                         ) : <span className="text-gray-400">-</span>}
                       </td>
                       <td className="px-3 py-2">
-                        <div className="flex gap-1.5">
+                        <div className="flex gap-1.5 justify-center">
                           <button onClick={() => handleEdit(r)} className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors"><FiEdit2 size={15} /></button>
                           <button onClick={() => handleDelete(r._id)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"><FiTrash2 size={15} /></button>
                         </div>

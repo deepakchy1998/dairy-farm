@@ -449,7 +449,7 @@ export default function MilkRecords() {
                       <th className="px-2 py-2 text-center text-amber-600">Afternoon</th>
                       <th className="px-2 py-2 text-center text-orange-600">Evening</th>
                       <th className="px-3 py-2 text-center text-emerald-600">Total</th>
-                      <th className="px-2 py-2">Actions</th>
+                      <th className="px-2 py-2 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -460,9 +460,11 @@ export default function MilkRecords() {
                         <td className="px-2 py-2 text-center">{r.afternoonYield > 0 ? <span>{r.afternoonYield.toFixed(1)}L</span> : <span className="text-gray-300">-</span>}</td>
                         <td className="px-2 py-2 text-center">{r.eveningYield > 0 ? <span>{r.eveningYield.toFixed(1)}L {r.eveningFat ? <span className="text-xs text-gray-400">({r.eveningFat}%)</span> : ''}</span> : <span className="text-gray-300">-</span>}</td>
                         <td className="px-3 py-2 text-center font-bold text-emerald-600">{r.totalYield.toFixed(1)}L</td>
-                        <td className="px-2 py-2 whitespace-nowrap">
-                          <button onClick={() => { setRecordCattle(viewCattle); setForm({ date: r.date?.slice(0,10) || todayStr(), morningYield: r.morningYield || '', morningFat: r.morningFat || '', morningSNF: r.morningSNF || '', afternoonYield: r.afternoonYield || '', afternoonFat: r.afternoonFat || '', afternoonSNF: r.afternoonSNF || '', eveningYield: r.eveningYield || '', eveningFat: r.eveningFat || '', eveningSNF: r.eveningSNF || '' }); setEditId(r._id); setRecordModal(true); }} className="text-blue-500 hover:text-blue-700 text-xs mr-2">Edit</button>
-                          <button onClick={() => handleDeleteRecord(r._id)} className="text-red-400 hover:text-red-600 text-xs">Delete</button>
+                        <td className="px-2 py-2">
+                          <div className="flex gap-2 justify-center">
+                            <button onClick={() => { setRecordCattle(viewCattle); setForm({ date: r.date?.slice(0,10) || todayStr(), morningYield: r.morningYield || '', morningFat: r.morningFat || '', morningSNF: r.morningSNF || '', afternoonYield: r.afternoonYield || '', afternoonFat: r.afternoonFat || '', afternoonSNF: r.afternoonSNF || '', eveningYield: r.eveningYield || '', eveningFat: r.eveningFat || '', eveningSNF: r.eveningSNF || '' }); setEditId(r._id); setRecordModal(true); }} className="text-blue-500 hover:text-blue-700 text-xs">Edit</button>
+                            <button onClick={() => handleDeleteRecord(r._id)} className="text-red-400 hover:text-red-600 text-xs">Delete</button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -662,7 +664,7 @@ export default function MilkRecords() {
                       <th className="px-2 py-2 text-center text-blue-600">Morning</th>
                       <th className="px-2 py-2 text-center text-orange-600">Evening</th>
                       <th className="px-3 py-2 text-center text-emerald-600">Total</th>
-                      <th className="px-2 py-2">Actions</th>
+                      <th className="px-2 py-2 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -673,8 +675,10 @@ export default function MilkRecords() {
                         <td className="px-2 py-2 text-center">{r.morningYield > 0 ? <span>{r.morningYield.toFixed(1)}L {r.morningFat ? <span className="text-xs text-gray-400">({r.morningFat}%)</span> : ''}</span> : <span className="text-gray-300">-</span>}</td>
                         <td className="px-2 py-2 text-center">{r.eveningYield > 0 ? <span>{r.eveningYield.toFixed(1)}L {r.eveningFat ? <span className="text-xs text-gray-400">({r.eveningFat}%)</span> : ''}</span> : <span className="text-gray-300">-</span>}</td>
                         <td className="px-3 py-2 text-center font-bold text-emerald-600">{r.totalYield.toFixed(1)}L</td>
-                        <td className="px-2 py-2 whitespace-nowrap">
-                          <button onClick={() => handleDeleteRecord(r._id)} className="text-red-400 hover:text-red-600 text-xs">Delete</button>
+                        <td className="px-2 py-2">
+                          <div className="flex justify-center">
+                            <button onClick={() => handleDeleteRecord(r._id)} className="text-red-400 hover:text-red-600 text-xs">Delete</button>
+                          </div>
                         </td>
                       </tr>
                     ))}

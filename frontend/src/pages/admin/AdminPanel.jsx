@@ -772,7 +772,7 @@ export default function AdminPanel() {
                       <th className="px-3 py-2 text-center">Subscription</th>
                       <th className="px-3 py-2 text-center">Status</th>
                       <th className="px-3 py-2 text-left">Joined</th>
-                      <th className="px-3 py-2">Actions</th>
+                      <th className="px-3 py-2 text-center">Actions</th>
                     </tr></thead>
                     <tbody>
                       {users.map((u, i) => (
@@ -784,7 +784,7 @@ export default function AdminPanel() {
                           <td className="px-3 py-2 text-center"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.isBlocked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{u.isBlocked ? 'Blocked' : 'Active'}</span></td>
                           <td className="px-3 py-2 text-xs text-gray-500">{formatDate(u.createdAt)}</td>
                           <td className="px-3 py-2">
-                            <div className="flex gap-1">
+                            <div className="flex gap-1 justify-center">
                               <button onClick={() => viewUserDetail(u._id)} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-lg hover:bg-blue-200"><FiEye size={12} /></button>
                               {u.role !== 'admin' && (
                                 <button onClick={() => toggleBlock(u._id, u.isBlocked)} className={`text-xs px-2 py-1 rounded-lg ${u.isBlocked ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}>
