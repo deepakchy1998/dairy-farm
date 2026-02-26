@@ -172,25 +172,27 @@ export default function Settings() {
               <p><strong>Member since:</strong> {formatDate(user?.createdAt)}</p>
             </div>
 
-            {/* Personal Farm Toggle */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold text-sm text-blue-800 dark:text-blue-300 flex items-center gap-2">🐄 Personal Dairy Farm</h4>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
-                    {user?.farmEnabled !== false
-                      ? 'Farm modules are visible in your sidebar (cattle, milk, health, etc.)'
-                      : 'Farm modules are hidden — only admin panel and settings are visible'}
-                  </p>
+            {/* Personal Farm Toggle — Admin only */}
+            {user?.role === 'admin' && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold text-sm text-blue-800 dark:text-blue-300 flex items-center gap-2">🐄 Personal Dairy Farm</h4>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
+                      {profileForm.farmEnabled !== false
+                        ? 'Farm modules are visible in your sidebar (cattle, milk, health, etc.)'
+                        : 'Farm modules are hidden — only admin panel and settings are visible'}
+                    </p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked={profileForm.farmEnabled !== false}
+                      onChange={e => setProfileForm({ ...profileForm, farmEnabled: e.target.checked })}
+                      className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                  </label>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" checked={profileForm.farmEnabled !== false}
-                    onChange={e => setProfileForm({ ...profileForm, farmEnabled: e.target.checked })}
-                    className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-                </label>
               </div>
-            </div>
+            )}
 
             <button type="submit" disabled={saving} className="btn-primary flex items-center gap-2">
               <FiSave size={16} /> {saving ? 'Saving...' : 'Save Changes'}
