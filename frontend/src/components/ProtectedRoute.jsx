@@ -4,10 +4,13 @@ import { useAppConfig } from '../context/AppConfigContext';
 
 export default function ProtectedRoute({ children, adminOnly = false }) {
   const { user, loading, authReason } = useAuth();
-  const { maintenanceMode, maintenanceMessage } = useAppConfig();
+  const appConfig = useAppConfig();
+  const maintenanceMode = appConfig.maintenanceMode;
+  const maintenanceMessage = appConfig.maintenanceMessage;
+  const configLoaded = appConfig.loaded;
   const location = useLocation();
 
-  if (loading) return (
+  if (loading || !configLoaded) return (
     <div className="flex items-center justify-center h-screen">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
     </div>
@@ -19,7 +22,7 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
   // Admin check
   if (adminOnly && user.role !== 'admin') return <Navigate to="/dashboard" replace />;
 
-  // Maintenance mode — block non-admin users
+  // Maintenance mode — block non-admin users (admins see a banner instead)
   if (maintenanceMode && user.role !== 'admin') {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950 p-4">

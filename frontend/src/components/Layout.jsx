@@ -303,6 +303,14 @@ export default function Layout({ children }) {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-6 dark:text-gray-100">
+          {/* Admin maintenance banner */}
+          {user?.role === 'admin' && appConfig?.maintenanceMode && (
+            <div className="mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-2.5 flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400">
+              <span>🚧</span>
+              <span className="font-medium">Maintenance mode is ON</span>
+              <span className="text-amber-500">— Regular users cannot access the app right now.</span>
+            </div>
+          )}
           <div className="page-enter">
             <Paywall>{children}</Paywall>
           </div>
