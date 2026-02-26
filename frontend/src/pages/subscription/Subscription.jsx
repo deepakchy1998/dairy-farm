@@ -21,12 +21,17 @@ export default function Subscription() {
       api.get('/subscription/plans'),
       api.get('/payment/my'),
       api.get('/razorpay/config').catch(() => ({ data: { data: { enabled: false } } })),
-      api.get('/landing').then(r => r.data.data?.customPlanConfig).catch(() => null),
-    ]).then(([p, pay, rz, config]) => {
+      api.get('/app-config').then(r => r.data.data).catch(() => null),
+    ]).then(([p, pay, rz, appCfg]) => {
       setPlans(p.data.data);
       setPayments(pay.data.data);
       setRazorpayEnabled(rz.data.data?.enabled || false);
-      setCustomConfig(config);
+      setCustomConfig(appCfg ? {
+        enabled: appCfg.customPlanEnabled !== false,
+        minPrice: appCfg.customPlanMinPrice || 200,
+        maxPrice: appCfg.customPlanMaxPrice || 5000,
+        modulePrices: appCfg.customPlanModulePrices || {},
+      } : null);
     }).catch(() => toast.error('Failed to load'))
     .finally(() => setLoading(false));
   }, []);

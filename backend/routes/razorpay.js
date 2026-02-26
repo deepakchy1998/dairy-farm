@@ -116,20 +116,24 @@ router.post('/create-order', auth, async (req, res, next) => {
       if (!Array.isArray(selectedModules) || selectedModules.length === 0) {
         return res.status(400).json({ success: false, message: 'Custom plan requires selected modules' });
       }
-      // Calculate price
-      const LandingContent = (await import('../models/LandingContent.js')).default;
-      const content = await LandingContent.findOne();
-      const config = content?.customPlanConfig;
-      if (!config?.enabled) return res.status(400).json({ success: false, message: 'Custom plans not available' });
+      // Calculate price from AppConfig
+      const AppConfig = (await import('../models/AppConfig.js')).default;
+      const appCfg = await AppConfig.findOne({ key: 'global' }).lean();
+      if (appCfg?.customPlanEnabled === false) return res.status(400).json({ success: false, message: 'Custom plans not available' });
       
-      const rawPrices = config.modulePrices || {};
-      const otherPrices = Object.entries(rawPrices).filter(([k]) => k !== 'chatbot').map(([, v]) => v).sort((a, b) => a - b);
+      const rawPrices = appCfg?.customPlanModulePrices instanceof Map
+        ? Object.fromEntries(appCfg.customPlanModulePrices)
+        : (appCfg?.customPlanModulePrices || { cattle: 50, milk: 50, health: 40, breeding: 40, feed: 30, finance: 40, milkDelivery: 50, employees: 40, insurance: 30, reports: 40 });
+      const otherPrices = Object.values(rawPrices).sort((a, b) => a - b);
       const mid = Math.floor(otherPrices.length / 2);
       const chatbotPrice = otherPrices.length % 2 === 0 ? Math.round((otherPrices[mid - 1] + otherPrices[mid]) / 2) : otherPrices[mid];
       const modulePrices = { ...rawPrices, chatbot: chatbotPrice };
       
       let monthlyPrice = selectedModules.reduce((t, m) => t + (modulePrices[m] || 0), 0);
-      if (monthlyPrice < config.minMonthlyPrice) monthlyPrice = config.minMonthlyPrice;
+      const minPrice = appCfg?.customPlanMinPrice || 200;
+      const maxPrice = appCfg?.customPlanMaxPrice || 5000;
+      if (monthlyPrice < minPrice) monthlyPrice = minPrice;
+      if (monthlyPrice > maxPrice) monthlyPrice = maxPrice;
       
       const multipliers = { monthly: 1, halfyearly: 6, yearly: 12 };
       const daysMap = { monthly: 30, halfyearly: 180, yearly: 365 };

@@ -19,10 +19,9 @@ router.get('/', auth, async (req, res, next) => {
     delete config.key;
     delete config.createdAt;
     delete config.updatedAt;
-    // Convert Map to plain object for frontend
-    if (config.modulesEnabled instanceof Map) {
-      config.modulesEnabled = Object.fromEntries(config.modulesEnabled);
-    }
+    // Convert Maps to plain objects for frontend
+    if (config.modulesEnabled instanceof Map) config.modulesEnabled = Object.fromEntries(config.modulesEnabled);
+    if (config.customPlanModulePrices instanceof Map) config.customPlanModulePrices = Object.fromEntries(config.customPlanModulePrices);
     res.json({ success: true, data: config });
   } catch (err) { next(err); }
 });
@@ -40,7 +39,7 @@ router.put('/', auth, admin, async (req, res, next) => {
     const stringFields = [
       'maintenanceMessage', 'welcomeMessage', 'currencySymbol', 'dateFormat', 'milkUnit', 'weightUnit',
     ];
-    const boolFields = ['maintenanceMode', 'chatBubbleEnabled'];
+    const boolFields = ['maintenanceMode', 'chatBubbleEnabled', 'customPlanEnabled'];
 
     let config = await AppConfig.findOne({ key: 'global' });
     if (!config) config = new AppConfig({ key: 'global' });
@@ -61,6 +60,18 @@ router.put('/', auth, admin, async (req, res, next) => {
     }
     for (const field of boolFields) {
       if (req.body[field] !== undefined) config[field] = !!req.body[field];
+    }
+
+    // Custom plan pricing
+    if (req.body.customPlanMinPrice !== undefined) config.customPlanMinPrice = Number(req.body.customPlanMinPrice) || 200;
+    if (req.body.customPlanMaxPrice !== undefined) config.customPlanMaxPrice = Number(req.body.customPlanMaxPrice) || 5000;
+    if (req.body.customPlanModulePrices && typeof req.body.customPlanModulePrices === 'object') {
+      const allowed = ['cattle', 'milk', 'health', 'breeding', 'feed', 'finance', 'milkDelivery', 'employees', 'insurance', 'reports'];
+      const prices = {};
+      for (const key of allowed) {
+        if (req.body.customPlanModulePrices[key] !== undefined) prices[key] = Number(req.body.customPlanModulePrices[key]) || 0;
+      }
+      config.customPlanModulePrices = prices;
     }
 
     // Module toggles (object of booleans)

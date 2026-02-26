@@ -37,7 +37,7 @@ const features = [
 ];
 
 // Custom Plan Builder Component
-function CustomPlanBuilder({ content }) {
+function CustomPlanBuilder({ content, appConfig }) {
   const [selectedModules, setSelectedModules] = useState(new Set());
   const [period, setPeriod] = useState('monthly');
 
@@ -55,11 +55,13 @@ function CustomPlanBuilder({ content }) {
     { id: 'chatbot', icon: '🤖', name: 'AI Farm Assistant' },
   ];
 
-  const rawModulePrices = content?.customPlanConfig?.modulePrices || {
+  // Use AppConfig for pricing (primary), fallback to LandingContent then defaults
+  const rawModulePrices = appConfig?.customPlanModulePrices || content?.customPlanConfig?.modulePrices || {
     cattle: 50, milk: 50, health: 40, breeding: 40, feed: 30, finance: 40,
     milkDelivery: 50, employees: 40, insurance: 30, reports: 40, chatbot: 0
   };
-  const minMonthlyPrice = content?.customPlanConfig?.minMonthlyPrice || 200;
+  const minMonthlyPrice = appConfig?.customPlanMinPrice || content?.customPlanConfig?.minMonthlyPrice || 200;
+  const maxMonthlyPrice = appConfig?.customPlanMaxPrice || 5000;
 
   // AI Farm Assistant price = median of all other module prices (never highest, never lowest)
   const otherPrices = Object.entries(rawModulePrices)
@@ -91,9 +93,8 @@ function CustomPlanBuilder({ content }) {
     return total + (modulePrices[moduleId] || 0);
   }, 0);
 
-  if (monthlyPrice > 0 && monthlyPrice < minMonthlyPrice) {
-    monthlyPrice = minMonthlyPrice;
-  }
+  if (monthlyPrice > 0 && monthlyPrice < minMonthlyPrice) monthlyPrice = minMonthlyPrice;
+  if (monthlyPrice > maxMonthlyPrice) monthlyPrice = maxMonthlyPrice;
 
   const periodMultipliers = { monthly: 1, halfyearly: 6, yearly: 12 };
   const periodDays = { monthly: 30, halfyearly: 180, yearly: 365 };
@@ -231,10 +232,12 @@ export default function Landing() {
   });
 
   const [dynamicPlans, setDynamicPlans] = useState([]);
+  const [appConfig, setAppConfig] = useState(null);
 
   useEffect(() => {
     api.get('/landing').then(r => setContent(r.data.data)).catch(() => {});
     api.get('/subscription/plans').then(r => setDynamicPlans(r.data.data?.plans || [])).catch(() => {});
+    api.get('/app-config').then(r => setAppConfig(r.data.data)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -459,7 +462,7 @@ export default function Landing() {
       </section>
 
       {/* ─── Custom Plan Builder ─── */}
-      {content?.customPlanConfig?.enabled !== false && (
+      {(appConfig?.customPlanEnabled !== false) && (
         <section id="custom-plan" className="py-20 px-4 bg-gray-50 dark:bg-gray-900">
           <div className="max-w-7xl mx-auto">
             <FadeIn>
@@ -473,7 +476,7 @@ export default function Landing() {
               </div>
             </FadeIn>
             
-            <CustomPlanBuilder content={content} />
+            <CustomPlanBuilder content={content} appConfig={appConfig} />
           </div>
         </section>
       )}

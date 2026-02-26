@@ -1290,6 +1290,120 @@ export default function AdminPanel() {
             </div>
           )}
 
+          {/* ── Custom Plan Builder ── */}
+          <div className="card mt-6">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">🛠️ Custom Plan Builder
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${appConfigForm.customPlanEnabled !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                {appConfigForm.customPlanEnabled !== false ? 'Enabled' : 'Disabled'}
+              </span>
+            </h3>
+            <p className="text-xs text-gray-500 mb-4">Let users build their own plan by selecting specific modules. Pricing is managed here.</p>
+
+            <div className="space-y-4">
+              {/* Enable/Disable */}
+              <div className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                <div>
+                  <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">Enable Custom Plans</p>
+                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400">Show custom plan builder on landing page and subscription page</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={appConfigForm.customPlanEnabled !== false}
+                    onChange={e => setAppConfigForm({ ...appConfigForm, customPlanEnabled: e.target.checked })}
+                    className="sr-only peer" />
+                  <div className="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
+
+              {/* Min/Max Price */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Minimum Monthly Price (₹)</label>
+                  <input type="number" className="input" placeholder="200"
+                    value={appConfigForm.customPlanMinPrice || ''}
+                    onChange={e => setAppConfigForm({ ...appConfigForm, customPlanMinPrice: +e.target.value })} />
+                </div>
+                <div>
+                  <label className="label">Maximum Monthly Price (₹)</label>
+                  <input type="number" className="input" placeholder="5000"
+                    value={appConfigForm.customPlanMaxPrice || ''}
+                    onChange={e => setAppConfigForm({ ...appConfigForm, customPlanMaxPrice: +e.target.value })} />
+                </div>
+              </div>
+
+              {/* Auto-generate */}
+              <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 border border-indigo-200 dark:border-indigo-800">
+                <p className="text-xs font-semibold text-indigo-800 dark:text-indigo-300 mb-2">⚡ Auto-Generate Module Prices</p>
+                <p className="text-[10px] text-indigo-600 dark:text-indigo-400 mb-3">Set lower & upper limit — prices distribute by module complexity</p>
+                <div className="flex items-end gap-3">
+                  <div className="flex-1">
+                    <label className="text-[10px] text-indigo-500">Lower (₹)</label>
+                    <input type="number" className="input text-sm" placeholder="20" id="autoGenLower2" defaultValue={20} />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-[10px] text-indigo-500">Upper (₹)</label>
+                    <input type="number" className="input text-sm" placeholder="80" id="autoGenUpper2" defaultValue={80} />
+                  </div>
+                  <button type="button" onClick={() => {
+                    const lo = Math.min(Number(document.getElementById('autoGenLower2').value) || 20, Number(document.getElementById('autoGenUpper2').value) || 80);
+                    const hi = Math.max(Number(document.getElementById('autoGenLower2').value) || 20, Number(document.getElementById('autoGenUpper2').value) || 80);
+                    const weights = { cattle: 2.5, milk: 2.5, health: 2, breeding: 2, feed: 1.5, finance: 2, milkDelivery: 2.5, employees: 2, insurance: 1.5, reports: 2 };
+                    const wVals = Object.values(weights);
+                    const minW = Math.min(...wVals), maxW = Math.max(...wVals), range = maxW - minW || 1;
+                    const prices = {};
+                    for (const [k, w] of Object.entries(weights)) prices[k] = Math.round(lo + ((w - minW) / range) * (hi - lo));
+                    setAppConfigForm(prev => ({ ...prev, customPlanModulePrices: prices }));
+                  }} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition whitespace-nowrap">
+                    ⚡ Generate
+                  </button>
+                </div>
+              </div>
+
+              {/* Module Prices */}
+              <h4 className="font-semibold text-sm">Module Prices (₹/month)</h4>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { id: 'cattle', name: 'Cattle', icon: '🐄' }, { id: 'milk', name: 'Milk', icon: '🥛' },
+                  { id: 'health', name: 'Health', icon: '💉' }, { id: 'breeding', name: 'Breeding', icon: '🐣' },
+                  { id: 'feed', name: 'Feed', icon: '🌾' }, { id: 'finance', name: 'Finance', icon: '💰' },
+                  { id: 'milkDelivery', name: 'Dudh Khata', icon: '🏘️' }, { id: 'employees', name: 'Employees', icon: '👷' },
+                  { id: 'insurance', name: 'Insurance', icon: '🛡️' }, { id: 'reports', name: 'Reports', icon: '📊' },
+                ].map(mod => {
+                  const prices = appConfigForm.customPlanModulePrices || {};
+                  return (
+                    <div key={mod.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                      <span>{mod.icon}</span>
+                      <div className="flex-1">
+                        <label className="text-xs font-medium dark:text-gray-300">{mod.name}</label>
+                        <input type="number" className="input mt-1" placeholder="50"
+                          value={prices[mod.id] || ''}
+                          onChange={e => setAppConfigForm({ ...appConfigForm, customPlanModulePrices: { ...prices, [mod.id]: +e.target.value } })} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* AI chatbot price - auto calculated */}
+              {(() => {
+                const prices = Object.values(appConfigForm.customPlanModulePrices || {}).sort((a, b) => a - b);
+                const m = Math.floor(prices.length / 2);
+                const median = prices.length === 0 ? 40 : prices.length % 2 === 0 ? Math.round((prices[m-1] + prices[m]) / 2) : prices[m];
+                return (
+                  <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
+                    <span>🤖</span>
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-purple-800 dark:text-purple-300">AI Farm Assistant</p>
+                      <p className="text-[10px] text-purple-600 dark:text-purple-400">Auto-calculated median</p>
+                    </div>
+                    <span className="text-lg font-bold text-purple-700 dark:text-purple-300">₹{median}/mo</span>
+                  </div>
+                );
+              })()}
+
+              <button onClick={async () => { setSaving(true); try { await api.put('/app-config', appConfigForm); toast.success('Custom plan settings saved!'); } catch { toast.error('Failed'); } finally { setSaving(false); } }}
+                disabled={saving} className="btn-primary w-full py-2.5">{saving ? 'Saving...' : '💾 Save Custom Plan Settings'}</button>
+            </div>
+          </div>
+
           {/* Plan Modal */}
           <Modal isOpen={planModal} onClose={() => setPlanModal(false)} title={editPlanId ? 'Edit Plan' : 'Create New Plan'} size="lg">
             <form onSubmit={async (e) => {
@@ -1460,129 +1574,6 @@ export default function AdminPanel() {
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="label">Link Text</label><input className="input" value={websiteForm.announcementLinkText || ''} onChange={e => setWebsiteForm({ ...websiteForm, announcementLinkText: e.target.value })} placeholder="Learn more →" /></div>
                 <div><label className="label">Link URL</label><input className="input" value={websiteForm.announcementLinkUrl || ''} onChange={e => setWebsiteForm({ ...websiteForm, announcementLinkUrl: e.target.value })} placeholder="/register" /></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Custom Plan Builder */}
-          <div className="card">
-            <h3 className="font-semibold mb-4">🛠️ Custom Plan Builder</h3>
-            <p className="text-xs text-gray-500 mb-3">Configure the custom plan feature where users can select specific modules</p>
-            <div className="space-y-4">
-              <div>
-                <label className="flex items-center gap-2">
-                  <input 
-                    type="checkbox" 
-                    checked={websiteForm.customPlanEnabled !== false}
-                    onChange={e => setWebsiteForm({ ...websiteForm, customPlanEnabled: e.target.checked })}
-                    className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500" 
-                  />
-                  <span className="text-sm font-medium">Enable Custom Plan Builder</span>
-                </label>
-              </div>
-              
-              <div><label className="label">Heading</label><input className="input" value={websiteForm.customPlanHeading || ''} onChange={e => setWebsiteForm({ ...websiteForm, customPlanHeading: e.target.value })} placeholder="🛠️ Build Your Own Plan" /></div>
-              
-              <div><label className="label">Subheading</label><textarea className="input" rows={2} value={websiteForm.customPlanSubheading || ''} onChange={e => setWebsiteForm({ ...websiteForm, customPlanSubheading: e.target.value })} placeholder="Select only the modules you need. Pay for what you use!" /></div>
-              
-              <div><label className="label">Minimum Monthly Price (₹)</label><input type="number" className="input" value={websiteForm.customPlanMinPrice || ''} onChange={e => setWebsiteForm({ ...websiteForm, customPlanMinPrice: +e.target.value })} placeholder="200" /></div>
-
-              <div>
-                <h4 className="font-semibold text-sm mb-3">Module Prices (₹/month)</h4>
-
-                {/* Auto-generate prices */}
-                <div className="mb-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 border border-indigo-200 dark:border-indigo-800">
-                  <p className="text-xs font-semibold text-indigo-800 dark:text-indigo-300 mb-2">⚡ Auto-Generate Module Prices</p>
-                  <p className="text-[10px] text-indigo-600 dark:text-indigo-400 mb-3">Set a lower and upper limit — prices will be distributed smartly across modules based on complexity</p>
-                  <div className="flex items-end gap-3">
-                    <div className="flex-1">
-                      <label className="text-[10px] text-indigo-500">Lower Limit (₹)</label>
-                      <input type="number" className="input text-sm" placeholder="20" id="autoGenLower" defaultValue={20} />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-[10px] text-indigo-500">Upper Limit (₹)</label>
-                      <input type="number" className="input text-sm" placeholder="80" id="autoGenUpper" defaultValue={80} />
-                    </div>
-                    <button type="button" onClick={() => {
-                      const lower = Number(document.getElementById('autoGenLower').value) || 20;
-                      const upper = Number(document.getElementById('autoGenUpper').value) || 80;
-                      const lo = Math.min(lower, upper);
-                      const hi = Math.max(lower, upper);
-                      // Module complexity weights (1=simple, 3=complex)
-                      const weights = {
-                        cattle: 2.5, milk: 2.5, health: 2, breeding: 2,
-                        feed: 1.5, finance: 2, milkDelivery: 2.5,
-                        employees: 2, insurance: 1.5, reports: 2,
-                      };
-                      const wValues = Object.values(weights);
-                      const minW = Math.min(...wValues);
-                      const maxW = Math.max(...wValues);
-                      const range = maxW - minW || 1;
-                      const generated = {};
-                      for (const [key, w] of Object.entries(weights)) {
-                        const ratio = (w - minW) / range;
-                        generated[key] = Math.round(lo + ratio * (hi - lo));
-                      }
-                      const updates = {};
-                      for (const [key, price] of Object.entries(generated)) {
-                        updates[`customPlan${key.charAt(0).toUpperCase() + key.slice(1)}Price`] = price;
-                      }
-                      setWebsiteForm(prev => ({ ...prev, ...updates }));
-                    }}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition whitespace-nowrap">
-                      ⚡ Generate
-                    </button>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { id: 'cattle', name: 'Cattle Management', icon: '🐄' },
-                    { id: 'milk', name: 'Milk Recording', icon: '🥛' },
-                    { id: 'health', name: 'Health & Vaccination', icon: '💉' },
-                    { id: 'breeding', name: 'Breeding Tracker', icon: '🐣' },
-                    { id: 'feed', name: 'Feed Management', icon: '🌾' },
-                    { id: 'finance', name: 'Finance & Accounting', icon: '💰' },
-                    { id: 'milkDelivery', name: 'Dudh Khata', icon: '🏘️' },
-                    { id: 'employees', name: 'Employee Management', icon: '👷' },
-                    { id: 'insurance', name: 'Insurance Tracking', icon: '🛡️' },
-                    { id: 'reports', name: 'Reports & Analytics', icon: '📊' },
-                  ].map(module => (
-                    <div key={module.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-2 rounded">
-                      <span className="text-lg">{module.icon}</span>
-                      <div className="flex-1">
-                        <label className="text-xs font-medium text-gray-700 dark:text-gray-300">{module.name}</label>
-                        <input 
-                          type="number" 
-                          className="input mt-1" 
-                          placeholder="50"
-                          value={websiteForm[`customPlan${module.id.charAt(0).toUpperCase() + module.id.slice(1)}Price`] || ''} 
-                          onChange={e => setWebsiteForm({ 
-                            ...websiteForm, 
-                            [`customPlan${module.id.charAt(0).toUpperCase() + module.id.slice(1)}Price`]: +e.target.value 
-                          })} 
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {/* AI chatbot price - auto calculated */}
-                {(() => {
-                  const prices = ['cattle','milk','health','breeding','feed','finance','milkDelivery','employees','insurance','reports']
-                    .map(k => websiteForm[`customPlan${k.charAt(0).toUpperCase() + k.slice(1)}Price`] || { cattle:50, milk:50, health:40, breeding:40, feed:30, finance:40, milkDelivery:50, employees:40, insurance:30, reports:40 }[k])
-                    .sort((a, b) => a - b);
-                  const m = Math.floor(prices.length / 2);
-                  const median = prices.length % 2 === 0 ? Math.round((prices[m-1] + prices[m]) / 2) : prices[m];
-                  return (
-                    <div className="mt-3 flex items-center gap-2 bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
-                      <span className="text-lg">🤖</span>
-                      <div className="flex-1">
-                        <p className="text-xs font-medium text-purple-800 dark:text-purple-300">AI Farm Assistant</p>
-                        <p className="text-[10px] text-purple-600 dark:text-purple-400">Auto-calculated as median of other module prices</p>
-                      </div>
-                      <span className="text-lg font-bold text-purple-700 dark:text-purple-300">₹{median}/mo</span>
-                    </div>
-                  );
-                })()}
               </div>
             </div>
           </div>

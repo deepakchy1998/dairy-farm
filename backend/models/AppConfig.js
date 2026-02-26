@@ -26,6 +26,18 @@ const appConfigSchema = new mongoose.Schema({
   weightUnit: { type: String, default: 'kg' },
   // Feature toggles
   chatBubbleEnabled: { type: Boolean, default: true },
+  customPlanEnabled: { type: Boolean, default: true },
+  customPlanMinPrice: { type: Number, default: 200 },
+  customPlanMaxPrice: { type: Number, default: 5000 },
+  customPlanModulePrices: {
+    type: Map,
+    of: Number,
+    default: {
+      cattle: 50, milk: 50, health: 40, breeding: 40, feed: 30,
+      finance: 40, milkDelivery: 50, employees: 40, insurance: 30,
+      reports: 40,
+    },
+  },
   modulesEnabled: {
     type: Map,
     of: Boolean,
