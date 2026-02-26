@@ -603,7 +603,7 @@ export default function MilkDelivery() {
                       <p className={`text-sm font-bold ${c.balance > 0 ? 'text-red-600' : 'text-gray-400'}`}>₹{(c.balance || 0).toLocaleString('en-IN')}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                  <div className="flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition">
                     <button onClick={e => { e.stopPropagation(); openEditCustomer(c); }} className="flex-1 btn-secondary text-xs py-1.5 flex items-center justify-center gap-1"><FiEdit2 size={12} /> Edit</button>
                     <button onClick={e => { e.stopPropagation(); openPayment(c); }} className="flex-1 btn-primary text-xs py-1.5 flex items-center justify-center gap-1"><FaIndianRupeeSign size={12} /> Pay</button>
                     <button onClick={e => { e.stopPropagation(); deleteCustomer(c); }} className="btn-danger text-xs py-1.5 px-2"><FiTrash2 size={14} /></button>

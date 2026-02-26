@@ -839,10 +839,10 @@ export default function AdminPanel() {
       {/* ═══ PAYMENTS ═══ */}
       {tab === 'payments' && (
         <div className="space-y-4">
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 overflow-x-auto pb-1">
             {[{ v: '', l: 'All' }, { v: 'pending', l: '⏳ Pending' }, { v: 'verified', l: '✅ Verified' }, { v: 'rejected', l: '❌ Rejected' }, { v: 'expired', l: '⏰ Expired' }].map(f => (
               <button key={f.v} onClick={() => { setPaymentStatusFilter(f.v); setPaymentsPage(1); }}
-                className={`px-3 py-2 rounded-lg text-xs font-medium ${paymentStatusFilter === f.v ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{f.l}</button>
+                className={`px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0 ${paymentStatusFilter === f.v ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{f.l}</button>
             ))}
           </div>
           <div className="card p-0 overflow-hidden">

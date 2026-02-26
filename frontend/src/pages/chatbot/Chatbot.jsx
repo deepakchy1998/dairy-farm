@@ -167,7 +167,7 @@ export default function Chatbot() {
               {msg.role === 'assistant' && i > 0 && (
                 <button
                   onClick={() => copyMsg(msg.content, i)}
-                  className="absolute -bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600"
+                  className="absolute -bottom-2 right-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity p-1.5 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600"
                   title="Copy"
                 >
                   {copied === i ? <FiCheck size={12} className="text-green-500" /> : <FiCopy size={12} />}

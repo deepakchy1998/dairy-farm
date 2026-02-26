@@ -211,7 +211,7 @@ export default function Subscription() {
               </div>
               
               {/* Period selector + price + pay button in one row */}
-              <div className="flex items-center gap-4 flex-wrap bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
                 <div className="flex gap-1 bg-white dark:bg-gray-700 rounded-lg p-1">
                   {[
                     { key: 'monthly', label: 'Monthly' },
@@ -221,7 +221,7 @@ export default function Subscription() {
                     <button
                       key={period.key}
                       onClick={() => setCustomPeriod(period.key)}
-                      className={`px-3 py-2 rounded-md text-xs transition-all ${
+                      className={`flex-1 sm:flex-initial px-3 py-2 rounded-md text-xs transition-all ${
                         customPeriod === period.key
                           ? 'bg-emerald-500 text-white shadow-sm'
                           : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
@@ -231,17 +231,19 @@ export default function Subscription() {
                     </button>
                   ))}
                 </div>
-                <div className="flex-1 text-right">
-                  <p className="text-2xl font-bold dark:text-white">₹{totalPrice}</p>
-                  <p className="text-xs text-gray-400">₹{monthlyPrice}/mo × {months} months</p>
+                <div className="flex items-center justify-between sm:flex-1 sm:text-right">
+                  <div>
+                    <p className="text-2xl font-bold dark:text-white">₹{totalPrice}</p>
+                    <p className="text-xs text-gray-400">₹{monthlyPrice}/mo × {months} months</p>
+                  </div>
+                  <button
+                    onClick={() => handlePayment('custom', { modules: [...customModules], period: customPeriod })}
+                    disabled={customModules.size === 0 || razorpayLoading}
+                    className="btn-primary px-6 disabled:opacity-50"
+                  >
+                    💳 Pay Now
+                  </button>
                 </div>
-                <button
-                  onClick={() => handlePayment('custom', { modules: [...customModules], period: customPeriod })}
-                  disabled={customModules.size === 0 || razorpayLoading}
-                  className="btn-primary px-6 disabled:opacity-50"
-                >
-                  💳 Pay Now
-                </button>
               </div>
             </div>
           );

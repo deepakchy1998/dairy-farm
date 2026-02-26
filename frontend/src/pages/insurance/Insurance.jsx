@@ -133,7 +133,7 @@ export default function Insurance() {
       )}
 
       {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {['', 'active', 'expired', 'claimed'].map(s => (
           <button key={s} onClick={() => setFilters({ ...filters, status: s, page: 1 })}
             className={`px-3 py-2 rounded-lg text-xs font-medium transition ${filters.status === s ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200'}`}>

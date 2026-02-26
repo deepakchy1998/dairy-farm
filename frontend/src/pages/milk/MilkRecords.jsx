@@ -730,14 +730,14 @@ export default function MilkRecords() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">🥛 Milk Records</h1>
-            <p className="text-gray-500 text-sm">Manage daily milk production</p>
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold">🥛 Milk Records</h1>
+            <p className="text-gray-500 text-xs sm:text-sm">Manage daily milk production</p>
           </div>
-          <button onClick={() => setAddCattleModal(true)} className="btn-primary flex items-center gap-2"><FiPlus size={18} /> Add Cattle</button>
+          <button onClick={() => setAddCattleModal(true)} className="btn-primary flex items-center gap-1.5 flex-shrink-0 text-sm"><FiPlus size={16} /> <span className="hidden sm:inline">Add Cattle</span><span className="sm:hidden">Add</span></button>
         </div>
-        <div className="grid grid-cols-2 sm:flex gap-2">
+        <div className="grid grid-cols-3 sm:flex gap-2">
           <button onClick={() => {
             if (!milkCattle?.length) { toast.error('No cattle to export'); return; }
             exportCsv({
