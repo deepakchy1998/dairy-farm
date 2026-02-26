@@ -211,4 +211,112 @@ router.get('/:id/weight', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ─── Cattle Performance PDF (for sharing with buyers) ───
+router.get('/:id/pdf', async (req, res, next) => {
+  try {
+    const farmId = req.user.farmId;
+    const cattle = await Cattle.findOne({ _id: req.params.id, farmId }).lean();
+    if (!cattle) return res.status(404).json({ success: false, message: 'Cattle not found' });
+
+    // Fetch last 6 months of milk records
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const milkRecords = await MilkRecord.find({ farmId, cattleId: cattle._id, date: { $gte: sixMonthsAgo } }).sort('date').lean();
+    const totalMilk = milkRecords.reduce((s, r) => s + (r.totalYield || 0), 0);
+    const avgDaily = milkRecords.length > 0 ? totalMilk / milkRecords.length : 0;
+    const avgFat = milkRecords.filter(r => r.morningFat > 0).length > 0
+      ? milkRecords.reduce((s, r) => s + (r.morningFat || 0), 0) / milkRecords.filter(r => r.morningFat > 0).length : 0;
+
+    // Monthly summary
+    const monthlyMap = {};
+    milkRecords.forEach(r => {
+      const key = new Date(r.date).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+      if (!monthlyMap[key]) monthlyMap[key] = { total: 0, days: 0 };
+      monthlyMap[key].total += r.totalYield || 0;
+      monthlyMap[key].days += 1;
+    });
+    const monthlyRows = Object.entries(monthlyMap).map(([month, d]) =>
+      `<tr><td>${month}</td><td>${d.days}</td><td>${d.total.toFixed(1)}</td><td>${(d.total / d.days).toFixed(1)}</td></tr>`
+    ).join('');
+
+    // Health records
+    const healthRecords = await HealthRecord.find({ farmId, cattleId: cattle._id }).sort('-date').limit(10).lean();
+    const healthRows = healthRecords.map(r =>
+      `<tr><td>${new Date(r.date).toLocaleDateString('en-IN')}</td><td>${r.type}</td><td>${r.description}</td><td>${r.medicine || '-'}</td></tr>`
+    ).join('');
+
+    // Breeding records
+    const breedingRecords = await BreedingRecord.find({ farmId, cattleId: cattle._id }).sort('-breedingDate').limit(5).lean();
+    const breedingRows = breedingRecords.map(r =>
+      `<tr><td>${new Date(r.breedingDate).toLocaleDateString('en-IN')}</td><td>${r.method === 'artificial' ? 'AI' : 'Natural'}</td><td>${r.bullDetails || '-'}</td><td>${r.status}</td></tr>`
+    ).join('');
+
+    const now = new Date();
+    const age = cattle.dateOfBirth ? Math.floor((now - new Date(cattle.dateOfBirth)) / (365.25 * 24 * 60 * 60 * 1000)) : null;
+
+    const html = `<!DOCTYPE html><html><head><title>Cattle Profile - ${cattle.tagNumber}</title>
+<style>
+  body{font-family:Arial,sans-serif;padding:25px;color:#333;max-width:800px;margin:0 auto}
+  h1{color:#059669;margin-bottom:5px}
+  h2{color:#059669;font-size:16px;margin-top:25px;border-bottom:2px solid #059669;padding-bottom:5px}
+  table{width:100%;border-collapse:collapse;margin:10px 0}
+  th{background:#059669;color:white;padding:8px 10px;text-align:left;font-size:13px}
+  td{padding:7px 10px;border-bottom:1px solid #e5e7eb;font-size:13px}
+  tr:nth-child(even){background:#f9fafb}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+  .info-item{background:#f0fdf4;padding:10px;border-radius:8px}
+  .info-item .label{font-size:11px;color:#6b7280;text-transform:uppercase}
+  .info-item .value{font-size:16px;font-weight:bold;color:#059669}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:15px 0}
+  .stat{background:#ecfdf5;padding:12px;border-radius:8px;text-align:center}
+  .stat .num{font-size:22px;font-weight:bold;color:#059669}
+  .stat .lbl{font-size:11px;color:#6b7280}
+  .footer{margin-top:30px;text-align:center;color:#9ca3af;font-size:11px;border-top:1px solid #e5e7eb;padding-top:10px}
+  @media print{body{padding:15px}}
+</style></head><body>
+<h1>🐄 Cattle Profile — Tag No ${cattle.tagNumber}</h1>
+<p style="color:#6b7280;margin-top:0">Generated on ${now.toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' })}</p>
+
+<div class="info-grid">
+  <div class="info-item"><div class="label">Breed</div><div class="value">${cattle.breed}</div></div>
+  <div class="info-item"><div class="label">Category</div><div class="value">${cattle.category}</div></div>
+  <div class="info-item"><div class="label">Gender</div><div class="value">${cattle.gender}</div></div>
+  <div class="info-item"><div class="label">Weight</div><div class="value">${cattle.weight ? cattle.weight + ' kg' : '-'}</div></div>
+  ${age !== null ? `<div class="info-item"><div class="label">Age</div><div class="value">${age} years</div></div>` : ''}
+  ${cattle.lactationNumber ? `<div class="info-item"><div class="label">Lactation</div><div class="value">L-${cattle.lactationNumber}</div></div>` : ''}
+  ${cattle.generation ? `<div class="info-item"><div class="label">Generation</div><div class="value">${cattle.generation}</div></div>` : ''}
+  ${cattle.source ? `<div class="info-item"><div class="label">Source</div><div class="value">${cattle.source === 'purchased' ? 'Purchased' : 'Born on Farm'}</div></div>` : ''}
+</div>
+
+${milkRecords.length > 0 ? `
+<h2>🥛 Milk Performance (Last 6 Months)</h2>
+<div class="stats">
+  <div class="stat"><div class="num">${totalMilk.toFixed(0)}L</div><div class="lbl">Total Milk</div></div>
+  <div class="stat"><div class="num">${avgDaily.toFixed(1)}L</div><div class="lbl">Avg / Day</div></div>
+  <div class="stat"><div class="num">${milkRecords.length}</div><div class="lbl">Records</div></div>
+  <div class="stat"><div class="num">${avgFat > 0 ? avgFat.toFixed(1) + '%' : '-'}</div><div class="lbl">Avg Fat</div></div>
+</div>
+<table><tr><th>Month</th><th>Days Recorded</th><th>Total (L)</th><th>Avg/Day (L)</th></tr>${monthlyRows}</table>
+` : '<p style="color:#9ca3af;font-style:italic">No milk records in last 6 months</p>'}
+
+${healthRows ? `
+<h2>💉 Health Records (Last 10)</h2>
+<table><tr><th>Date</th><th>Type</th><th>Description</th><th>Medicine</th></tr>${healthRows}</table>
+` : ''}
+
+${breedingRows ? `
+<h2>🐣 Breeding History</h2>
+<table><tr><th>Date</th><th>Method</th><th>Bull Details</th><th>Status</th></tr>${breedingRows}</table>
+` : ''}
+
+<div class="footer">
+  <p>🐄 DairyPro — Cattle Performance Report</p>
+</div>
+</body></html>`;
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  } catch (err) { next(err); }
+});
+
 export default router;

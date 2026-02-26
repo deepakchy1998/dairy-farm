@@ -9,6 +9,11 @@ const revenueSchema = new mongoose.Schema({
   milkSaleType: { type: String, enum: ['retail', 'dairy', 'other', ''], default: '' },
   milkQuantity: { type: Number },
   milkRate: { type: Number },
+  // Cattle sale fields
+  cattleId: { type: mongoose.Schema.Types.ObjectId, ref: 'Cattle' },
+  cattleTagNumber: { type: String },
+  buyerName: { type: String },
+  buyerPhone: { type: String },
 }, { timestamps: true });
 
 revenueSchema.index({ farmId: 1, date: -1 });

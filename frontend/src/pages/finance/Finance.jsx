@@ -13,7 +13,7 @@ import { useAppConfig } from '../../context/AppConfigContext';
 import toast from 'react-hot-toast';
 
 const milkSaleTypes = ['retail', 'dairy', 'other'];
-const defaultForm = { date: new Date().toISOString().slice(0, 10), category: '', description: '', amount: '', milkSaleType: '', milkQuantity: '', milkRate: '' };
+const defaultForm = { date: new Date().toISOString().slice(0, 10), category: '', description: '', amount: '', milkSaleType: '', milkQuantity: '', milkRate: '', cattleId: '', cattleTagNumber: '', buyerName: '', buyerPhone: '' };
 
 export default function Finance() {
   const { expenseCategories: expCategories, revenueCategories: revCategories } = useAppConfig();
@@ -30,9 +30,13 @@ export default function Finance() {
   const [saving, setSaving] = useState(false);
   const [summary, setSummary] = useState({ total: 0, count: 0, byCategory: {} });
   const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', onConfirm: null, variant: 'danger', confirmText: 'Confirm' });
+  const [cattleList, setCattleList] = useState([]);
 
   const endpoint = tab === 'expense' ? '/expense' : '/revenue';
   const cats = tab === 'expense' ? expCategories : revCategories;
+
+  // Load cattle list for cattle_sale dropdown
+  useEffect(() => { api.get('/cattle', { params: { limit: 500, status: 'active' } }).then(r => setCattleList(r.data.data)).catch(() => {}); }, []);
 
   const fetchData = () => {
     setLoading(true);
@@ -51,6 +55,7 @@ export default function Finance() {
   useEffect(() => { fetchData(); }, [filters, tab]);
 
   const isMilkSale = tab === 'revenue' && form.category === 'milk_sale';
+  const isCattleSale = tab === 'revenue' && form.category === 'cattle_sale';
 
   useEffect(() => {
     if (isMilkSale && form.milkQuantity && form.milkRate) {
@@ -63,6 +68,7 @@ export default function Finance() {
     try {
       const payload = { ...form };
       if (!isMilkSale) { delete payload.milkSaleType; delete payload.milkQuantity; delete payload.milkRate; }
+      if (!isCattleSale) { delete payload.cattleId; delete payload.cattleTagNumber; delete payload.buyerName; delete payload.buyerPhone; }
       if (editId) { await api.put(`${endpoint}/${editId}`, payload); toast.success('Updated'); }
       else { await api.post(endpoint, payload); toast.success('Record added'); }
       setModalOpen(false); setForm({ ...defaultForm }); setEditId(null); fetchData();
@@ -70,7 +76,7 @@ export default function Finance() {
   };
 
   const handleEdit = (r) => {
-    setForm({ date: r.date?.slice(0, 10), category: r.category, description: r.description || '', amount: r.amount, milkSaleType: r.milkSaleType || '', milkQuantity: r.milkQuantity || '', milkRate: r.milkRate || '' });
+    setForm({ date: r.date?.slice(0, 10), category: r.category, description: r.description || '', amount: r.amount, milkSaleType: r.milkSaleType || '', milkQuantity: r.milkQuantity || '', milkRate: r.milkRate || '', cattleId: r.cattleId?._id || r.cattleId || '', cattleTagNumber: r.cattleTagNumber || '', buyerName: r.buyerName || '', buyerPhone: r.buyerPhone || '' });
     setEditId(r._id); setModalOpen(true);
   };
 
@@ -210,6 +216,10 @@ export default function Finance() {
                           <span className="text-sm text-gray-600 dark:text-gray-400">
                             {r.milkQuantity}L × ₹{r.milkRate}/L{r.description ? ` · ${r.description}` : ''}
                           </span>
+                        ) : r.category === 'cattle_sale' && r.cattleTagNumber ? (
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            🐄 Tag {r.cattleTagNumber}{r.buyerName ? ` → ${r.buyerName}` : ''}{r.description ? ` · ${r.description}` : ''}
+                          </span>
                         ) : (
                           <span className="dark:text-gray-400">{r.description || '-'}</span>
                         )}
@@ -221,6 +231,21 @@ export default function Finance() {
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex gap-1.5 justify-center">
+                          {r.category === 'cattle_sale' && (r.cattleId?._id || r.cattleId) && (
+                            <button onClick={async () => {
+                              const cId = r.cattleId?._id || r.cattleId;
+                              try {
+                                toast.loading('Generating...', { id: 'cpdf' });
+                                const res = await api.get(`/cattle/${cId}/pdf`, { responseType: 'blob' });
+                                const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/html' }));
+                                const w = window.open(url, '_blank');
+                                setTimeout(() => { if (w) w.print(); }, 800);
+                                toast.success('Ready to share!', { id: 'cpdf' });
+                              } catch { toast.error('Failed to generate', { id: 'cpdf' }); }
+                            }} className="p-1.5 rounded-lg text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors" title="Download cattle details">
+                              <FiDownload size={15} />
+                            </button>
+                          )}
                           <button onClick={() => handleEdit(r)} className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors">
                             <FiEdit2 size={15} />
                           </button>
@@ -247,6 +272,21 @@ export default function Finance() {
                       <span className="text-xs text-gray-400">{formatDate(r.date)}</span>
                     </div>
                     <div className="flex gap-1">
+                      {r.category === 'cattle_sale' && (r.cattleId?._id || r.cattleId) && (
+                        <button onClick={async () => {
+                          const cId = r.cattleId?._id || r.cattleId;
+                          try {
+                            toast.loading('Generating...', { id: 'cpdf' });
+                            const res = await api.get(`/cattle/${cId}/pdf`, { responseType: 'blob' });
+                            const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/html' }));
+                            const w = window.open(url, '_blank');
+                            setTimeout(() => { if (w) w.print(); }, 800);
+                            toast.success('Ready to share!', { id: 'cpdf' });
+                          } catch { toast.error('Failed to generate', { id: 'cpdf' }); }
+                        }} className="p-1.5 rounded-lg text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors" title="Download cattle details">
+                          <FiDownload size={14} />
+                        </button>
+                      )}
                       <button onClick={() => handleEdit(r)} className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors">
                         <FiEdit2 size={14} />
                       </button>
@@ -259,6 +299,8 @@ export default function Finance() {
                     <div className="text-sm text-gray-600 dark:text-gray-400">
                       {r.category === 'milk_sale' && r.milkQuantity ? (
                         <span>{r.milkQuantity}L × ₹{r.milkRate}/L{r.description ? ` · ${r.description}` : ''}</span>
+                      ) : r.category === 'cattle_sale' && r.cattleTagNumber ? (
+                        <span>🐄 Tag {r.cattleTagNumber}{r.buyerName ? ` → ${r.buyerName}` : ''}</span>
                       ) : (
                         <span>{r.description || 'No description'}</span>
                       )}
@@ -375,7 +417,39 @@ export default function Finance() {
             </div>
           )}
 
-          {!isMilkSale && (
+          {isCattleSale && (
+            <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4 space-y-4">
+              <p className="text-sm font-semibold text-orange-700 dark:text-orange-400">🐄 Cattle Sale Details</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Select Cattle *</label>
+                  <select className="input" required value={form.cattleId} onChange={e => {
+                    const c = cattleList.find(c => c._id === e.target.value);
+                    setForm({ ...form, cattleId: e.target.value, cattleTagNumber: c?.tagNumber || '' });
+                  }}>
+                    <option value="">Choose cattle</option>
+                    {cattleList.map(c => (
+                      <option key={c._id} value={c._id}>Tag {c.tagNumber} — {c.breed} ({c.category})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Sale Price (₹) *</label>
+                  <input type="number" className="input" required placeholder="e.g. 50000" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
+                </div>
+                <div>
+                  <label className="label">Buyer Name</label>
+                  <input className="input" placeholder="Buyer's name" value={form.buyerName} onChange={e => setForm({ ...form, buyerName: e.target.value })} />
+                </div>
+                <div>
+                  <label className="label">Buyer Phone</label>
+                  <input className="input" placeholder="+91..." value={form.buyerPhone} onChange={e => setForm({ ...form, buyerPhone: e.target.value })} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!isMilkSale && !isCattleSale && (
             <div>
               <label className="label">Amount (₹) *</label>
               <input 
