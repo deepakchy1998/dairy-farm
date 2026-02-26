@@ -49,6 +49,42 @@ router.get('/analytics', async (req, res, next) => {
 });
 
 // Single cattle
+// Cattle profile — full details with stats for profile page
+router.get('/:id/profile', async (req, res, next) => {
+  try {
+    const farmId = req.user.farmId;
+    const cattle = await Cattle.findOne({ _id: req.params.id, farmId }).lean();
+    if (!cattle) return res.status(404).json({ success: false, message: 'Cattle not found' });
+
+    // Last 90 days of milk records
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+    const [milkRecords, healthRecords, breedingRecords] = await Promise.all([
+      MilkRecord.find({ farmId, cattleId: cattle._id, date: { $gte: ninetyDaysAgo } }).sort('-date').lean(),
+      HealthRecord.find({ farmId, cattleId: cattle._id }).sort('-date').limit(20).lean(),
+      BreedingRecord.find({ farmId, cattleId: cattle._id }).sort('-breedingDate').limit(10).lean(),
+    ]);
+
+    // Calculate stats
+    const totalMilk = milkRecords.reduce((s, r) => s + (r.totalYield || 0), 0);
+    const avgDailyMilk = milkRecords.length > 0 ? totalMilk / milkRecords.length : 0;
+    const totalHealthCost = healthRecords.reduce((s, r) => s + (r.cost || 0), 0);
+    const activeBreeding = breedingRecords.find(b => ['pending', 'confirmed'].includes(b.status));
+
+    const stats = {
+      totalMilk,
+      avgDailyMilk,
+      milkRecordCount: milkRecords.length,
+      totalHealthCost,
+      breedingCount: breedingRecords.length,
+      activeBreeding: activeBreeding ? { status: activeBreeding.status, expectedDelivery: activeBreeding.expectedDelivery } : null,
+    };
+
+    res.json({ success: true, data: { cattle, milkRecords, healthRecords, breedingRecords, stats } });
+  } catch (err) { next(err); }
+});
+
 router.get('/:id', async (req, res, next) => {
   try {
     const cattle = await Cattle.findOne({ _id: req.params.id, farmId: req.user.farmId });

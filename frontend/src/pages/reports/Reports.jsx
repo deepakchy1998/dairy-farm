@@ -159,6 +159,63 @@ export default function Reports() {
     finally { setExporting(false); }
   };
 
+  const exportCSV = () => {
+    try {
+      const tabLabels = { profit: 'Profit_Loss', milk: 'Milk_Analytics', cattle: 'Cattle_Analytics', expense: 'Expense_Breakdown', milkQuality: 'Milk_Quality', health: 'Health_Analytics', revenue: 'Revenue_Breakdown', feed: 'Feed_Analytics', employee: 'Employee_Analytics', customer: 'Customer_Analytics' };
+      let headers = '', rows = '';
+
+      if (tab === 'profit' && profitData) {
+        headers = 'Month,Revenue,Expense,Net Profit';
+        const plMonthsCSV = new Set([...(profitData.revenue || []).map(r => r._id), ...(profitData.expense || []).map(r => r._id)]);
+        rows = [...plMonthsCSV].sort().map(m => {
+          const rev = profitData.revenue?.find(r => r._id === m)?.total || 0;
+          const exp = profitData.expense?.find(r => r._id === m)?.total || 0;
+          return `${m},${rev},${exp},${rev - exp}`;
+        }).join('\n');
+      } else if (tab === 'milk' && milkData) {
+        headers = 'Rank,Tag No,Breed,Total (L),Avg/Day (L)';
+        rows = (milkData.topCattle || []).map((c, i) => `${i + 1},"${c.cattle?.tagNumber || '-'}","${c.cattle?.breed || '-'}",${c.total?.toFixed(1)},${c.avg?.toFixed(1)}`).join('\n');
+      } else if (tab === 'cattle' && cattleData) {
+        headers = 'Type,Category,Count';
+        rows = ['byCategory', 'byBreed', 'byGender', 'byStatus'].flatMap(key =>
+          (cattleData[key] || []).map(d => `"${key.replace('by', '')}","${d._id}",${d.count}`)
+        ).join('\n');
+      } else if (tab === 'expense' && expenseData) {
+        headers = 'Category,Amount,Entries';
+        rows = (expenseData.byCategory || []).map(d => `"${d._id}",${d.total},${d.count}`).join('\n');
+      } else if (tab === 'revenue' && revenueData) {
+        headers = 'Source,Amount,Entries';
+        rows = (revenueData.byCategory || []).map(d => `"${d._id}",${d.total},${d.count}`).join('\n');
+      } else if (tab === 'health' && healthData) {
+        headers = 'Type,Records,Total Cost';
+        rows = (healthData.byType || []).map(d => `"${d._id}",${d.count},${d.totalCost}`).join('\n');
+      } else if (tab === 'feed' && feedData) {
+        headers = 'Feed Type,Quantity,Total Cost';
+        rows = (feedData.byType || []).map(d => `"${d._id}",${d.totalQty?.toFixed(0)},${d.totalCost}`).join('\n');
+      } else if (tab === 'employee' && employeeData) {
+        headers = 'Role,Count,Total Salary';
+        rows = (employeeData.byRole || []).map(d => `"${d._id}",${d.count},${d.totalSalary}`).join('\n');
+      } else if (tab === 'customer' && customerData) {
+        headers = 'Rank,Customer,Total Amount';
+        rows = (customerData.topCustomers || []).map((c, i) => `${i + 1},"${c.customer?.name || '-'}",${c.totalAmt}`).join('\n');
+      } else if (tab === 'milkQuality' && milkQuality) {
+        headers = 'Month,Avg Fat %,Avg SNF %';
+        rows = (milkQuality.avgFatSNF || []).map(d => `${d._id},${d.avgFat?.toFixed(2) || 0},${d.avgSNF?.toFixed(2) || 0}`).join('\n');
+      } else {
+        toast.error('No data to export for this tab');
+        return;
+      }
+
+      const csv = '\ufeff' + headers + '\n' + rows;
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `DairyPro_${tabLabels[tab] || tab}_${months}months.csv`;
+      a.click();
+      toast.success('CSV downloaded!');
+    } catch { toast.error('CSV export failed'); }
+  };
+
   if (loading) return (
     <div className="flex flex-col items-center justify-center h-80 gap-4">
       <div className="relative">
@@ -209,6 +266,9 @@ export default function Reports() {
           </div>
           <button onClick={fetchAll} className="btn-secondary !p-2 sm:!p-2.5 !rounded-xl" title="Refresh">
             <FiRefreshCw size={16} />
+          </button>
+          <button onClick={exportCSV} className="btn-secondary flex items-center gap-1.5 text-xs sm:text-sm">
+            <FiDownload size={15} /> CSV
           </button>
           <button onClick={exportPDF} disabled={exporting} className="btn-primary flex items-center gap-1.5 text-xs sm:text-sm">
             <FiDownload size={15} /> {exporting ? '...' : 'PDF'}
