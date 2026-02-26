@@ -198,31 +198,31 @@ export default function Reports() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports & Analytics 📊</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Deep insights into your farm performance</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
           <div className="flex items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2">
-            <FiCalendar className="text-gray-400" size={15} />
-            <select className="bg-transparent text-sm font-medium dark:text-white outline-none cursor-pointer" value={months} onChange={e => setMonths(+e.target.value)}>
-              <option value={3}>Last 3 Months</option>
-              <option value={6}>Last 6 Months</option>
-              <option value={12}>Last 12 Months</option>
+            <FiCalendar className="text-gray-400 hidden sm:block" size={15} />
+            <select className="bg-transparent text-xs sm:text-sm font-medium dark:text-white outline-none cursor-pointer" value={months} onChange={e => setMonths(+e.target.value)}>
+              <option value={3}>3 Months</option>
+              <option value={6}>6 Months</option>
+              <option value={12}>12 Months</option>
             </select>
           </div>
-          <button onClick={fetchAll} className="btn-secondary !p-2.5 !rounded-xl" title="Refresh">
+          <button onClick={fetchAll} className="btn-secondary !p-2 sm:!p-2.5 !rounded-xl" title="Refresh">
             <FiRefreshCw size={16} />
           </button>
-          <button onClick={exportPDF} disabled={exporting} className="btn-primary flex items-center gap-2 text-sm">
-            <FiDownload size={15} /> {exporting ? 'Exporting...' : 'Export PDF'}
+          <button onClick={exportPDF} disabled={exporting} className="btn-primary flex items-center gap-1.5 text-xs sm:text-sm">
+            <FiDownload size={15} /> {exporting ? '...' : 'PDF'}
           </button>
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {tabs.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+            className={`flex items-center gap-1.5 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
               tab === t.id
                 ? `bg-${t.color}-100 dark:bg-${t.color}-900/30 text-${t.color}-700 dark:text-${t.color}-400 shadow-sm ring-1 ring-${t.color}-200 dark:ring-${t.color}-800`
                 : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700'

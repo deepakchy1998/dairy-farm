@@ -97,11 +97,11 @@ export default function CattleProfile() {
           <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white text-4xl shadow-lg shrink-0">
             {c.photo ? <img src={c.photo} alt={c.tagNumber} loading="lazy" className="w-full h-full object-cover rounded-2xl" /> : '🐄'}
           </div>
-          {/* QR Code */}
+          {/* QR Code — hidden on very small screens, shown sm+ */}
           <img 
             src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(window.location.origin + '/cattle/' + c._id)}`}
             alt="QR Code"
-            className="w-24 h-24 rounded-lg border border-gray-200 dark:border-gray-700 shrink-0"
+            className="hidden sm:block w-24 h-24 rounded-lg border border-gray-200 dark:border-gray-700 shrink-0"
             loading="lazy"
           />
           <div className="flex-1">
@@ -137,10 +137,10 @@ export default function CattleProfile() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+            className={`flex items-center gap-1.5 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
               tab === t.id
                 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-200 dark:ring-emerald-800'
                 : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700'
@@ -224,7 +224,8 @@ export default function CattleProfile() {
             </div>
           )}
           <div className="card !p-0 overflow-hidden max-h-[350px] overflow-y-auto">
-            <table className="w-full text-sm">
+            {/* Desktop table */}
+            <table className="w-full text-sm hidden md:table">
               <thead className="sticky top-0 z-10">
                 <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                   <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Date</th>
@@ -244,6 +245,18 @@ export default function CattleProfile() {
                 ))}
               </tbody>
             </table>
+            {/* Mobile cards */}
+            <div className="md:hidden divide-y dark:divide-gray-800">
+              {milkRecords.map((r, i) => (
+                <div key={i} className="p-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{formatDate(r.date)}</p>
+                    <p className="text-xs text-gray-400">M: {r.morningYield?.toFixed(1) || '-'}L · E: {r.eveningYield?.toFixed(1) || '-'}L</p>
+                  </div>
+                  <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{r.totalYield?.toFixed(1)}L</span>
+                </div>
+              ))}
+            </div>
             {milkRecords.length === 0 && <p className="text-gray-400 text-center py-12">No milk records</p>}
           </div>
         </div>
@@ -252,7 +265,8 @@ export default function CattleProfile() {
       {/* Health Tab */}
       {tab === 'health' && (
         <div className="card !p-0 overflow-hidden animate-fadeIn max-h-[400px] overflow-y-auto">
-          <table className="w-full text-sm">
+          {/* Desktop table */}
+          <table className="w-full text-sm hidden md:table">
             <thead className="sticky top-0 z-10">
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Date</th>
@@ -276,6 +290,23 @@ export default function CattleProfile() {
               ))}
             </tbody>
           </table>
+          {/* Mobile cards */}
+          <div className="md:hidden divide-y dark:divide-gray-800">
+            {healthRecords.map((r, i) => (
+              <div key={i} className="p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{formatDate(r.date)}</span>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 capitalize">{r.type}</span>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{r.description}</p>
+                <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                  {r.medicine && <span>💊 {r.medicine}</span>}
+                  {r.cost > 0 && <span className="text-red-500 font-semibold">{formatCurrency(r.cost)}</span>}
+                  {r.nextDueDate && <span>📅 Due: {formatDate(r.nextDueDate)}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
           {healthRecords.length === 0 && <p className="text-gray-400 text-center py-12">No health records</p>}
         </div>
       )}
@@ -283,7 +314,8 @@ export default function CattleProfile() {
       {/* Breeding Tab */}
       {tab === 'breeding' && (
         <div className="card !p-0 overflow-hidden animate-fadeIn max-h-[400px] overflow-y-auto">
-          <table className="w-full text-sm">
+          {/* Desktop table */}
+          <table className="w-full text-sm hidden md:table">
             <thead className="sticky top-0 z-10">
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                 <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Breeding Date</th>
@@ -308,6 +340,25 @@ export default function CattleProfile() {
               })}
             </tbody>
           </table>
+          {/* Mobile cards */}
+          <div className="md:hidden divide-y dark:divide-gray-800">
+            {breedingRecords.map((r, i) => {
+              const statusBadge = { pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400', confirmed: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400', delivered: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400', failed: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' };
+              return (
+                <div key={i} className="p-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{formatDate(r.breedingDate)}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold capitalize ${statusBadge[r.status] || ''}`}>{r.status}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                    <span>{r.method === 'artificial' ? '🧪 AI' : '🐂 Natural'}</span>
+                    {r.bullDetails && <span>· {r.bullDetails}</span>}
+                  </div>
+                  {r.expectedDelivery && <p className="text-xs text-pink-500 mt-1">📅 Due: {formatDate(r.expectedDelivery)}</p>}
+                </div>
+              );
+            })}
+          </div>
           {breedingRecords.length === 0 && <p className="text-gray-400 text-center py-12">No breeding records</p>}
         </div>
       )}

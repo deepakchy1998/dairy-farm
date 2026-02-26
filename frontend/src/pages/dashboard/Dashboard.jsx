@@ -240,7 +240,7 @@ export default function Dashboard() {
       )}
 
       {/* Quick Insights Bar */}
-      <div className="card !p-4 flex flex-wrap items-center gap-6 text-sm">
+      <div className="card !p-4 grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-3 sm:gap-6 text-sm">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span className="text-gray-500 dark:text-gray-400">Profit Margin:</span>
