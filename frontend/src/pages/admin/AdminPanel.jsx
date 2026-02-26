@@ -1489,6 +1489,51 @@ export default function AdminPanel() {
 
               <div>
                 <h4 className="font-semibold text-sm mb-3">Module Prices (₹/month)</h4>
+
+                {/* Auto-generate prices */}
+                <div className="mb-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 border border-indigo-200 dark:border-indigo-800">
+                  <p className="text-xs font-semibold text-indigo-800 dark:text-indigo-300 mb-2">⚡ Auto-Generate Module Prices</p>
+                  <p className="text-[10px] text-indigo-600 dark:text-indigo-400 mb-3">Set a lower and upper limit — prices will be distributed smartly across modules based on complexity</p>
+                  <div className="flex items-end gap-3">
+                    <div className="flex-1">
+                      <label className="text-[10px] text-indigo-500">Lower Limit (₹)</label>
+                      <input type="number" className="input text-sm" placeholder="20" id="autoGenLower" defaultValue={20} />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-[10px] text-indigo-500">Upper Limit (₹)</label>
+                      <input type="number" className="input text-sm" placeholder="80" id="autoGenUpper" defaultValue={80} />
+                    </div>
+                    <button type="button" onClick={() => {
+                      const lower = Number(document.getElementById('autoGenLower').value) || 20;
+                      const upper = Number(document.getElementById('autoGenUpper').value) || 80;
+                      const lo = Math.min(lower, upper);
+                      const hi = Math.max(lower, upper);
+                      // Module complexity weights (1=simple, 3=complex)
+                      const weights = {
+                        cattle: 2.5, milk: 2.5, health: 2, breeding: 2,
+                        feed: 1.5, finance: 2, milkDelivery: 2.5,
+                        employees: 2, insurance: 1.5, reports: 2,
+                      };
+                      const wValues = Object.values(weights);
+                      const minW = Math.min(...wValues);
+                      const maxW = Math.max(...wValues);
+                      const range = maxW - minW || 1;
+                      const generated = {};
+                      for (const [key, w] of Object.entries(weights)) {
+                        const ratio = (w - minW) / range;
+                        generated[key] = Math.round(lo + ratio * (hi - lo));
+                      }
+                      const updates = {};
+                      for (const [key, price] of Object.entries(generated)) {
+                        updates[`customPlan${key.charAt(0).toUpperCase() + key.slice(1)}Price`] = price;
+                      }
+                      setWebsiteForm(prev => ({ ...prev, ...updates }));
+                    }}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition whitespace-nowrap">
+                      ⚡ Generate
+                    </button>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { id: 'cattle', name: 'Cattle Management', icon: '🐄' },
