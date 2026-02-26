@@ -1296,115 +1296,110 @@ export default function AdminPanel() {
 
           {/* ── Custom Plan Builder ── */}
           <div className="card mt-6">
-            <h3 className="font-semibold mb-4 flex items-center gap-2">🛠️ Custom Plan Builder
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${appConfigForm.customPlanEnabled !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                {appConfigForm.customPlanEnabled !== false ? 'Enabled' : 'Disabled'}
-              </span>
-            </h3>
-            <p className="text-xs text-gray-500 mb-4">Let users build their own plan by selecting specific modules. Pricing is managed here.</p>
-
-            <div className="space-y-4">
-              {/* Enable/Disable */}
-              <div className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                <div>
-                  <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">Enable Custom Plans</p>
-                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400">Show custom plan builder on landing page and subscription page</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
+            {/* Header row */}
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+              <div className="flex items-center gap-3">
+                <h3 className="font-semibold text-lg flex items-center gap-2">🛠️ Custom Plan Builder
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${appConfigForm.customPlanEnabled !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                    {appConfigForm.customPlanEnabled !== false ? 'Enabled' : 'Disabled'}
+                  </span>
+                </h3>
+              </div>
+              {/* Enable toggle + Min/Max prices — all inline in header */}
+              <div className="flex flex-wrap items-center gap-4">
+                <label className="relative inline-flex items-center cursor-pointer" title="Enable Custom Plans">
                   <input type="checkbox" checked={appConfigForm.customPlanEnabled !== false}
                     onChange={e => setAppConfigForm({ ...appConfigForm, customPlanEnabled: e.target.checked })}
                     className="sr-only peer" />
                   <div className="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                  <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">Show on pages</span>
                 </label>
-              </div>
-
-              {/* Min/Max Price */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Minimum Monthly Price (₹)</label>
-                  <input type="number" className="input" placeholder="200"
+                <div className="flex items-center gap-2">
+                  <label className="text-[10px] text-gray-500 whitespace-nowrap">Min ₹</label>
+                  <input type="number" className="input w-20 text-sm" placeholder="200"
                     value={appConfigForm.customPlanMinPrice || ''}
                     onChange={e => setAppConfigForm({ ...appConfigForm, customPlanMinPrice: +e.target.value })} />
                 </div>
-                <div>
-                  <label className="label">Maximum Monthly Price (₹)</label>
-                  <input type="number" className="input" placeholder="5000"
+                <div className="flex items-center gap-2">
+                  <label className="text-[10px] text-gray-500 whitespace-nowrap">Max ₹</label>
+                  <input type="number" className="input w-20 text-sm" placeholder="5000"
                     value={appConfigForm.customPlanMaxPrice || ''}
                     onChange={e => setAppConfigForm({ ...appConfigForm, customPlanMaxPrice: +e.target.value })} />
                 </div>
               </div>
+            </div>
 
-              {/* Auto-generate */}
-              <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-xl p-4 border border-indigo-200 dark:border-indigo-800">
-                <p className="text-xs font-semibold text-indigo-800 dark:text-indigo-300 mb-2">⚡ Auto-Generate Module Prices</p>
-                <p className="text-[10px] text-indigo-600 dark:text-indigo-400 mb-3">Set lower & upper limit — prices distribute by module complexity</p>
-                <div className="flex items-end gap-3">
-                  <div className="flex-1">
-                    <label className="text-[10px] text-indigo-500">Lower (₹)</label>
-                    <input type="number" className="input text-sm" placeholder="20" id="autoGenLower2" defaultValue={20} />
-                  </div>
-                  <div className="flex-1">
-                    <label className="text-[10px] text-indigo-500">Upper (₹)</label>
-                    <input type="number" className="input text-sm" placeholder="80" id="autoGenUpper2" defaultValue={80} />
-                  </div>
-                  <button type="button" onClick={() => {
-                    const lo = Math.min(Number(document.getElementById('autoGenLower2').value) || 20, Number(document.getElementById('autoGenUpper2').value) || 80);
-                    const hi = Math.max(Number(document.getElementById('autoGenLower2').value) || 20, Number(document.getElementById('autoGenUpper2').value) || 80);
-                    const weights = { cattle: 2.5, milk: 2.5, health: 2, breeding: 2, feed: 1.5, finance: 2, milkDelivery: 2.5, employees: 2, insurance: 1.5, reports: 2 };
-                    const wVals = Object.values(weights);
-                    const minW = Math.min(...wVals), maxW = Math.max(...wVals), range = maxW - minW || 1;
-                    const prices = {};
-                    for (const [k, w] of Object.entries(weights)) prices[k] = Math.round(lo + ((w - minW) / range) * (hi - lo));
-                    setAppConfigForm(prev => ({ ...prev, customPlanModulePrices: prices }));
-                  }} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition whitespace-nowrap">
-                    ⚡ Generate
-                  </button>
-                </div>
+            {/* Auto-generate — horizontal bar */}
+            <div className="flex flex-wrap items-center gap-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl px-4 py-3 border border-indigo-200 dark:border-indigo-800 mb-5">
+              <p className="text-xs font-semibold text-indigo-800 dark:text-indigo-300 whitespace-nowrap">⚡ Auto-Generate Prices</p>
+              <span className="text-[10px] text-indigo-500 dark:text-indigo-400 hidden sm:inline">Distribute by complexity →</span>
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] text-indigo-500">Lower ₹</label>
+                <input type="number" className="input w-20 text-sm" placeholder="20" id="autoGenLower2" defaultValue={20} />
               </div>
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] text-indigo-500">Upper ₹</label>
+                <input type="number" className="input w-20 text-sm" placeholder="80" id="autoGenUpper2" defaultValue={80} />
+              </div>
+              <button type="button" onClick={() => {
+                const lo = Math.min(Number(document.getElementById('autoGenLower2').value) || 20, Number(document.getElementById('autoGenUpper2').value) || 80);
+                const hi = Math.max(Number(document.getElementById('autoGenLower2').value) || 20, Number(document.getElementById('autoGenUpper2').value) || 80);
+                const weights = { cattle: 2.5, milk: 2.5, health: 2, breeding: 2, feed: 1.5, finance: 2, milkDelivery: 2.5, employees: 2, insurance: 1.5, reports: 2 };
+                const wVals = Object.values(weights);
+                const minW = Math.min(...wVals), maxW = Math.max(...wVals), range = maxW - minW || 1;
+                const prices = {};
+                for (const [k, w] of Object.entries(weights)) prices[k] = Math.round(lo + ((w - minW) / range) * (hi - lo));
+                setAppConfigForm(prev => ({ ...prev, customPlanModulePrices: prices }));
+              }} className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition whitespace-nowrap">
+                ⚡ Generate
+              </button>
+            </div>
 
-              {/* Module Prices */}
-              <h4 className="font-semibold text-sm">Module Prices (₹/month)</h4>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { id: 'cattle', name: 'Cattle', icon: '🐄' }, { id: 'milk', name: 'Milk', icon: '🥛' },
-                  { id: 'health', name: 'Health', icon: '💉' }, { id: 'breeding', name: 'Breeding', icon: '🐣' },
-                  { id: 'feed', name: 'Feed', icon: '🌾' }, { id: 'finance', name: 'Finance', icon: '💰' },
-                  { id: 'milkDelivery', name: 'Dudh Khata', icon: '🏘️' }, { id: 'employees', name: 'Employees', icon: '👷' },
-                  { id: 'insurance', name: 'Insurance', icon: '🛡️' }, { id: 'reports', name: 'Reports', icon: '📊' },
-                ].map(mod => {
-                  const prices = appConfigForm.customPlanModulePrices || {};
-                  return (
-                    <div key={mod.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-2 rounded">
-                      <span>{mod.icon}</span>
-                      <div className="flex-1">
-                        <label className="text-xs font-medium dark:text-gray-300">{mod.name}</label>
-                        <input type="number" className="input mt-1" placeholder="50"
-                          value={prices[mod.id] || ''}
-                          onChange={e => setAppConfigForm({ ...appConfigForm, customPlanModulePrices: { ...prices, [mod.id]: +e.target.value } })} />
-                      </div>
+            {/* Module Prices — horizontal 5-col grid */}
+            <h4 className="font-semibold text-sm mb-3">Module Prices (₹/month)</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-4">
+              {[
+                { id: 'cattle', name: 'Cattle', icon: '🐄' }, { id: 'milk', name: 'Milk', icon: '🥛' },
+                { id: 'health', name: 'Health', icon: '💉' }, { id: 'breeding', name: 'Breeding', icon: '🐣' },
+                { id: 'feed', name: 'Feed', icon: '🌾' }, { id: 'finance', name: 'Finance', icon: '💰' },
+                { id: 'milkDelivery', name: 'Dudh Khata', icon: '🏘️' }, { id: 'employees', name: 'Employees', icon: '👷' },
+                { id: 'insurance', name: 'Insurance', icon: '🛡️' }, { id: 'reports', name: 'Reports', icon: '📊' },
+              ].map(mod => {
+                const prices = appConfigForm.customPlanModulePrices || {};
+                return (
+                  <div key={mod.id} className="flex flex-col items-center gap-1 bg-gray-50 dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                    <span className="text-2xl">{mod.icon}</span>
+                    <label className="text-[11px] font-medium dark:text-gray-300 text-center">{mod.name}</label>
+                    <div className="relative w-full">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">₹</span>
+                      <input type="number" className="input pl-5 text-center text-sm font-semibold" placeholder="50"
+                        value={prices[mod.id] || ''}
+                        onChange={e => setAppConfigForm({ ...appConfigForm, customPlanModulePrices: { ...prices, [mod.id]: +e.target.value } })} />
                     </div>
-                  );
-                })}
-              </div>
-              {/* AI chatbot price - auto calculated */}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* AI chatbot price + Save — horizontal footer */}
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               {(() => {
                 const prices = Object.values(appConfigForm.customPlanModulePrices || {}).sort((a, b) => a - b);
                 const m = Math.floor(prices.length / 2);
                 const median = prices.length === 0 ? 40 : prices.length % 2 === 0 ? Math.round((prices[m-1] + prices[m]) / 2) : prices[m];
                 return (
-                  <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-200 dark:border-purple-800">
-                    <span>🤖</span>
-                    <div className="flex-1">
+                  <div className="flex items-center gap-3 bg-purple-50 dark:bg-purple-900/20 px-4 py-2.5 rounded-xl border border-purple-200 dark:border-purple-800">
+                    <span className="text-xl">🤖</span>
+                    <div>
                       <p className="text-xs font-medium text-purple-800 dark:text-purple-300">AI Farm Assistant</p>
                       <p className="text-[10px] text-purple-600 dark:text-purple-400">Auto-calculated median</p>
                     </div>
-                    <span className="text-lg font-bold text-purple-700 dark:text-purple-300">₹{median}/mo</span>
+                    <span className="text-lg font-bold text-purple-700 dark:text-purple-300 ml-2">₹{median}/mo</span>
                   </div>
                 );
               })()}
-
               <button onClick={async () => { setSaving(true); try { await api.put('/app-config', appConfigForm); toast.success('Custom plan settings saved!'); } catch { toast.error('Failed'); } finally { setSaving(false); } }}
-                disabled={saving} className="btn-primary w-full py-2.5">{saving ? 'Saving...' : '💾 Save Custom Plan Settings'}</button>
+                disabled={saving} className="btn-primary px-8 py-2.5">{saving ? 'Saving...' : '💾 Save Custom Plan Settings'}</button>
             </div>
           </div>
 
