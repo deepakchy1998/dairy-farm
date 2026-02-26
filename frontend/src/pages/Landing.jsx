@@ -238,6 +238,14 @@ export default function Landing() {
   }, []);
 
   useEffect(() => {
+    if (content?.metaTitle) document.title = content.metaTitle;
+    if (content?.metaDescription) {
+      const meta = document.querySelector('meta[name="description"]');
+      if (meta) meta.setAttribute('content', content.metaDescription);
+    }
+  }, [content]);
+
+  useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
     localStorage.setItem('theme', dark ? 'dark' : 'light');
   }, [dark]);
@@ -300,14 +308,24 @@ export default function Landing() {
         </div>
       </nav>
 
+      {/* ─── Announcement Banner ─── */}
+      {content?.announcementText && (
+        <div className="fixed top-16 w-full bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-center py-2 text-sm z-40">
+          <span>{content.announcementText}</span>
+          {content.announcementLinkText && content.announcementLinkUrl && (
+            <a href={content.announcementLinkUrl} className="ml-2 underline font-semibold hover:text-emerald-100">{content.announcementLinkText}</a>
+          )}
+        </div>
+      )}
+
       {/* ─── Hero ─── */}
-      <section className="pt-32 pb-20 px-4 bg-gradient-to-br from-emerald-50 via-white to-green-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 relative overflow-hidden">
+      <section className={`${content?.announcementText ? 'pt-40' : 'pt-32'} pb-20 px-4 bg-gradient-to-br from-emerald-50 via-white to-green-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 relative overflow-hidden`}>
         <div className="absolute top-20 right-0 w-96 h-96 bg-emerald-100 dark:bg-emerald-900/20 rounded-full blur-3xl opacity-40"></div>
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-green-100 dark:bg-green-900/20 rounded-full blur-3xl opacity-40"></div>
         <div className="max-w-7xl mx-auto text-center relative">
           <FadeIn>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 rounded-full text-sm font-medium mb-6">
-              <FiStar size={14} /> #1 Smart Dairy Farm Management Platform
+              <FiStar size={14} /> {content?.heroBadge || '#1 Smart Dairy Farm Management Platform'}
             </div>
           </FadeIn>
           <FadeIn delay={0.1}>
@@ -321,7 +339,7 @@ export default function Landing() {
           <FadeIn delay={0.3}>
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/register" className="px-8 py-3.5 bg-emerald-600 text-white rounded-full font-semibold text-lg hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 dark:shadow-emerald-900/30 flex items-center gap-2 hover:scale-105">
-                Start Free Trial <FiArrowRight />
+                {content?.ctaText || 'Start Free Trial'} <FiArrowRight />
               </Link>
               <a href="#features" className="px-8 py-3.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full font-semibold text-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all border border-gray-200 dark:border-gray-700">
                 See Features
@@ -440,8 +458,28 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ─── Custom Plan Builder ─── */}
+      {content?.customPlanConfig?.enabled !== false && (
+        <section id="custom-plan" className="py-20 px-4 bg-gray-50 dark:bg-gray-900">
+          <div className="max-w-7xl mx-auto">
+            <FadeIn>
+              <div className="text-center mb-12">
+                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
+                  {content?.customPlanConfig?.heading || '🛠️ Build Your Own Plan'}
+                </h2>
+                <p className="mt-4 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                  {content?.customPlanConfig?.subheading || 'Select only the modules you need. Pay for what you use!'}
+                </p>
+              </div>
+            </FadeIn>
+            
+            <CustomPlanBuilder content={content} />
+          </div>
+        </section>
+      )}
+
       {/* ─── Pricing ─── */}
-      <section id="pricing" className="py-20 px-4 bg-gray-50 dark:bg-gray-900">
+      <section id="pricing" className="py-20 px-4 bg-white dark:bg-gray-950">
         <div className="max-w-7xl mx-auto">
           <FadeIn>
             <div className="text-center mb-12">
@@ -472,26 +510,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
-      {/* ─── Custom Plan Builder ─── */}
-      {content?.customPlanConfig?.enabled !== false && (
-        <section id="custom-plan" className="py-20 px-4 bg-white dark:bg-gray-950">
-          <div className="max-w-7xl mx-auto">
-            <FadeIn>
-              <div className="text-center mb-12">
-                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
-                  {content?.customPlanConfig?.heading || '🛠️ Build Your Own Plan'}
-                </h2>
-                <p className="mt-4 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                  {content?.customPlanConfig?.subheading || 'Select only the modules you need. Pay for what you use!'}
-                </p>
-              </div>
-            </FadeIn>
-            
-            <CustomPlanBuilder content={content} />
-          </div>
-        </section>
-      )}
 
       {/* ─── Testimonials ─── */}
       <section id="testimonials" className="py-20 px-4 bg-white dark:bg-gray-950">
@@ -554,6 +572,29 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ─── Download App ─── */}
+      <section className="py-20 px-4 bg-white dark:bg-gray-950">
+        <div className="max-w-4xl mx-auto text-center">
+          <FadeIn>
+            <div className="p-8 rounded-3xl bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border border-emerald-100 dark:border-emerald-900/30">
+              <span className="text-6xl block mb-4">📱</span>
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                Available on All Devices
+              </h2>
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
+                Install DairyPro on your phone, tablet, or computer. Works offline too!
+              </p>
+              <Link 
+                to="/register" 
+                className="inline-flex items-center gap-2 px-8 py-4 bg-emerald-600 text-white rounded-full font-bold text-lg hover:bg-emerald-700 transition-all shadow-lg hover:scale-105"
+              >
+                Install Now <FiArrowRight />
+              </Link>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
       {/* ─── Contact ─── */}
       <section id="contact" className="py-20 px-4 bg-white dark:bg-gray-950">
         <div className="max-w-7xl mx-auto">
@@ -563,16 +604,19 @@ export default function Landing() {
               <p className="mt-4 text-gray-600 dark:text-gray-400">Have questions? We're here to help.</p>
             </div>
           </FadeIn>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
+          <div className={`grid grid-cols-1 sm:grid-cols-${content?.whatsappNumber ? '4' : '3'} gap-6 max-w-4xl mx-auto`}>
             {[
-              { icon: <FiPhone size={24} />, title: 'Phone', value: phone, sub: 'Mon-Sat, 9am-6pm' },
+              { icon: <FiPhone size={24} />, title: 'Phone', value: phone, sub: content?.workingHours || 'Mon-Sat, 9am-6pm' },
               { icon: <FiMail size={24} />, title: 'Email', value: email, sub: 'We reply within 24 hours' },
               { icon: <FiMapPin size={24} />, title: 'Location', value: address, sub: 'Serving all of India' },
+              ...(content?.whatsappNumber ? [{ icon: '💬', title: 'WhatsApp', value: content.whatsappNumber, sub: 'Quick support' }] : []),
             ].map((c, i) => (
               <FadeIn key={c.title} delay={i * 0.1}>
                 <motion.div whileHover={{ y: -5 }}
                   className="text-center p-6 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
-                  <div className="mx-auto text-emerald-600 dark:text-emerald-400 flex justify-center">{c.icon}</div>
+                  <div className="mx-auto text-emerald-600 dark:text-emerald-400 flex justify-center text-2xl">
+                    {typeof c.icon === 'string' ? c.icon : c.icon}
+                  </div>
                   <h3 className="font-semibold mt-3 text-gray-900 dark:text-white">{c.title}</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{c.value}</p>
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{c.sub}</p>
@@ -613,7 +657,7 @@ export default function Landing() {
             </div>
           </FadeIn>
           <div className="space-y-4">
-            {[
+            {(content?.faqs?.length > 0 ? content.faqs : [
               { q: 'Is DairyPro free to try?', a: `Yes! You get a ${trialDays}-day free trial with full access to all 12 modules. No credit card required.` },
               { q: 'Can I use it on my phone?', a: 'Absolutely! DairyPro is a Progressive Web App (PWA) — install it on your phone like a regular app. Works on Android, iOS, tablet, and desktop.' },
               { q: 'Does it support Hindi?', a: 'Yes! Our AI Farm Assistant understands Hindi, English, and Hinglish. Ask "aaj ka dudh kitna hai?" or "show breeding status" — both work perfectly!' },
@@ -626,7 +670,7 @@ export default function Landing() {
               { q: 'Can I track cattle insurance?', a: 'Yes! Record insurance policies with coverage dates, premiums, and provider details. Get alerts before policies expire. The AI chatbot also knows about govt schemes like Pashu Dhan Bima Yojana.' },
               { q: 'How many cattle can I track?', a: 'No limits! Track unlimited cattle — milking, dry, heifers, calves, bulls. Unlimited records across all modules. Every plan includes everything.' },
               { q: 'Can I export my records?', a: 'Yes! Export from any module as CSV or PDF — milk records, health history, employee attendance, financial reports, customer ledgers, and more.' },
-            ].map((faq, i) => (
+            ]).map((faq, i) => (
               <FadeIn key={i} delay={i * 0.05}>
                 <details className="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                   <summary className="flex items-center justify-between p-5 cursor-pointer font-semibold text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-750 transition">
@@ -650,7 +694,7 @@ export default function Landing() {
                 <span className="text-2xl">🐄</span>
                 <span className="text-lg font-bold text-white">DairyPro</span>
               </div>
-              <p className="text-sm leading-relaxed">Smart dairy farm management platform built for Indian farmers.</p>
+              <p className="text-sm leading-relaxed">{content?.footerTagline || 'Smart dairy farm management platform built for Indian farmers.'}</p>
             </div>
             <div>
               <h4 className="text-white font-semibold mb-4">Product</h4>
@@ -678,11 +722,26 @@ export default function Landing() {
                 <li className="flex items-center gap-2"><FiPhone size={14} /> {phone}</li>
                 <li className="flex items-center gap-2"><FiMail size={14} /> {email}</li>
                 <li className="flex items-center gap-2"><FiMapPin size={14} /> {address}</li>
+                {content?.workingHours && <li className="flex items-center gap-2">🕒 {content.workingHours}</li>}
               </ul>
+              
+              {/* Social Links */}
+              {(content?.whatsappNumber || content?.youtubeUrl || content?.facebookUrl || content?.instagramUrl || content?.twitterUrl) && (
+                <div className="mt-4">
+                  <h5 className="text-white font-semibold mb-3 text-sm">Follow Us</h5>
+                  <div className="flex gap-3 text-sm">
+                    {content?.whatsappNumber && <a href={`https://wa.me/${content.whatsappNumber.replace(/[^\d]/g, '')}`} className="hover:text-white transition">WhatsApp</a>}
+                    {content?.youtubeUrl && <a href={content.youtubeUrl} className="hover:text-white transition">YouTube</a>}
+                    {content?.facebookUrl && <a href={content.facebookUrl} className="hover:text-white transition">Facebook</a>}
+                    {content?.instagramUrl && <a href={content.instagramUrl} className="hover:text-white transition">Instagram</a>}
+                    {content?.twitterUrl && <a href={content.twitterUrl} className="hover:text-white transition">Twitter</a>}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
-            <p>© {new Date().getFullYear()} DairyPro. All rights reserved. Made with ❤️ for Indian Dairy Farmers.</p>
+            <p>{content?.copyrightText || `© ${new Date().getFullYear()} DairyPro. All rights reserved.`}</p>
           </div>
         </div>
       </footer>
