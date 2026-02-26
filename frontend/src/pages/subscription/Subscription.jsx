@@ -12,16 +12,21 @@ export default function Subscription() {
   const [loading, setLoading] = useState(true);
   const [razorpayEnabled, setRazorpayEnabled] = useState(false);
   const [razorpayLoading, setRazorpayLoading] = useState(false);
+  const [customModules, setCustomModules] = useState(new Set());
+  const [customPeriod, setCustomPeriod] = useState('monthly');
+  const [customConfig, setCustomConfig] = useState(null);
 
   useEffect(() => {
     Promise.all([
       api.get('/subscription/plans'),
       api.get('/payment/my'),
       api.get('/razorpay/config').catch(() => ({ data: { data: { enabled: false } } })),
-    ]).then(([p, pay, rz]) => {
+      api.get('/landing').then(r => r.data.data?.customPlanConfig).catch(() => null),
+    ]).then(([p, pay, rz, config]) => {
       setPlans(p.data.data);
       setPayments(pay.data.data);
       setRazorpayEnabled(rz.data.data?.enabled || false);
+      setCustomConfig(config);
     }).catch(() => toast.error('Failed to load'))
     .finally(() => setLoading(false));
   }, []);
@@ -35,14 +40,15 @@ export default function Subscription() {
     document.body.appendChild(s);
   });
 
-  const handlePayment = async (plan) => {
+  const handlePayment = async (plan, customData = null) => {
     if (!razorpayEnabled) return toast.error('Payment gateway not configured. Contact admin.');
     setRazorpayLoading(true);
     try {
       const loaded = await loadRazorpayScript();
       if (!loaded) { toast.error('Failed to load payment gateway'); return; }
 
-      const res = await api.post('/razorpay/create-order', { plan });
+      const orderData = customData ? { plan, ...customData } : { plan };
+      const res = await api.post('/razorpay/create-order', orderData);
       const { orderId, amount, currency, keyId, name, description, prefill } = res.data.data;
 
       const options = {
@@ -129,6 +135,112 @@ export default function Subscription() {
       {/* Plan Cards */}
       <div>
         <h2 className="text-lg font-semibold mb-4 dark:text-white">Choose a Plan</h2>
+        
+        {/* Custom Plan Builder */}
+        {customConfig?.enabled !== false && (() => {
+          const moduleList = [
+            { id: 'cattle', icon: '🐄', name: 'Cattle', price: customConfig?.modulePrices?.cattle || 50 },
+            { id: 'milk', icon: '🥛', name: 'Milk', price: customConfig?.modulePrices?.milk || 50 },
+            { id: 'health', icon: '💉', name: 'Health', price: customConfig?.modulePrices?.health || 40 },
+            { id: 'breeding', icon: '🐣', name: 'Breeding', price: customConfig?.modulePrices?.breeding || 40 },
+            { id: 'feed', icon: '🌾', name: 'Feed', price: customConfig?.modulePrices?.feed || 30 },
+            { id: 'finance', icon: '💰', name: 'Finance', price: customConfig?.modulePrices?.finance || 40 },
+            { id: 'milkDelivery', icon: '🏘️', name: 'Dudh Khata', price: customConfig?.modulePrices?.milkDelivery || 50 },
+            { id: 'employees', icon: '👷', name: 'Employees', price: customConfig?.modulePrices?.employees || 40 },
+            { id: 'insurance', icon: '🛡️', name: 'Insurance', price: customConfig?.modulePrices?.insurance || 30 },
+            { id: 'reports', icon: '📊', name: 'Reports', price: customConfig?.modulePrices?.reports || 40 },
+            { id: 'chatbot', icon: '🤖', name: 'AI Assistant', price: (() => {
+              const rawPrices = customConfig?.modulePrices || {};
+              const otherPrices = Object.entries(rawPrices).filter(([k]) => k !== 'chatbot').map(([, v]) => v).sort((a, b) => a - b);
+              const mid = Math.floor(otherPrices.length / 2);
+              return otherPrices.length % 2 === 0 ? Math.round((otherPrices[mid - 1] + otherPrices[mid]) / 2) : otherPrices[mid];
+            })() || 60 },
+          ];
+
+          let monthlyPrice = Array.from(customModules).reduce((t, m) => t + (moduleList.find(mod => mod.id === m)?.price || 0), 0);
+          if (monthlyPrice < (customConfig?.minMonthlyPrice || 200)) monthlyPrice = customConfig?.minMonthlyPrice || 200;
+
+          const multipliers = { monthly: 1, halfyearly: 6, yearly: 12 };
+          const months = multipliers[customPeriod] || 1;
+          const totalPrice = monthlyPrice * months;
+
+          return (
+            <div className="card mb-6 border-2 border-dashed border-emerald-300 dark:border-emerald-700">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold dark:text-white flex items-center gap-2">🛠️ Build Your Custom Plan</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Select only the modules you need</p>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setCustomModules(new Set(moduleList.map(m => m.id)))} className="text-xs text-emerald-600 hover:underline">All</button>
+                  <button onClick={() => setCustomModules(new Set())} className="text-xs text-gray-400 hover:underline">Clear</button>
+                </div>
+              </div>
+              
+              {/* Module selection grid - 3 cols on mobile, 4 on desktop */}
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 mb-4">
+                {moduleList.map(module => (
+                  <div
+                    key={module.id}
+                    onClick={() => {
+                      const newModules = new Set(customModules);
+                      if (newModules.has(module.id)) {
+                        newModules.delete(module.id);
+                      } else {
+                        newModules.add(module.id);
+                      }
+                      setCustomModules(newModules);
+                    }}
+                    className={`cursor-pointer p-3 rounded-lg text-center text-xs transition-all ${
+                      customModules.has(module.id)
+                        ? 'bg-emerald-100 dark:bg-emerald-900/30 ring-1 ring-emerald-500 text-emerald-700 dark:text-emerald-400'
+                        : 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400'
+                    }`}
+                  >
+                    <div className="text-lg mb-1">{module.icon}</div>
+                    <div className="font-medium">{module.name}</div>
+                    <div className="text-xs opacity-75">₹{module.price}</div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Period selector + price + pay button in one row */}
+              <div className="flex items-center gap-4 flex-wrap bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                <div className="flex gap-1 bg-white dark:bg-gray-700 rounded-lg p-1">
+                  {[
+                    { key: 'monthly', label: 'Monthly' },
+                    { key: 'halfyearly', label: '6 Months' },
+                    { key: 'yearly', label: 'Yearly' }
+                  ].map(period => (
+                    <button
+                      key={period.key}
+                      onClick={() => setCustomPeriod(period.key)}
+                      className={`px-3 py-2 rounded-md text-xs transition-all ${
+                        customPeriod === period.key
+                          ? 'bg-emerald-500 text-white shadow-sm'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {period.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex-1 text-right">
+                  <p className="text-2xl font-bold dark:text-white">₹{totalPrice}</p>
+                  <p className="text-xs text-gray-400">₹{monthlyPrice}/mo × {months} months</p>
+                </div>
+                <button
+                  onClick={() => handlePayment('custom', { modules: [...customModules], period: customPeriod })}
+                  disabled={customModules.size === 0 || razorpayLoading}
+                  className="btn-primary px-6 disabled:opacity-50"
+                >
+                  💳 Pay Now
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+        
         <div className={`grid grid-cols-1 sm:grid-cols-2 ${planCards.length >= 4 ? 'lg:grid-cols-4' : planCards.length === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-4`}>
           {planCards.map(plan => (
             <div key={plan.id} className={`card relative ${plan.popular ? 'border-2 border-emerald-500 shadow-lg' : ''}`}>

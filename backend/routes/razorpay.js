@@ -28,7 +28,15 @@ function getRazorpay() {
 // ═══════════════════════════════════════════
 async function activateSubscription(userId, planName, paymentId) {
   const planDoc = await Plan.findOne({ name: planName });
-  const days = planDoc?.days || 30;
+  
+  let days = planDoc?.days || 30;
+  
+  // If no plan doc (custom plan), use payment amount to determine days
+  if (!planDoc) {
+    // Custom plan — get days from payment document
+    const payment = await Payment.findById(paymentId).lean();
+    days = payment?.customDays || 30;
+  }
 
   // Check for existing active subscription to extend
   const existing = await Subscription.findOne({
@@ -99,9 +107,43 @@ router.post('/create-order', auth, async (req, res, next) => {
     }
 
     const planDoc = await Plan.findOne({ name: plan, isActive: true });
-    if (!planDoc) {
+
+    // Support custom plan
+    let customPlanPrice = null;
+    let customPlanDays = null;
+    if (!planDoc && plan === 'custom') {
+      const { modules: selectedModules, period: customPeriod = 'monthly' } = req.body;
+      if (!Array.isArray(selectedModules) || selectedModules.length === 0) {
+        return res.status(400).json({ success: false, message: 'Custom plan requires selected modules' });
+      }
+      // Calculate price
+      const LandingContent = (await import('../models/LandingContent.js')).default;
+      const content = await LandingContent.findOne();
+      const config = content?.customPlanConfig;
+      if (!config?.enabled) return res.status(400).json({ success: false, message: 'Custom plans not available' });
+      
+      const rawPrices = config.modulePrices || {};
+      const otherPrices = Object.entries(rawPrices).filter(([k]) => k !== 'chatbot').map(([, v]) => v).sort((a, b) => a - b);
+      const mid = Math.floor(otherPrices.length / 2);
+      const chatbotPrice = otherPrices.length % 2 === 0 ? Math.round((otherPrices[mid - 1] + otherPrices[mid]) / 2) : otherPrices[mid];
+      const modulePrices = { ...rawPrices, chatbot: chatbotPrice };
+      
+      let monthlyPrice = selectedModules.reduce((t, m) => t + (modulePrices[m] || 0), 0);
+      if (monthlyPrice < config.minMonthlyPrice) monthlyPrice = config.minMonthlyPrice;
+      
+      const multipliers = { monthly: 1, halfyearly: 6, yearly: 12 };
+      const daysMap = { monthly: 30, halfyearly: 180, yearly: 365 };
+      customPlanPrice = monthlyPrice * (multipliers[customPeriod] || 1);
+      customPlanDays = daysMap[customPeriod] || 30;
+    }
+
+    if (!planDoc && !customPlanPrice) {
       return res.status(400).json({ success: false, message: 'Invalid or inactive plan' });
     }
+
+    const orderPrice = customPlanPrice || planDoc.price;
+    const orderDays = customPlanDays || planDoc.days;
+    const orderLabel = planDoc?.label || 'Custom Plan';
 
     // Expire any old pending razorpay payments for this user
     await Payment.updateMany(
@@ -113,7 +155,7 @@ router.post('/create-order', auth, async (req, res, next) => {
     let order;
     try {
       order = await razorpay.orders.create({
-        amount: planDoc.price * 100, // paise
+        amount: orderPrice * 100, // paise
         currency: 'INR',
         receipt: `dp_${req.user._id.toString().slice(-8)}_${Date.now()}`,
         notes: {
@@ -132,7 +174,7 @@ router.post('/create-order', auth, async (req, res, next) => {
     await Payment.create({
       userId: req.user._id,
       plan,
-      amount: planDoc.price,
+      amount: orderPrice,
       upiTransactionId: order.id,
       paymentMethod: 'razorpay',
       razorpayOrderId: order.id,
@@ -140,6 +182,8 @@ router.post('/create-order', auth, async (req, res, next) => {
       ipAddress: req.ip,
       userAgent: (req.headers['user-agent'] || '').slice(0, 500),
       expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      customDays: orderDays,
+      customModules: req.body.modules,
     });
 
     res.json({
@@ -150,7 +194,7 @@ router.post('/create-order', auth, async (req, res, next) => {
         currency: order.currency,
         keyId: process.env.RAZORPAY_KEY_ID,
         name: 'DairyPro',
-        description: `${planDoc.label} Plan Subscription`,
+        description: `${orderLabel} Subscription`,
         prefill: {
           name: req.user.name,
           email: req.user.email,

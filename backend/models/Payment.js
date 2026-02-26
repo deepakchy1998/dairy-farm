@@ -16,6 +16,8 @@ const paymentSchema = new mongoose.Schema({
   verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   adminNote: { type: String, default: '' },
   expiresAt: { type: Date }, // Auto-expire unverified payments after 48hrs
+  customDays: { type: Number },
+  customModules: [{ type: String }],
 }, { timestamps: true });
 
 // Prevent duplicate transaction IDs (only for non-rejected/expired)
