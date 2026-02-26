@@ -421,34 +421,36 @@ export default function MilkDelivery() {
                 ))}
               </div>
             </div>
-            <button onClick={async () => {
-              try {
-                const yesterday = new Date(dailyDate);
-                yesterday.setDate(yesterday.getDate() - 1);
-                const yStr = yesterday.toISOString().slice(0, 10);
-                const res = await api.get('/milk-delivery/deliveries/daily-sheet', { params: { date: yStr, session: dailySession } });
-                const yData = res.data.data || [];
-                if (!yData.length) { toast.error('No records found for yesterday'); return; }
-                const yMap = {};
-                yData.forEach(d => { yMap[d.customerId] = d; });
+            <div className="flex items-center gap-2">
+              <button onClick={async () => {
+                try {
+                  const yesterday = new Date(dailyDate);
+                  yesterday.setDate(yesterday.getDate() - 1);
+                  const yStr = yesterday.toISOString().slice(0, 10);
+                  const res = await api.get('/milk-delivery/deliveries/daily-sheet', { params: { date: yStr, session: dailySession } });
+                  const yData = res.data.data || [];
+                  if (!yData.length) { toast.error('No records found for yesterday'); return; }
+                  const yMap = {};
+                  yData.forEach(d => { yMap[d.customerId] = d; });
+                  setSheet(prev => prev.map(s => {
+                    const y = yMap[s.customerId];
+                    return y ? { ...s, _qty: String(y.quantity) } : s;
+                  }));
+                  toast.success('Copied yesterday\'s quantities');
+                } catch { toast.error('Failed to fetch yesterday\'s data'); }
+              }} className="btn-secondary text-xs flex items-center gap-1">📋 Copy Yesterday</button>
+              <button onClick={() => {
+                let filled = 0;
                 setSheet(prev => prev.map(s => {
-                  const y = yMap[s.customerId];
-                  return y ? { ...s, _qty: String(y.quantity) } : s;
+                  if ((!s._qty || s._qty === '0' || s._qty === '') && s.dailyQuantity) {
+                    filled++;
+                    return { ...s, _qty: String(s.dailyQuantity) };
+                  }
+                  return s;
                 }));
-                toast.success('Copied yesterday\'s quantities');
-              } catch { toast.error('Failed to fetch yesterday\'s data'); }
-            }} className="btn-secondary text-xs flex items-center gap-1">📋 Copy Yesterday</button>
-            <button onClick={() => {
-              let filled = 0;
-              setSheet(prev => prev.map(s => {
-                if ((!s._qty || s._qty === '0' || s._qty === '') && s.dailyQuantity) {
-                  filled++;
-                  return { ...s, _qty: String(s.dailyQuantity) };
-                }
-                return s;
-              }));
-              toast.success(`Auto-filled ${filled} entries with default quantities`);
-            }} className="btn-secondary text-xs flex items-center gap-1">⚡ Auto-fill Defaults</button>
+                toast.success(`Auto-filled ${filled} entries with default quantities`);
+              }} className="btn-secondary text-xs flex items-center gap-1">⚡ Auto-fill</button>
+            </div>
             <div className="flex-1" />
             <div className="flex items-center gap-3 text-sm">
               <span className="text-gray-500">Total: <strong className="text-emerald-600">{sheetTotal.qty.toFixed(1)} L</strong></span>

@@ -232,27 +232,48 @@ export default function HealthRecords() {
             <div className="md:hidden divide-y dark:divide-gray-800">
               {records.map((r, i) => (
                 <div key={r._id} className="p-4 space-y-3">
+                  {/* Header row: tag + type badge + actions */}
                   <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold dark:text-white">{r.cattleId?.tagNumber || '-'}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${typeBadge[r.type]}`}>{r.type}</span>
-                      </div>
-                      <p className="text-xs text-gray-400">{formatDate(r.date)}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-base dark:text-white">{r.cattleId?.tagNumber || '-'}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${typeBadge[r.type]}`}>{r.type}</span>
                     </div>
                     <div className="flex gap-1">
                       <button onClick={() => handleEdit(r)} className="p-2 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors"><FiEdit2 size={16} /></button>
                       <button onClick={() => handleDelete(r._id)} className="p-2 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"><FiTrash2 size={16} /></button>
                     </div>
                   </div>
-                  <div className="space-y-1 text-sm">
-                    <p className="text-gray-900 dark:text-gray-100">{r.description}</p>
-                    {r.medicine && <p className="text-gray-600 dark:text-gray-400"><strong>Medicine:</strong> {r.medicine}</p>}
-                    {r.cost && <p className="font-bold text-red-600 dark:text-red-400"><strong>Cost:</strong> {formatCurrency(r.cost)}</p>}
+                  {/* Description */}
+                  <p className="text-sm text-gray-900 dark:text-gray-100">{r.description}</p>
+                  {/* Details grid — 2 columns */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">Date</p>
+                      <p className="font-medium text-gray-700 dark:text-gray-300">{formatDate(r.date)}</p>
+                    </div>
+                    {r.medicine && (
+                      <div>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">Medicine</p>
+                        <p className="font-medium text-gray-700 dark:text-gray-300">{r.medicine}</p>
+                      </div>
+                    )}
+                    {r.cost ? (
+                      <div>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">Cost</p>
+                        <p className="font-bold text-red-600 dark:text-red-400">{formatCurrency(r.cost)}</p>
+                      </div>
+                    ) : null}
                     {r.nextDueDate && (
-                      <p className="text-orange-700 dark:text-orange-400">
-                        <strong>Next Due:</strong> {formatDate(r.nextDueDate)}
-                      </p>
+                      <div>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">Next Due</p>
+                        <p className="font-medium text-orange-600 dark:text-orange-400">{formatDate(r.nextDueDate)}</p>
+                      </div>
+                    )}
+                    {r.vetName && (
+                      <div>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">Vet</p>
+                        <p className="font-medium text-gray-700 dark:text-gray-300">{r.vetName}</p>
+                      </div>
                     )}
                   </div>
                 </div>
