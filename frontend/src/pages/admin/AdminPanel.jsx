@@ -299,22 +299,24 @@ export default function AdminPanel() {
 
         {/* Payments */}
         {userDetail.payments?.length > 0 && (
-          <div className="card p-0">
+          <div className="card p-0 overflow-hidden">
             <div className="px-4 py-3 border-b dark:border-gray-800"><h3 className="font-semibold text-sm">💳 Payments</h3></div>
             <div className="divide-y dark:divide-gray-800">
               {userDetail.payments.map(p => (
-                <div key={p._id} className="px-4 py-2 flex items-center justify-between text-sm">
-                  <div>
-                    <span className="capitalize font-medium">{p.plan}</span>
-                    <span className="text-gray-400 mx-2">·</span>
-                    <span>{formatCurrency(p.amount)}</span>
-                    <span className="text-gray-400 mx-2">·</span>
-                    <span className="font-mono text-xs text-gray-500">{p.upiTransactionId}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
+                <div key={p._id} className="px-4 py-3 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="capitalize font-medium text-sm">{p.plan}</span>
+                      <span className="font-semibold text-sm">{formatCurrency(p.amount)}</span>
+                    </div>
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${p.status === 'verified' ? 'bg-green-100 text-green-700' : p.status === 'rejected' ? 'bg-red-100 text-red-700' : p.status === 'expired' ? 'bg-gray-100 text-gray-500' : 'bg-yellow-100 text-yellow-700'}`}>{p.status}</span>
-                    {p.screenshot && <button onClick={() => viewScreenshot(p._id)} className="text-xs text-blue-600 hover:underline">📷</button>}
-                    <span className="text-xs text-gray-400">{formatDate(p.createdAt)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-gray-400">
+                    <span className="font-mono">{p.upiTransactionId}</span>
+                    <div className="flex items-center gap-2">
+                      {p.screenshot && <button onClick={() => viewScreenshot(p._id)} className="text-blue-600 hover:underline">📷</button>}
+                      <span>{formatDate(p.createdAt)}</span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -404,9 +406,9 @@ export default function AdminPanel() {
         <div><h1 className="text-2xl font-bold">Admin Panel</h1><p className="text-gray-500 text-sm">Full control over users, payments, subscriptions & system</p></div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
         {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} className={`px-4 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${tab === t.id ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'}`}>{t.label}</button>
+          <button key={t.id} onClick={() => setTab(t.id)} className={`px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap ${tab === t.id ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-200 dark:ring-emerald-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'}`}>{t.label}</button>
         ))}
       </div>
 
@@ -622,43 +624,77 @@ export default function AdminPanel() {
               ))}
             </div>
           </div>
-          <div className="card p-0">
+          <div className="card p-0 overflow-hidden">
             {users.length === 0 ? <div className="py-8 text-center text-gray-400">No users found</div> : (
-              <div className="overflow-auto max-h-[60vh]">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 z-10"><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
-                    <th className="px-4 py-2 text-left">User</th>
-                    <th className="px-3 py-2 text-left">Farm</th>
-                    <th className="px-3 py-2 text-center">Role</th>
-                    <th className="px-3 py-2 text-center">Subscription</th>
-                    <th className="px-3 py-2 text-center">Status</th>
-                    <th className="px-3 py-2 text-left">Joined</th>
-                    <th className="px-3 py-2">Actions</th>
-                  </tr></thead>
-                  <tbody>
-                    {users.map((u, i) => (
-                      <tr key={u._id} className={`border-b hover:bg-gray-50 dark:hover:bg-gray-800/30 ${i % 2 ? 'bg-gray-50/50 dark:bg-gray-800/20' : ''}`}>
-                        <td className="px-4 py-2"><p className="font-medium">{u.name}</p><p className="text-xs text-gray-400">{u.email}</p></td>
-                        <td className="px-3 py-2 text-xs text-gray-500">{u.farmId?.name || '-'}</td>
-                        <td className="px-3 py-2 text-center"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>{u.role}</span></td>
-                        <td className="px-3 py-2 text-center"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.subscriptionActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>{u.subscriptionActive ? '✅ Active' : '❌ Expired'}</span></td>
-                        <td className="px-3 py-2 text-center"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.isBlocked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{u.isBlocked ? 'Blocked' : 'Active'}</span></td>
-                        <td className="px-3 py-2 text-xs text-gray-500">{formatDate(u.createdAt)}</td>
-                        <td className="px-3 py-2">
-                          <div className="flex gap-1">
-                            <button onClick={() => viewUserDetail(u._id)} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-lg hover:bg-blue-200"><FiEye size={12} /></button>
-                            {u.role !== 'admin' && (
-                              <button onClick={() => toggleBlock(u._id, u.isBlocked)} className={`text-xs px-2 py-1 rounded-lg ${u.isBlocked ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}>
-                                {u.isBlocked ? <FiUnlock size={12} /> : <FiLock size={12} />}
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                {/* Desktop Table */}
+                <div className="hidden md:block overflow-auto max-h-[60vh]">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 z-10"><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
+                      <th className="px-4 py-2 text-left">User</th>
+                      <th className="px-3 py-2 text-left">Farm</th>
+                      <th className="px-3 py-2 text-center">Role</th>
+                      <th className="px-3 py-2 text-center">Subscription</th>
+                      <th className="px-3 py-2 text-center">Status</th>
+                      <th className="px-3 py-2 text-left">Joined</th>
+                      <th className="px-3 py-2">Actions</th>
+                    </tr></thead>
+                    <tbody>
+                      {users.map((u, i) => (
+                        <tr key={u._id} className={`border-b hover:bg-gray-50 dark:hover:bg-gray-800/30 ${i % 2 ? 'bg-gray-50/50 dark:bg-gray-800/20' : ''}`}>
+                          <td className="px-4 py-2"><p className="font-medium">{u.name}</p><p className="text-xs text-gray-400">{u.email}</p></td>
+                          <td className="px-3 py-2 text-xs text-gray-500">{u.farmId?.name || '-'}</td>
+                          <td className="px-3 py-2 text-center"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>{u.role}</span></td>
+                          <td className="px-3 py-2 text-center"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.subscriptionActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>{u.subscriptionActive ? '✅ Active' : '❌ Expired'}</span></td>
+                          <td className="px-3 py-2 text-center"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.isBlocked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{u.isBlocked ? 'Blocked' : 'Active'}</span></td>
+                          <td className="px-3 py-2 text-xs text-gray-500">{formatDate(u.createdAt)}</td>
+                          <td className="px-3 py-2">
+                            <div className="flex gap-1">
+                              <button onClick={() => viewUserDetail(u._id)} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-lg hover:bg-blue-200"><FiEye size={12} /></button>
+                              {u.role !== 'admin' && (
+                                <button onClick={() => toggleBlock(u._id, u.isBlocked)} className={`text-xs px-2 py-1 rounded-lg ${u.isBlocked ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}>
+                                  {u.isBlocked ? <FiUnlock size={12} /> : <FiLock size={12} />}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="md:hidden divide-y dark:divide-gray-800 max-h-[60vh] overflow-y-auto">
+                  {users.map(u => (
+                    <div key={u._id} className="p-4 space-y-2" onClick={() => viewUserDetail(u._id)}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-sm dark:text-white">{u.name}</p>
+                          <p className="text-xs text-gray-400">{u.email}</p>
+                        </div>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${u.isBlocked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                          {u.isBlocked ? '🚫 Blocked' : '✅ Active'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>{u.role}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${u.subscriptionActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>{u.subscriptionActive ? 'Subscribed' : 'No Sub'}</span>
+                        {u.farmId?.name && <span className="text-[10px] text-gray-400">🏠 {u.farmId.name}</span>}
+                        <span className="text-[10px] text-gray-400 ml-auto">{formatDate(u.createdAt)}</span>
+                      </div>
+                      <div className="flex gap-2 pt-1">
+                        <button onClick={(e) => { e.stopPropagation(); viewUserDetail(u._id); }} className="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 flex items-center gap-1"><FiEye size={12} /> View</button>
+                        {u.role !== 'admin' && (
+                          <button onClick={(e) => { e.stopPropagation(); toggleBlock(u._id, u.isBlocked); }} className={`text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 ${u.isBlocked ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}>
+                            {u.isBlocked ? <><FiUnlock size={12} /> Unblock</> : <><FiLock size={12} /> Block</>}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
             <Pagination page={usersPagination.page} pages={usersPagination.pages} total={usersPagination.total} onPageChange={p => setUsersPage(p)} />
           </div>
@@ -674,36 +710,76 @@ export default function AdminPanel() {
                 className={`px-3 py-2 rounded-lg text-xs font-medium ${paymentStatusFilter === f.v ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{f.l}</button>
             ))}
           </div>
-          <div className="card p-0">
+          <div className="card p-0 overflow-hidden">
             {payments.length === 0 ? <div className="py-8 text-center text-gray-400">No payments</div> : (
-              <div className="overflow-auto max-h-[60vh]">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 z-10"><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
-                    <th className="px-4 py-2 text-left">User</th>
-                    <th className="px-3 py-2">Plan</th>
-                    <th className="px-3 py-2">Amount</th>
-                    <th className="px-3 py-2">Txn ID</th>
-                    <th className="px-3 py-2">Date</th>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Proof</th>
-                    <th className="px-3 py-2">Actions</th>
-                  </tr></thead>
-                  <tbody>
-                    {payments.map((p, i) => (
-                      <tr key={p._id} className={`border-b ${i % 2 ? 'bg-gray-50/50 dark:bg-gray-800/20' : ''}`}>
-                        <td className="px-4 py-2"><p className="font-medium text-xs">{p.userId?.name}</p><p className="text-[10px] text-gray-400">{p.userId?.email}</p></td>
-                        <td className="px-3 py-2 capitalize text-xs font-medium">{p.plan}</td>
-                        <td className="px-3 py-2 text-xs font-semibold">{formatCurrency(p.amount)}</td>
-                        <td className="px-3 py-2 font-mono text-[10px] text-gray-500">{p.upiTransactionId}</td>
-                        <td className="px-3 py-2 text-xs text-gray-500">{formatDate(p.createdAt)}</td>
-                        <td className="px-3 py-2"><span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${p.status === 'verified' ? 'bg-green-100 text-green-700' : p.status === 'rejected' ? 'bg-red-100 text-red-700' : p.status === 'expired' ? 'bg-gray-100 text-gray-500' : 'bg-yellow-100 text-yellow-700'}`}>{p.status}</span></td>
-                        <td className="px-3 py-2 text-xs text-gray-400">{p.paymentMethod === 'razorpay' ? '💳 Razorpay' : '📱 Legacy'}</td>
-                        <td className="px-3 py-2 text-xs text-gray-400">{p.adminNote || '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                {/* Desktop Table */}
+                <div className="hidden md:block overflow-auto max-h-[60vh]">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 z-10"><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
+                      <th className="px-4 py-2 text-left">User</th>
+                      <th className="px-3 py-2">Plan</th>
+                      <th className="px-3 py-2">Amount</th>
+                      <th className="px-3 py-2">Txn ID</th>
+                      <th className="px-3 py-2">Date</th>
+                      <th className="px-3 py-2">Status</th>
+                      <th className="px-3 py-2">Method</th>
+                      <th className="px-3 py-2">Note</th>
+                    </tr></thead>
+                    <tbody>
+                      {payments.map((p, i) => (
+                        <tr key={p._id} className={`border-b ${i % 2 ? 'bg-gray-50/50 dark:bg-gray-800/20' : ''}`}>
+                          <td className="px-4 py-2"><p className="font-medium text-xs">{p.userId?.name}</p><p className="text-[10px] text-gray-400">{p.userId?.email}</p></td>
+                          <td className="px-3 py-2 capitalize text-xs font-medium">{p.plan}</td>
+                          <td className="px-3 py-2 text-xs font-semibold">{formatCurrency(p.amount)}</td>
+                          <td className="px-3 py-2 font-mono text-[10px] text-gray-500">{p.upiTransactionId}</td>
+                          <td className="px-3 py-2 text-xs text-gray-500">{formatDate(p.createdAt)}</td>
+                          <td className="px-3 py-2"><span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${p.status === 'verified' ? 'bg-green-100 text-green-700' : p.status === 'rejected' ? 'bg-red-100 text-red-700' : p.status === 'expired' ? 'bg-gray-100 text-gray-500' : 'bg-yellow-100 text-yellow-700'}`}>{p.status}</span></td>
+                          <td className="px-3 py-2 text-xs text-gray-400">{p.paymentMethod === 'razorpay' ? '💳 Razorpay' : '📱 UPI'}</td>
+                          <td className="px-3 py-2 text-xs text-gray-400">{p.adminNote || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="md:hidden divide-y dark:divide-gray-800 max-h-[60vh] overflow-y-auto">
+                  {payments.map(p => {
+                    const statusColor = p.status === 'verified' ? 'bg-green-100 text-green-700' : p.status === 'rejected' ? 'bg-red-100 text-red-700' : p.status === 'expired' ? 'bg-gray-100 text-gray-500' : 'bg-yellow-100 text-yellow-700';
+                    return (
+                      <div key={p._id} className="p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-sm dark:text-white">{p.userId?.name}</p>
+                            <p className="text-xs text-gray-400">{p.userId?.email}</p>
+                          </div>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusColor}`}>{p.status}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold dark:text-white">{formatCurrency(p.amount)}</span>
+                            <span className="text-xs capitalize bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">{p.plan}</span>
+                          </div>
+                          <span className="text-xs text-gray-400">{formatDate(p.createdAt)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-gray-400">
+                          <span className="font-mono">{p.upiTransactionId}</span>
+                          <span>{p.paymentMethod === 'razorpay' ? '💳 Razorpay' : '📱 UPI'}</span>
+                        </div>
+                        {p.status === 'pending' && (
+                          <div className="flex gap-2 pt-1">
+                            <button onClick={() => verifyPayment(p._id)} className="flex-1 text-xs bg-emerald-100 text-emerald-700 py-1.5 rounded-lg hover:bg-emerald-200 font-medium flex items-center justify-center gap-1"><FiCheck size={12} /> Verify</button>
+                            <button onClick={() => rejectPayment(p._id)} className="flex-1 text-xs bg-red-100 text-red-700 py-1.5 rounded-lg hover:bg-red-200 font-medium flex items-center justify-center gap-1"><FiX size={12} /> Reject</button>
+                            {p.screenshot && <button onClick={() => viewScreenshot(p._id)} className="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200">📷</button>}
+                          </div>
+                        )}
+                        {p.adminNote && <p className="text-xs text-gray-400 italic">Note: {p.adminNote}</p>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
             <Pagination page={paymentsPagination.page} pages={paymentsPagination.pages} total={paymentsPagination.total} onPageChange={p => setPaymentsPage(p)} />
           </div>
