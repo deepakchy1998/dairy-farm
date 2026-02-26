@@ -117,14 +117,29 @@ export default function AdminPanel() {
   const viewUserDetail = async (userId) => {
     setDetailLoading(true);
     try {
-      const [res, plansRes, overridesRes] = await Promise.all([
+      const [res, plansRes] = await Promise.all([
         api.get(`/admin/users/${userId}/detail`),
         adminPlans.length ? null : api.get('/admin/plans'),
-        api.get(`/admin/users/${userId}/overrides`),
       ]);
       setUserDetail(res.data.data);
       if (plansRes) setAdminPlans(plansRes.data.data);
-      setUserOverridesForm(overridesRes.data.data || {});
+      // Load overrides separately so it doesn't block the detail view
+      try {
+        const overridesRes = await api.get(`/admin/users/${userId}/overrides`);
+        setUserOverridesForm(overridesRes.data.data || {});
+      } catch {
+        // Fallback: read from user object
+        const u = res.data.data?.user;
+        setUserOverridesForm({
+          chatBubbleEnabled: u?.chatBubbleEnabled !== false,
+          farmEnabled: u?.farmEnabled !== false,
+          modulesEnabled: u?.userOverrides?.modulesEnabled || {},
+          maxCattle: u?.userOverrides?.maxCattle || null,
+          maxEmployees: u?.userOverrides?.maxEmployees || null,
+          maxCustomers: u?.userOverrides?.maxCustomers || null,
+          customNotes: u?.userOverrides?.customNotes || '',
+        });
+      }
     } catch { toast.error('Failed to load user details'); }
     finally { setDetailLoading(false); }
   };
