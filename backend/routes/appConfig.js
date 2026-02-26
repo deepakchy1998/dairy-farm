@@ -5,8 +5,8 @@ import AppConfig from '../models/AppConfig.js';
 
 const router = Router();
 
-// Get app config (any authenticated user)
-router.get('/', auth, async (req, res, next) => {
+// Get app config (public — needed for landing page custom plan pricing)
+router.get('/', async (req, res, next) => {
   try {
     let config = await AppConfig.findOne({ key: 'global' }).lean();
     if (!config) {

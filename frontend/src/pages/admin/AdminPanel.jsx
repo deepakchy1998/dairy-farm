@@ -86,8 +86,12 @@ export default function AdminPanel() {
         setAppConfig(r.data.data); setAppConfigForm(r.data.data);
       }
       if (tab === 'plans') {
-        const r = await api.get('/admin/plans');
+        const [r, cfgRes] = await Promise.all([
+          api.get('/admin/plans'),
+          api.get('/app-config').catch(() => ({ data: { data: {} } })),
+        ]);
         setAdminPlans(r.data.data);
+        setAppConfigForm(prev => ({ ...prev, ...cfgRes.data.data }));
       }
       if (tab === 'logs') {
         const r = await api.get('/admin/audit-logs');

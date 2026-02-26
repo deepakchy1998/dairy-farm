@@ -26,12 +26,12 @@ export default function Subscription() {
       setPlans(p.data.data);
       setPayments(pay.data.data);
       setRazorpayEnabled(rz.data.data?.enabled || false);
-      setCustomConfig(appCfg ? {
-        enabled: appCfg.customPlanEnabled !== false,
-        minPrice: appCfg.customPlanMinPrice || 200,
-        maxPrice: appCfg.customPlanMaxPrice || 5000,
-        modulePrices: appCfg.customPlanModulePrices || {},
-      } : null);
+      setCustomConfig({
+        enabled: appCfg?.customPlanEnabled !== false,
+        minPrice: appCfg?.customPlanMinPrice || 200,
+        maxPrice: appCfg?.customPlanMaxPrice || 5000,
+        modulePrices: appCfg?.customPlanModulePrices || {},
+      });
     }).catch(() => toast.error('Failed to load'))
     .finally(() => setLoading(false));
   }, []);
@@ -163,7 +163,8 @@ export default function Subscription() {
           ];
 
           let monthlyPrice = Array.from(customModules).reduce((t, m) => t + (moduleList.find(mod => mod.id === m)?.price || 0), 0);
-          if (monthlyPrice < (customConfig?.minMonthlyPrice || 200)) monthlyPrice = customConfig?.minMonthlyPrice || 200;
+          if (customModules.size > 0 && monthlyPrice < (customConfig?.minPrice || 200)) monthlyPrice = customConfig?.minPrice || 200;
+          if (monthlyPrice > (customConfig?.maxPrice || 5000)) monthlyPrice = customConfig?.maxPrice || 5000;
 
           const multipliers = { monthly: 1, halfyearly: 6, yearly: 12 };
           const months = multipliers[customPeriod] || 1;
