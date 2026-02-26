@@ -14,21 +14,22 @@ import { GiCow, GiMilkCarton } from 'react-icons/gi';
 import { formatDistanceToNow } from 'date-fns';
 import ChatBubble from './ChatBubble';
 import Paywall from './Paywall';
+import { useAppConfig } from '../context/AppConfigContext';
 
 const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: FiHome },
-  { path: '/cattle', label: 'Cattle', icon: GiCow },
-  { path: '/milk', label: 'Milk Records', icon: GiMilkCarton },
-  { path: '/health', label: 'Health', icon: FiHeart },
-  { path: '/breeding', label: 'Breeding', icon: FiActivity },
-  { path: '/feed', label: 'Feed', icon: FiPackage },
-  { path: '/finance', label: 'Finance', icon: FaIndianRupeeSign },
-  { path: '/milk-delivery', label: 'Dudh Khata', icon: FiUsers },
-  { path: '/employees', label: 'Employees', icon: FiBriefcase },
-  { path: '/insurance', label: 'Insurance', icon: FiShield },
-  { path: '/reports', label: 'Reports', icon: FiBarChart2 },
-  { path: '/subscription', label: 'Subscription', icon: FiCreditCard },
-  { path: '/chatbot', label: 'Farm Assistant', icon: FiMessageSquare },
+  { path: '/dashboard', label: 'Dashboard', icon: FiHome, module: null },
+  { path: '/cattle', label: 'Cattle', icon: GiCow, module: 'cattle' },
+  { path: '/milk', label: 'Milk Records', icon: GiMilkCarton, module: 'milk' },
+  { path: '/health', label: 'Health', icon: FiHeart, module: 'health' },
+  { path: '/breeding', label: 'Breeding', icon: FiActivity, module: 'breeding' },
+  { path: '/feed', label: 'Feed', icon: FiPackage, module: 'feed' },
+  { path: '/finance', label: 'Finance', icon: FaIndianRupeeSign, module: 'finance' },
+  { path: '/milk-delivery', label: 'Dudh Khata', icon: FiUsers, module: 'milkDelivery' },
+  { path: '/employees', label: 'Employees', icon: FiBriefcase, module: 'employees' },
+  { path: '/insurance', label: 'Insurance', icon: FiShield, module: 'insurance' },
+  { path: '/reports', label: 'Reports', icon: FiBarChart2, module: 'reports' },
+  { path: '/subscription', label: 'Subscription', icon: FiCreditCard, module: null },
+  { path: '/chatbot', label: 'Farm Assistant', icon: FiMessageSquare, module: 'chatbot' },
 ];
 
 const adminItems = [
@@ -129,7 +130,12 @@ export default function Layout({ children }) {
 
   const severityIcon = { critical: <FiAlertTriangle size={16} className="text-red-500" />, warning: <FiAlertCircle size={16} className="text-orange-500" />, info: <FiInfo size={16} className="text-blue-500" /> };
 
-  const allItems = user?.role === 'admin' ? [...navItems, ...adminItems] : navItems;
+  const appConfig = useAppConfig();
+  const modules = appConfig.modulesEnabled || {};
+
+  // Filter nav items based on admin module toggles
+  const filteredNavItems = navItems.filter(item => !item.module || modules[item.module] !== false);
+  const allItems = user?.role === 'admin' ? [...filteredNavItems, ...adminItems] : filteredNavItems;
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
@@ -151,27 +157,6 @@ export default function Layout({ children }) {
         </div>
 
         <nav className="p-3 space-y-1 overflow-y-auto h-[calc(100vh-8rem)]">
-          {/* Notification link inside sidebar */}
-          <button
-            onClick={() => { setNotifOpen(!notifOpen); setSidebarOpen(false); }}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800`}
-          >
-            <div className="relative">
-              <FiBell size={18} />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </div>
-            Notifications
-            {unreadCount > 0 && (
-              <span className="ml-auto text-xs bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded-full font-bold">{unreadCount}</span>
-            )}
-          </button>
-
-          <div className="border-b border-gray-100 dark:border-gray-800 my-1"></div>
-
           {allItems.map((item) => {
             const Icon = item.icon;
             const active = location.pathname.startsWith(item.path);

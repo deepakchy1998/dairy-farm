@@ -1,16 +1,22 @@
 import { useState, useEffect } from 'react';
-import { FiDownload } from 'react-icons/fi';
+import { FiDownload, FiX } from 'react-icons/fi';
 import useDraggable from '../hooks/useDraggable';
 
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const { ref, style, handlers, hasMoved } = useDraggable({ x: null, y: null });
 
   useEffect(() => {
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
       return;
+    }
+    // Check if user dismissed recently (24h cooldown)
+    const dismissedAt = localStorage.getItem('installPromptDismissed');
+    if (dismissedAt && Date.now() - Number(dismissedAt) < 24 * 60 * 60 * 1000) {
+      setDismissed(true);
     }
     const handler = (e) => { e.preventDefault(); setDeferredPrompt(e); };
     window.addEventListener('beforeinstallprompt', handler);
@@ -19,7 +25,7 @@ export default function InstallPrompt() {
   }, []);
 
   const handleClick = async () => {
-    if (hasMoved.current) { hasMoved.current = false; return; } // Was a drag, not click
+    if (hasMoved.current) { hasMoved.current = false; return; }
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const result = await deferredPrompt.userChoice;
@@ -33,7 +39,13 @@ export default function InstallPrompt() {
     }
   };
 
-  if (isInstalled) return null;
+  const handleDismiss = (e) => {
+    e.stopPropagation();
+    setDismissed(true);
+    localStorage.setItem('installPromptDismissed', String(Date.now()));
+  };
+
+  if (isInstalled || dismissed) return null;
 
   return (
     <div
@@ -41,10 +53,17 @@ export default function InstallPrompt() {
       {...handlers}
       onClick={handleClick}
       style={{ ...style, zIndex: 9998, touchAction: 'none', cursor: 'grab' }}
-      className={`fixed bottom-6 left-6 flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-full shadow-lg hover:shadow-xl transition-colors active:cursor-grabbing select-none`}
+      className="fixed bottom-6 left-6 flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-full shadow-lg hover:shadow-xl transition-colors active:cursor-grabbing select-none"
     >
       <FiDownload size={16} />
       Install App
+      <button
+        onClick={handleDismiss}
+        className="ml-1 p-0.5 rounded-full hover:bg-white/20 transition-colors"
+        title="Dismiss"
+      >
+        <FiX size={14} />
+      </button>
     </div>
   );
 }

@@ -13,6 +13,14 @@ const DEFAULTS = {
   feedTypes: ['Green Fodder', 'Dry Hay', 'Silage', 'Concentrate', 'Cotton Seed', 'Mustard Cake', 'Wheat Bran', 'Rice Bran', 'Mineral Mix', 'Other'],
   paymentMethods: ['cash', 'upi', 'bank', 'other'],
   milkDeliverySessions: ['morning', 'evening'],
+  // Feature toggles
+  chatBubbleEnabled: true,
+  // Module toggles (admin can disable specific farm modules)
+  modulesEnabled: {
+    cattle: true, milk: true, health: true, breeding: true, feed: true,
+    finance: true, milkDelivery: true, employees: true, insurance: true,
+    reports: true, chatbot: true,
+  },
 };
 
 export function AppConfigProvider({ children }) {

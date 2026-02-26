@@ -4,6 +4,7 @@ import { FiX, FiSend } from 'react-icons/fi';
 import api from '../utils/api';
 import useDraggable from '../hooks/useDraggable';
 import { useAuth } from '../context/AuthContext';
+import { useAppConfig } from '../context/AppConfigContext';
 
 const SUGGESTIONS = ["How is my farm doing?", 'Analyze milk production', 'Which cattle need attention?', 'How to increase profit?'];
 
@@ -18,6 +19,10 @@ export default function ChatBubble() {
   const endRef = useRef(null);
   const inputRef = useRef(null);
   const { user } = useAuth();
+  const appConfig = useAppConfig();
+
+  // If chatbot bubble is disabled by admin, don't render
+  if (appConfig.chatBubbleEnabled === false) return null;
   const { ref: btnRef, style: btnStyle, handlers: btnHandlers, hasMoved: btnHasMoved } = useDraggable({ x: null, y: null });
 
   // Track viewport height changes (keyboard open/close on mobile)

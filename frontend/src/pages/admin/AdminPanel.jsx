@@ -1013,6 +1013,57 @@ export default function AdminPanel() {
                     placeholder="e.g. Welcome to DairyPro! 🐄" />
                   <p className="text-[10px] text-gray-400 mt-1">Custom welcome message shown on user dashboard (leave empty for default)</p>
                 </div>
+                {/* Chatbot Bubble Toggle */}
+                <div className="sm:col-span-2 lg:col-span-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-sm text-emerald-800 dark:text-emerald-300 flex items-center gap-2">🤖 Chatbot Bubble</h4>
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">Show the floating AI chatbot bubble on all pages</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked={appConfigForm.chatBubbleEnabled !== false}
+                        onChange={e => setAppConfigForm({ ...appConfigForm, chatBubbleEnabled: e.target.checked })}
+                        className="sr-only peer" />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Farm Module Toggles */}
+                <div className="sm:col-span-2 lg:col-span-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                  <div className="mb-3">
+                    <h4 className="font-semibold text-sm text-blue-800 dark:text-blue-300 flex items-center gap-2">🏗️ Farm Management Modules</h4>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">Enable or disable specific modules for all users. Disabled modules will be hidden from the sidebar.</p>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {[
+                      { key: 'cattle', label: 'Cattle', icon: '🐄' },
+                      { key: 'milk', label: 'Milk Records', icon: '🥛' },
+                      { key: 'health', label: 'Health', icon: '💉' },
+                      { key: 'breeding', label: 'Breeding', icon: '🐣' },
+                      { key: 'feed', label: 'Feed', icon: '🌾' },
+                      { key: 'finance', label: 'Finance', icon: '💰' },
+                      { key: 'milkDelivery', label: 'Dudh Khata', icon: '🏘️' },
+                      { key: 'employees', label: 'Employees', icon: '👷' },
+                      { key: 'insurance', label: 'Insurance', icon: '🛡️' },
+                      { key: 'reports', label: 'Reports', icon: '📊' },
+                      { key: 'chatbot', label: 'Farm Assistant', icon: '🤖' },
+                    ].map(mod => {
+                      const modules = appConfigForm.modulesEnabled || {};
+                      const enabled = modules[mod.key] !== false;
+                      return (
+                        <label key={mod.key} className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-all ${enabled ? 'bg-white dark:bg-gray-800 border-blue-200 dark:border-blue-700' : 'bg-gray-100 dark:bg-gray-900 border-gray-200 dark:border-gray-700 opacity-60'}`}>
+                          <input type="checkbox" checked={enabled}
+                            onChange={e => setAppConfigForm({ ...appConfigForm, modulesEnabled: { ...modules, [mod.key]: e.target.checked } })}
+                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                          <span className="text-sm">{mod.icon}</span>
+                          <span className="text-xs font-medium dark:text-white">{mod.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="sm:col-span-2 lg:col-span-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800">
                   <div className="flex items-center justify-between">
                     <div>
@@ -1209,30 +1260,98 @@ export default function AdminPanel() {
       {/* ═══ WEBSITE ═══ */}
       {tab === 'website' && (
         <div className="space-y-6 max-w-3xl">
+          {/* Hero Section */}
           <div className="card">
             <h3 className="font-semibold mb-4">🏠 Hero Section</h3>
             <div className="space-y-4">
-              <div><label className="label">Hero Title</label><input className="input" value={websiteForm.heroTitle || ''} onChange={e => setWebsiteForm({ ...websiteForm, heroTitle: e.target.value })} /></div>
-              <div><label className="label">Hero Subtitle</label><textarea className="input" rows={3} value={websiteForm.heroSubtitle || ''} onChange={e => setWebsiteForm({ ...websiteForm, heroSubtitle: e.target.value })} /></div>
+              <div><label className="label">Hero Title</label><input className="input" value={websiteForm.heroTitle || ''} onChange={e => setWebsiteForm({ ...websiteForm, heroTitle: e.target.value })} placeholder="Manage Your Dairy Farm Smarter" /></div>
+              <div><label className="label">Hero Subtitle</label><textarea className="input" rows={3} value={websiteForm.heroSubtitle || ''} onChange={e => setWebsiteForm({ ...websiteForm, heroSubtitle: e.target.value })} placeholder="Track cattle, milk production, health records..." /></div>
+              <div><label className="label">Badge Text</label><input className="input" value={websiteForm.heroBadge || ''} onChange={e => setWebsiteForm({ ...websiteForm, heroBadge: e.target.value })} placeholder="#1 Smart Dairy Farm Management Platform" /><p className="text-[10px] text-gray-400 mt-1">Small text shown above the hero title</p></div>
+              <div><label className="label">CTA Button Text</label><input className="input" value={websiteForm.ctaText || ''} onChange={e => setWebsiteForm({ ...websiteForm, ctaText: e.target.value })} placeholder="Start Free Trial" /></div>
             </div>
           </div>
+
+          {/* Stats */}
           <div className="card">
-            <h3 className="font-semibold mb-4">📊 Stats</h3>
+            <h3 className="font-semibold mb-4">📊 Stats (shown below hero)</h3>
             <div className="grid grid-cols-2 gap-4">
-              <div><label className="label">Active Farms</label><input className="input" value={websiteForm.statsActiveFarms || ''} onChange={e => setWebsiteForm({ ...websiteForm, statsActiveFarms: e.target.value })} /></div>
-              <div><label className="label">Cattle Managed</label><input className="input" value={websiteForm.statsCattleManaged || ''} onChange={e => setWebsiteForm({ ...websiteForm, statsCattleManaged: e.target.value })} /></div>
-              <div><label className="label">Milk Records</label><input className="input" value={websiteForm.statsMilkRecords || ''} onChange={e => setWebsiteForm({ ...websiteForm, statsMilkRecords: e.target.value })} /></div>
-              <div><label className="label">Uptime</label><input className="input" value={websiteForm.statsUptime || ''} onChange={e => setWebsiteForm({ ...websiteForm, statsUptime: e.target.value })} /></div>
+              <div><label className="label">Active Farms</label><input className="input" value={websiteForm.statsActiveFarms || ''} onChange={e => setWebsiteForm({ ...websiteForm, statsActiveFarms: e.target.value })} placeholder="500+" /></div>
+              <div><label className="label">Cattle Managed</label><input className="input" value={websiteForm.statsCattleManaged || ''} onChange={e => setWebsiteForm({ ...websiteForm, statsCattleManaged: e.target.value })} placeholder="50,000+" /></div>
+              <div><label className="label">Milk Records</label><input className="input" value={websiteForm.statsMilkRecords || ''} onChange={e => setWebsiteForm({ ...websiteForm, statsMilkRecords: e.target.value })} placeholder="10L+" /></div>
+              <div><label className="label">Uptime</label><input className="input" value={websiteForm.statsUptime || ''} onChange={e => setWebsiteForm({ ...websiteForm, statsUptime: e.target.value })} placeholder="99.9%" /></div>
             </div>
           </div>
+
+          {/* SEO & Branding */}
           <div className="card">
-            <h3 className="font-semibold mb-4">📞 Contact</h3>
+            <h3 className="font-semibold mb-4">🔍 SEO & Branding</h3>
+            <div className="space-y-4">
+              <div><label className="label">Meta Title</label><input className="input" value={websiteForm.metaTitle || ''} onChange={e => setWebsiteForm({ ...websiteForm, metaTitle: e.target.value })} placeholder="DairyPro - Smart Dairy Farm Management" /></div>
+              <div><label className="label">Meta Description</label><textarea className="input" rows={2} value={websiteForm.metaDescription || ''} onChange={e => setWebsiteForm({ ...websiteForm, metaDescription: e.target.value })} placeholder="Track cattle, milk production, health records — all in one place." /></div>
+              <div><label className="label">Footer Tagline</label><input className="input" value={websiteForm.footerTagline || ''} onChange={e => setWebsiteForm({ ...websiteForm, footerTagline: e.target.value })} placeholder="Smart dairy farm management platform built for Indian farmers." /></div>
+              <div><label className="label">Copyright Text</label><input className="input" value={websiteForm.copyrightText || ''} onChange={e => setWebsiteForm({ ...websiteForm, copyrightText: e.target.value })} placeholder="© 2026 DairyPro. All rights reserved." /></div>
+            </div>
+          </div>
+
+          {/* Social Links */}
+          <div className="card">
+            <h3 className="font-semibold mb-4">🔗 Social Links</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div><label className="label">WhatsApp Number</label><input className="input" value={websiteForm.whatsappNumber || ''} onChange={e => setWebsiteForm({ ...websiteForm, whatsappNumber: e.target.value })} placeholder="+919876543210" /></div>
+              <div><label className="label">YouTube Channel URL</label><input className="input" value={websiteForm.youtubeUrl || ''} onChange={e => setWebsiteForm({ ...websiteForm, youtubeUrl: e.target.value })} placeholder="https://youtube.com/@dairypro" /></div>
+              <div><label className="label">Facebook Page URL</label><input className="input" value={websiteForm.facebookUrl || ''} onChange={e => setWebsiteForm({ ...websiteForm, facebookUrl: e.target.value })} placeholder="https://facebook.com/dairypro" /></div>
+              <div><label className="label">Instagram URL</label><input className="input" value={websiteForm.instagramUrl || ''} onChange={e => setWebsiteForm({ ...websiteForm, instagramUrl: e.target.value })} placeholder="https://instagram.com/dairypro" /></div>
+              <div><label className="label">Twitter / X URL</label><input className="input" value={websiteForm.twitterUrl || ''} onChange={e => setWebsiteForm({ ...websiteForm, twitterUrl: e.target.value })} placeholder="https://x.com/dairypro" /></div>
+              <div><label className="label">Play Store URL</label><input className="input" value={websiteForm.playStoreUrl || ''} onChange={e => setWebsiteForm({ ...websiteForm, playStoreUrl: e.target.value })} placeholder="https://play.google.com/store/apps/..." /></div>
+            </div>
+          </div>
+
+          {/* Contact */}
+          <div className="card">
+            <h3 className="font-semibold mb-4">📞 Contact Information</h3>
             <div className="grid grid-cols-2 gap-4">
               <div><label className="label">Phone</label><input className="input" value={websiteForm.supportPhone || ''} onChange={e => setWebsiteForm({ ...websiteForm, supportPhone: e.target.value })} /></div>
               <div><label className="label">Email</label><input className="input" value={websiteForm.supportEmail || ''} onChange={e => setWebsiteForm({ ...websiteForm, supportEmail: e.target.value })} /></div>
             </div>
-            <div className="mt-4"><label className="label">Address</label><input className="input" value={websiteForm.contactAddress || ''} onChange={e => setWebsiteForm({ ...websiteForm, contactAddress: e.target.value })} /></div>
+            <div className="mt-4 space-y-4">
+              <div><label className="label">Address</label><input className="input" value={websiteForm.contactAddress || ''} onChange={e => setWebsiteForm({ ...websiteForm, contactAddress: e.target.value })} /></div>
+              <div><label className="label">Working Hours</label><input className="input" value={websiteForm.workingHours || ''} onChange={e => setWebsiteForm({ ...websiteForm, workingHours: e.target.value })} placeholder="Mon-Sat, 9am-6pm" /></div>
+              <div><label className="label">Google Maps Embed URL</label><input className="input" value={websiteForm.mapEmbedUrl || ''} onChange={e => setWebsiteForm({ ...websiteForm, mapEmbedUrl: e.target.value })} placeholder="https://www.google.com/maps/embed?..." /><p className="text-[10px] text-gray-400 mt-1">Paste the iframe src URL from Google Maps</p></div>
+            </div>
           </div>
+
+          {/* Announcement Banner */}
+          <div className="card">
+            <h3 className="font-semibold mb-4">📢 Announcement Banner</h3>
+            <p className="text-xs text-gray-500 mb-3">Show a banner at the top of the landing page (leave empty to hide)</p>
+            <div className="space-y-4">
+              <div><label className="label">Banner Text</label><input className="input" value={websiteForm.announcementText || ''} onChange={e => setWebsiteForm({ ...websiteForm, announcementText: e.target.value })} placeholder="🎉 New feature: AI Farm Assistant now supports Hindi!" /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="label">Link Text</label><input className="input" value={websiteForm.announcementLinkText || ''} onChange={e => setWebsiteForm({ ...websiteForm, announcementLinkText: e.target.value })} placeholder="Learn more →" /></div>
+                <div><label className="label">Link URL</label><input className="input" value={websiteForm.announcementLinkUrl || ''} onChange={e => setWebsiteForm({ ...websiteForm, announcementLinkUrl: e.target.value })} placeholder="/register" /></div>
+              </div>
+            </div>
+          </div>
+
+          {/* FAQ Management */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">❓ FAQs</h3>
+              <button onClick={() => setWebsiteForm({ ...websiteForm, faqs: [...(websiteForm.faqs || []), { question: '', answer: '' }] })} className="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-200 flex items-center gap-1"><FiPlus size={14} /> Add FAQ</button>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">Custom FAQs shown on the landing page (leave empty to use defaults)</p>
+            <div className="space-y-4">
+              {(websiteForm.faqs || []).map((faq, i) => (
+                <div key={i} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-3 relative">
+                  <button onClick={() => { const up = [...websiteForm.faqs]; up.splice(i, 1); setWebsiteForm({ ...websiteForm, faqs: up }); }} className="absolute top-3 right-3 text-red-400 hover:text-red-600"><FiTrash2 size={14} /></button>
+                  <div><label className="label text-xs">Question</label><input className="input" value={faq.question} onChange={e => { const up = [...websiteForm.faqs]; up[i].question = e.target.value; setWebsiteForm({ ...websiteForm, faqs: up }); }} placeholder="Is DairyPro free to try?" /></div>
+                  <div><label className="label text-xs">Answer</label><textarea className="input" rows={2} value={faq.answer} onChange={e => { const up = [...websiteForm.faqs]; up[i].answer = e.target.value; setWebsiteForm({ ...websiteForm, faqs: up }); }} placeholder="Yes! You get a 5-day free trial..." /></div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Testimonials */}
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">⭐ Testimonials</h3>
@@ -1247,10 +1366,12 @@ export default function AdminPanel() {
                     <div><label className="label text-xs">Location</label><input className="input" value={t.location || ''} onChange={e => { const up = [...websiteForm.testimonials]; up[i].location = e.target.value; setWebsiteForm({ ...websiteForm, testimonials: up }); }} /></div>
                   </div>
                   <div><label className="label text-xs">Review</label><textarea className="input" rows={2} value={t.text} onChange={e => { const up = [...websiteForm.testimonials]; up[i].text = e.target.value; setWebsiteForm({ ...websiteForm, testimonials: up }); }} /></div>
+                  <div><label className="label text-xs">Stars (1-5)</label><input type="number" min="1" max="5" className="input w-20" value={t.stars || 5} onChange={e => { const up = [...websiteForm.testimonials]; up[i].stars = Number(e.target.value); setWebsiteForm({ ...websiteForm, testimonials: up }); }} /></div>
                 </div>
               ))}
             </div>
           </div>
+
           <button onClick={async () => { setSaving(true); try { await api.put('/admin/settings', websiteForm); toast.success('Saved!'); } catch { toast.error('Failed'); } finally { setSaving(false); } }} disabled={saving} className="btn-primary w-full py-3 text-lg">{saving ? 'Saving...' : '💾 Save Website Content'}</button>
         </div>
       )}
