@@ -283,14 +283,16 @@ export default function MilkRecords() {
           <div className="bg-gray-50 rounded-lg p-3 text-center"><p className="text-xs text-gray-500">Records</p><p className="text-lg font-bold">{history.length}</p></div>
         </div>
 
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex gap-2 flex-1 flex-wrap">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex gap-2 flex-wrap">
             {[{ k: 'week', l: 'This Week' }, { k: 'month', l: 'This Month' }, { k: 'year', l: 'This Year' }].map(f => (
-              <button key={f.k} onClick={() => fetchHistory(viewCattle._id, f.k)} className={`px-4 py-2 rounded-lg text-sm font-medium ${historyFilter === f.k ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{f.l}</button>
+              <button key={f.k} onClick={() => fetchHistory(viewCattle._id, f.k)} className={`px-3 py-1.5 rounded-lg text-sm font-medium ${historyFilter === f.k ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{f.l}</button>
             ))}
           </div>
-          <button onClick={() => { setRecordCattle(viewCattle); setForm({ date: todayStr(), morningYield: '', morningFat: '', morningSNF: '', afternoonYield: '', afternoonFat: '', afternoonSNF: '', eveningYield: '', eveningFat: '', eveningSNF: '' }); setEditId(null); setRecordModal(true); }} className="btn-primary flex items-center gap-1 text-sm"><FiPlus size={14} /> Add Today's Record</button>
-          <button onClick={() => handleSharePdf(viewCattle)} className="text-purple-600 hover:text-purple-800 text-sm font-medium">📄 Share PDF</button>
+          <div className="flex gap-2 sm:ml-auto">
+            <button onClick={() => { setRecordCattle(viewCattle); setForm({ date: todayStr(), morningYield: '', morningFat: '', morningSNF: '', afternoonYield: '', afternoonFat: '', afternoonSNF: '', eveningYield: '', eveningFat: '', eveningSNF: '' }); setEditId(null); setRecordModal(true); }} className="btn-primary flex items-center gap-1 text-xs sm:text-sm"><FiPlus size={14} /> Add Record</button>
+            <button onClick={() => handleSharePdf(viewCattle)} className="btn-secondary text-xs sm:text-sm">📄 PDF</button>
+          </div>
         </div>
 
         <div className="card p-0">
@@ -437,7 +439,7 @@ export default function MilkRecords() {
               <p className="text-gray-500 text-sm">Filter and view entire milk production data</p>
             </div>
           </div>
-          <div className="flex gap-2 justify-center">
+          <div className="flex gap-2">
             <button onClick={() => {
               if (!filteredRecords.length) { toast.error('No records to export'); return; }
               exportCsv({
@@ -450,8 +452,8 @@ export default function MilkRecords() {
                 ]),
               });
               toast.success('CSV downloaded');
-            }} className="btn-secondary flex items-center gap-2 text-sm"><FiDownload size={14} /> Export CSV</button>
-            <button onClick={handleDownloadReport} className="btn-primary flex items-center gap-2 text-sm"><FiDownload size={14} /> Export PDF</button>
+            }} className="btn-secondary flex items-center gap-1 text-xs sm:text-sm"><FiDownload size={14} /> <span className="hidden sm:inline">Export</span> CSV</button>
+            <button onClick={handleDownloadReport} className="btn-primary flex items-center gap-1 text-xs sm:text-sm"><FiDownload size={14} /> <span className="hidden sm:inline">Export</span> PDF</button>
           </div>
         </div>
 
@@ -598,7 +600,7 @@ export default function MilkRecords() {
           </div>
           <button onClick={() => setAddCattleModal(true)} className="btn-primary flex items-center gap-2"><FiPlus size={18} /> Add Cattle</button>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="grid grid-cols-2 sm:flex gap-2">
           <button onClick={() => {
             if (!milkCattle?.length) { toast.error('No cattle to export'); return; }
             exportCsv({
@@ -615,7 +617,7 @@ export default function MilkRecords() {
               }),
             });
             toast.success('CSV downloaded');
-          }} className="btn-secondary flex items-center gap-1 text-xs">📊 CSV</button>
+          }} className="btn-secondary flex items-center justify-center gap-1 text-xs">📊 CSV</button>
           <button onClick={() => {
             if (!milkCattle?.length) { toast.error('No cattle to export'); return; }
             const totalMilk = milkCattle.reduce((s, c) => s + (lastRecords[c._id]?.totalYield || 0), 0);
@@ -640,9 +642,9 @@ export default function MilkRecords() {
                 ];
               }),
             });
-          }} className="btn-secondary flex items-center gap-1 text-xs">📄 PDF</button>
-          <button onClick={() => setCalcModal(true)} className="btn-secondary flex items-center gap-2 text-sm">💰 Rate Calculator</button>
-          <button onClick={openRecordsView} className="btn-secondary flex items-center gap-2 text-sm"><FiFilter size={16} /> All Records</button>
+          }} className="btn-secondary flex items-center justify-center gap-1 text-xs">📄 PDF</button>
+          <button onClick={() => setCalcModal(true)} className="btn-secondary flex items-center justify-center gap-1 text-xs sm:text-sm">💰 Calculator</button>
+          <button onClick={openRecordsView} className="btn-secondary flex items-center justify-center gap-1 text-xs sm:text-sm"><FiFilter size={14} /> All Records</button>
         </div>
       </div>
 
@@ -681,57 +683,99 @@ export default function MilkRecords() {
         </div>
       ) : (
         <div className="card p-0 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 border-b text-xs text-gray-500 uppercase">
-                <th className="px-3 py-2 text-left">Date</th>
-                <th className="px-2 py-2 text-left">Tag No</th>
-                <th className="px-2 py-2 text-left">Breed</th>
-                <th className="px-2 py-2 text-center bg-blue-50 text-blue-600">Morn (L)</th>
-                <th className="px-2 py-2 text-center bg-blue-50 text-blue-600">Fat%</th>
-                <th className="px-2 py-2 text-center bg-blue-50 text-blue-600">SNF%</th>
-                <th className="px-2 py-2 text-center bg-orange-50 text-orange-600">Eve (L)</th>
-                <th className="px-2 py-2 text-center bg-orange-50 text-orange-600">Fat%</th>
-                <th className="px-2 py-2 text-center bg-orange-50 text-orange-600">SNF%</th>
-                <th className="px-3 py-2 text-center text-emerald-600">Total</th>
-                <th className="px-2 py-2 text-left">Status</th>
-                <th className="px-2 py-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {milkCattle.map((c, i) => {
-                const rec = lastRecords[c._id];
-                const hasToday = !!rec;
-                return (
-                  <tr key={c._id} className={`border-b ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                    <td className="px-3 py-2 text-gray-600">{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                    <td className="px-2 py-2 font-mono font-medium">Tag No {c.tagNumber}</td>
-                    <td className="px-2 py-2 text-gray-500 text-xs">{c.breed}</td>
-                    <td className="px-2 py-2 text-center">{hasToday ? (rec.morningYield > 0 ? rec.morningYield.toFixed(1) : '-') : '-'}</td>
-                    <td className="px-2 py-2 text-center text-xs text-gray-400">{hasToday ? (rec.morningFat ?? '-') : '-'}</td>
-                    <td className="px-2 py-2 text-center text-xs text-gray-400">{hasToday ? (rec.morningSNF ?? '-') : '-'}</td>
-                    <td className="px-2 py-2 text-center">{hasToday ? (rec.eveningYield > 0 ? rec.eveningYield.toFixed(1) : '-') : '-'}</td>
-                    <td className="px-2 py-2 text-center text-xs text-gray-400">{hasToday ? (rec.eveningFat ?? '-') : '-'}</td>
-                    <td className="px-2 py-2 text-center text-xs text-gray-400">{hasToday ? (rec.eveningSNF ?? '-') : '-'}</td>
-                    <td className="px-3 py-2 text-center font-bold text-emerald-600">{hasToday ? rec.totalYield?.toFixed(1) : '-'}</td>
-                    <td className="px-2 py-2">
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-auto max-h-[60vh]">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
+                  <th className="px-3 py-2 text-left">Tag No</th>
+                  <th className="px-2 py-2 text-left">Breed</th>
+                  <th className="px-2 py-2 text-center bg-blue-50 text-blue-600">Morn (L)</th>
+                  <th className="px-2 py-2 text-center bg-blue-50 text-blue-600">Fat%</th>
+                  <th className="px-2 py-2 text-center bg-orange-50 text-orange-600">Eve (L)</th>
+                  <th className="px-2 py-2 text-center bg-orange-50 text-orange-600">Fat%</th>
+                  <th className="px-3 py-2 text-center text-emerald-600">Total</th>
+                  <th className="px-2 py-2 text-left">Status</th>
+                  <th className="px-2 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {milkCattle.map((c, i) => {
+                  const rec = lastRecords[c._id];
+                  const hasToday = !!rec;
+                  return (
+                    <tr key={c._id} className={`border-b ${i % 2 === 0 ? 'bg-white dark:bg-transparent' : 'bg-gray-50/50 dark:bg-gray-800/20'}`}>
+                      <td className="px-3 py-2 font-mono font-medium dark:text-white">Tag No {c.tagNumber}</td>
+                      <td className="px-2 py-2 text-gray-500 text-xs">{c.breed}</td>
+                      <td className="px-2 py-2 text-center">{hasToday ? (rec.morningYield > 0 ? rec.morningYield.toFixed(1) : '-') : '-'}</td>
+                      <td className="px-2 py-2 text-center text-xs text-gray-400">{hasToday ? (rec.morningFat ?? '-') : '-'}</td>
+                      <td className="px-2 py-2 text-center">{hasToday ? (rec.eveningYield > 0 ? rec.eveningYield.toFixed(1) : '-') : '-'}</td>
+                      <td className="px-2 py-2 text-center text-xs text-gray-400">{hasToday ? (rec.eveningFat ?? '-') : '-'}</td>
+                      <td className="px-3 py-2 text-center font-bold text-emerald-600">{hasToday ? rec.totalYield?.toFixed(1) : '-'}</td>
+                      <td className="px-2 py-2">
+                        {hasToday ? (
+                          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">✓ Done</span>
+                        ) : (
+                          <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">Pending</span>
+                        )}
+                      </td>
+                      <td className="px-2 py-2 whitespace-nowrap">
+                        {!hasToday && <button onClick={() => openAddRecord(c)} className="text-emerald-600 hover:text-emerald-800 text-xs mr-2">Add</button>}
+                        <button onClick={() => openHistory(c)} className="text-blue-600 hover:text-blue-800 text-xs mr-2">View</button>
+                        <button onClick={() => handleSharePdf(c)} className="text-purple-600 hover:text-purple-800 text-xs mr-2">PDF</button>
+                        <button onClick={() => handleRemoveCattle(c._id)} className="text-red-500 hover:text-red-700 text-xs">Delete</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+            {milkCattle.map(c => {
+              const rec = lastRecords[c._id];
+              const hasToday = !!rec;
+              return (
+                <div key={c._id} className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="font-mono font-semibold text-sm dark:text-white">Tag No {c.tagNumber}</p>
+                      <p className="text-xs text-gray-400">{c.breed}</p>
+                    </div>
+                    <div className="text-right">
                       {hasToday ? (
-                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">✓ Done</span>
+                        <span className="text-lg font-bold text-emerald-600">{rec.totalYield?.toFixed(1)}L</span>
                       ) : (
                         <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">Pending</span>
                       )}
-                    </td>
-                    <td className="px-2 py-2 whitespace-nowrap">
-                      {!hasToday && <button onClick={() => openAddRecord(c)} className="text-emerald-600 hover:text-emerald-800 text-xs mr-2">Add</button>}
-                      <button onClick={() => openHistory(c)} className="text-blue-600 hover:text-blue-800 text-xs mr-2">View</button>
-                      <button onClick={() => handleSharePdf(c)} className="text-purple-600 hover:text-purple-800 text-xs mr-2">PDF</button>
-                      <button onClick={() => handleRemoveCattle(c._id)} className="text-red-500 hover:text-red-700 text-xs">Delete</button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    </div>
+                  </div>
+                  {hasToday && (
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg py-1.5 px-2 text-center">
+                        <p className="text-[10px] text-blue-500 font-medium">Morning</p>
+                        <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">{rec.morningYield > 0 ? rec.morningYield.toFixed(1) + 'L' : '-'}</p>
+                        {rec.morningFat > 0 && <p className="text-[10px] text-gray-400">Fat {rec.morningFat}%</p>}
+                      </div>
+                      <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg py-1.5 px-2 text-center">
+                        <p className="text-[10px] text-orange-500 font-medium">Evening</p>
+                        <p className="text-sm font-semibold text-orange-700 dark:text-orange-300">{rec.eveningYield > 0 ? rec.eveningYield.toFixed(1) + 'L' : '-'}</p>
+                        {rec.eveningFat > 0 && <p className="text-[10px] text-gray-400">Fat {rec.eveningFat}%</p>}
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex gap-2 flex-wrap">
+                    {!hasToday && <button onClick={() => openAddRecord(c)} className="text-emerald-600 text-xs font-medium">➕ Add</button>}
+                    <button onClick={() => openHistory(c)} className="text-blue-600 text-xs font-medium">📋 View</button>
+                    <button onClick={() => handleSharePdf(c)} className="text-purple-600 text-xs font-medium">📄 PDF</button>
+                    <button onClick={() => handleRemoveCattle(c._id)} className="text-red-500 text-xs font-medium ml-auto">🗑️ Remove</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

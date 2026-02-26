@@ -108,19 +108,19 @@ export default function Finance() {
           </div>
           <button onClick={() => { setForm({ ...defaultForm, category: cats[0] }); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2"><FiPlus size={16} /> Add {tab === 'expense' ? 'Expense' : 'Revenue'}</button>
         </div>
-        <div className="flex gap-2 justify-center">
+        <div className="flex gap-2">
           <button onClick={() => exportCsv({
             filename: tab === 'expense' ? 'expenses' : 'revenue',
             headers: ['Date', 'Category', 'Description', 'Amount'],
             rows: records.map(r => [formatDate(r.date), r.category?.replace('_', ' '), r.description || '', r.amount || 0]),
-          })} className="btn-secondary flex items-center gap-2 text-sm"><FiFileText size={15} /> Export CSV</button>
+          })} className="btn-secondary flex items-center gap-1 text-xs sm:text-sm"><FiFileText size={14} /> <span className="hidden sm:inline">Export</span> CSV</button>
           <button onClick={() => exportPdf({
             title: tab === 'expense' ? 'Expense Report' : 'Revenue Report',
             period: `${filters.startDate || 'All'} to ${filters.endDate || 'Now'}`,
             summaryCards: summaryCardsData.map(s => ({ label: s.label, value: s.value })),
             tableHeaders: ['Date', 'Category', 'Description', 'Amount'],
             tableRows: records.map(r => [formatDate(r.date), r.category?.replace('_', ' '), r.description || (r.milkQuantity ? `${r.milkQuantity}L × ₹${r.milkRate}/L` : '-'), formatCurrency(r.amount)]),
-          })} className="btn-secondary flex items-center gap-2 text-sm"><FiDownload size={15} /> Export PDF</button>
+          })} className="btn-secondary flex items-center gap-1 text-xs sm:text-sm"><FiDownload size={14} /> <span className="hidden sm:inline">Export</span> PDF</button>
         </div>
       </div>
 

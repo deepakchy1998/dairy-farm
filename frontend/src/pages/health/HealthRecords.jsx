@@ -97,21 +97,21 @@ export default function HealthRecords() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Health Records 💉</h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm">Vaccinations, treatments & checkups</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => exportCsv({
-              filename: 'health_records',
-              headers: ['Date', 'Cattle', 'Type', 'Description', 'Medicine', 'Cost', 'Vet', 'Next Due'],
-              rows: records.map(r => [formatDate(r.date), r.cattleId?.tagNumber || '-', r.type, r.description, r.medicine || '', r.cost || 0, r.vetName || '', r.nextDueDate ? formatDate(r.nextDueDate) : '']),
-            })} className="btn-secondary flex items-center gap-2 text-sm"><FiFileText size={15} /> Export CSV</button>
-            <button onClick={() => exportPdf({
-              title: 'Health Records Report',
-              period: `${filters.startDate || 'All'} to ${filters.endDate || 'Now'}`,
-              summaryCards: summaryCardsData.map(s => ({ label: s.label, value: s.value })),
-              tableHeaders: ['Date', 'Cattle', 'Type', 'Description', 'Medicine', 'Cost', 'Next Due'],
-              tableRows: records.map(r => [formatDate(r.date), r.cattleId?.tagNumber || '-', r.type, r.description, r.medicine || '-', r.cost ? formatCurrency(r.cost) : '-', r.nextDueDate ? formatDate(r.nextDueDate) : '-']),
-            })} className="btn-secondary flex items-center gap-2 text-sm"><FiDownload size={15} /> Export PDF</button>
-            <button onClick={() => { setForm(defaultForm); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2"><FiPlus size={16} /> Add Record</button>
-          </div>
+          <button onClick={() => { setForm(defaultForm); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2 flex-shrink-0"><FiPlus size={16} /> <span className="hidden sm:inline">Add Record</span><span className="sm:hidden">Add</span></button>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => exportCsv({
+            filename: 'health_records',
+            headers: ['Date', 'Cattle', 'Type', 'Description', 'Medicine', 'Cost', 'Vet', 'Next Due'],
+            rows: records.map(r => [formatDate(r.date), r.cattleId?.tagNumber || '-', r.type, r.description, r.medicine || '', r.cost || 0, r.vetName || '', r.nextDueDate ? formatDate(r.nextDueDate) : '']),
+          })} className="btn-secondary flex items-center gap-1 text-xs sm:text-sm"><FiFileText size={14} /> <span className="hidden sm:inline">Export</span> CSV</button>
+          <button onClick={() => exportPdf({
+            title: 'Health Records Report',
+            period: `${filters.startDate || 'All'} to ${filters.endDate || 'Now'}`,
+            summaryCards: summaryCardsData.map(s => ({ label: s.label, value: s.value })),
+            tableHeaders: ['Date', 'Cattle', 'Type', 'Description', 'Medicine', 'Cost', 'Next Due'],
+            tableRows: records.map(r => [formatDate(r.date), r.cattleId?.tagNumber || '-', r.type, r.description, r.medicine || '-', r.cost ? formatCurrency(r.cost) : '-', r.nextDueDate ? formatDate(r.nextDueDate) : '-']),
+          })} className="btn-secondary flex items-center gap-1 text-xs sm:text-sm"><FiDownload size={14} /> <span className="hidden sm:inline">Export</span> PDF</button>
         </div>
       </div>
 

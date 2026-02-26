@@ -90,21 +90,21 @@ export default function BreedingRecords() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Breeding Records 🐣</h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm">Track breeding, pregnancy & deliveries</p>
           </div>
-          <div className="flex gap-2">
-            <button onClick={() => exportCsv({
-              filename: 'breeding_records',
-              headers: ['Cattle', 'Breeding Date', 'Method', 'Bull Details', 'Expected Delivery', 'Status'],
-              rows: records.map(r => [r.cattleId?.tagNumber || '-', formatDate(r.breedingDate), r.method, r.bullDetails || '', formatDate(r.expectedDelivery), r.status]),
-            })} className="btn-secondary flex items-center gap-2 text-sm"><FiFileText size={15} /> Export CSV</button>
-            <button onClick={() => exportPdf({
-              title: 'Breeding Records Report',
-              period: `${filters.startDate || 'All'} to ${filters.endDate || 'Now'}`,
-              summaryCards: summaryCardsData.map(s => ({ label: s.label, value: s.value })),
-              tableHeaders: ['Cattle', 'Breeding Date', 'Method', 'Bull Details', 'Expected Delivery', 'Status'],
-              tableRows: records.map(r => [r.cattleId?.tagNumber || '-', formatDate(r.breedingDate), r.method === 'artificial' ? 'AI' : 'Natural', r.bullDetails || '-', formatDate(r.expectedDelivery), r.status]),
-            })} className="btn-secondary flex items-center gap-2 text-sm"><FiDownload size={15} /> Export PDF</button>
-            <button onClick={() => { setForm(defaultForm); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2"><FiPlus size={16} /> Add Record</button>
-          </div>
+          <button onClick={() => { setForm(defaultForm); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2 flex-shrink-0"><FiPlus size={16} /> <span className="hidden sm:inline">Add Record</span><span className="sm:hidden">Add</span></button>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => exportCsv({
+            filename: 'breeding_records',
+            headers: ['Cattle', 'Breeding Date', 'Method', 'Bull Details', 'Expected Delivery', 'Status'],
+            rows: records.map(r => [r.cattleId?.tagNumber || '-', formatDate(r.breedingDate), r.method, r.bullDetails || '', formatDate(r.expectedDelivery), r.status]),
+          })} className="btn-secondary flex items-center gap-1 text-xs sm:text-sm"><FiFileText size={14} /> <span className="hidden sm:inline">Export</span> CSV</button>
+          <button onClick={() => exportPdf({
+            title: 'Breeding Records Report',
+            period: `${filters.startDate || 'All'} to ${filters.endDate || 'Now'}`,
+            summaryCards: summaryCardsData.map(s => ({ label: s.label, value: s.value })),
+            tableHeaders: ['Cattle', 'Breeding Date', 'Method', 'Bull Details', 'Expected Delivery', 'Status'],
+            tableRows: records.map(r => [r.cattleId?.tagNumber || '-', formatDate(r.breedingDate), r.method === 'artificial' ? 'AI' : 'Natural', r.bullDetails || '-', formatDate(r.expectedDelivery), r.status]),
+          })} className="btn-secondary flex items-center gap-1 text-xs sm:text-sm"><FiDownload size={14} /> <span className="hidden sm:inline">Export</span> PDF</button>
         </div>
       </div>
 

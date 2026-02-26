@@ -81,26 +81,26 @@ export default function FeedRecords() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Feed Management 🌾</h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm">Track feed usage, types & costs</p>
           </div>
-          <div className="flex gap-2">
-            <button onClick={() => exportCsv({
-              filename: 'feed_records',
-              headers: ['Date', 'Feed Type', 'Quantity', 'Unit', 'Cost', 'Notes'],
-              rows: records.map(r => [formatDate(r.date), r.feedType, r.quantity, r.unit || 'kg', r.cost || 0, r.notes || '']),
-            })} className="btn-secondary flex items-center gap-2 text-sm"><FiFileText size={15} /> Export CSV</button>
-            <button onClick={() => exportPdf({
-              title: 'Feed Records Report',
-              period: `${filters.startDate || 'All'} to ${filters.endDate || 'Now'}`,
-              summaryCards: [
-                { label: 'Total Feed Cost', value: formatCurrency(summary.totalCost) },
-                { label: 'Total Quantity', value: `${summary.totalQty.toFixed(1)} kg` },
-                { label: 'Records', value: summary.count },
-                { label: 'Feed Types', value: Object.keys(summary.byType).length }
-              ],
-              tableHeaders: ['Date', 'Feed Type', 'Quantity', 'Cost', 'Notes'],
-              tableRows: records.map(r => [formatDate(r.date), r.feedType, `${r.quantity} ${r.unit || 'kg'}`, formatCurrency(r.cost), r.notes || '-']),
-            })} className="btn-secondary flex items-center gap-2 text-sm"><FiDownload size={15} /> Export PDF</button>
-            <button onClick={() => { setForm(defaultForm); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2"><FiPlus size={16} /> Add Record</button>
-          </div>
+          <button onClick={() => { setForm(defaultForm); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2 flex-shrink-0"><FiPlus size={16} /> <span className="hidden sm:inline">Add Record</span><span className="sm:hidden">Add</span></button>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => exportCsv({
+            filename: 'feed_records',
+            headers: ['Date', 'Feed Type', 'Quantity', 'Unit', 'Cost', 'Notes'],
+            rows: records.map(r => [formatDate(r.date), r.feedType, r.quantity, r.unit || 'kg', r.cost || 0, r.notes || '']),
+          })} className="btn-secondary flex items-center gap-1 text-xs sm:text-sm"><FiFileText size={14} /> <span className="hidden sm:inline">Export</span> CSV</button>
+          <button onClick={() => exportPdf({
+            title: 'Feed Records Report',
+            period: `${filters.startDate || 'All'} to ${filters.endDate || 'Now'}`,
+            summaryCards: [
+              { label: 'Total Feed Cost', value: formatCurrency(summary.totalCost) },
+              { label: 'Total Quantity', value: `${summary.totalQty.toFixed(1)} kg` },
+              { label: 'Records', value: summary.count },
+              { label: 'Feed Types', value: Object.keys(summary.byType).length }
+            ],
+            tableHeaders: ['Date', 'Feed Type', 'Quantity', 'Cost', 'Notes'],
+            tableRows: records.map(r => [formatDate(r.date), r.feedType, `${r.quantity} ${r.unit || 'kg'}`, formatCurrency(r.cost), r.notes || '-']),
+          })} className="btn-secondary flex items-center gap-1 text-xs sm:text-sm"><FiDownload size={14} /> <span className="hidden sm:inline">Export</span> PDF</button>
         </div>
       </div>
 
