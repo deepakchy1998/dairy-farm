@@ -120,7 +120,7 @@ export default function Subscription() {
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-[1400px] mx-auto">
       <div><h1 className="text-2xl font-bold dark:text-white">💳 Subscription</h1><p className="text-gray-500 dark:text-gray-400 text-sm">Manage your plan & payments</p></div>
 
       {/* Current Plan Status */}

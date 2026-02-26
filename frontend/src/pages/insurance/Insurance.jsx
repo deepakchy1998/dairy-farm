@@ -89,7 +89,7 @@ export default function Insurance() {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-[1400px] mx-auto">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">🛡️ Insurance</h1>

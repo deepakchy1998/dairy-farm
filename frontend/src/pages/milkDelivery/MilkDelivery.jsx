@@ -258,7 +258,7 @@ export default function MilkDelivery() {
   // ═══════════════════════════════════════
   if (viewCustomer) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 max-w-[1400px] mx-auto">
         <div className="flex items-center gap-3">
           <button onClick={() => { setViewCustomer(null); setCustHistory(null); }} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"><FiArrowLeft size={20} /></button>
           <div className="flex-1">
@@ -387,7 +387,7 @@ export default function MilkDelivery() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-[1400px] mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">🏘️ Dudh Khata (Milk Delivery)</h1>

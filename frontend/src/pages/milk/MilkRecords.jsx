@@ -308,7 +308,7 @@ export default function MilkRecords() {
   if (bulkMode) {
     const bulkTotal = bulkEntries.reduce((s, e) => s + (parseFloat(e.morningYield) || 0) + (parseFloat(e.eveningYield) || 0), 0);
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 max-w-[1400px] mx-auto">
         <div className="flex items-center gap-3">
           <button onClick={() => setBulkMode(false)} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white"><FiArrowLeft size={20} /></button>
           <div className="flex-1">
@@ -405,7 +405,7 @@ export default function MilkRecords() {
     const totalYield = history.reduce((s, r) => s + r.totalYield, 0);
     const avgYield = history.length ? totalYield / history.length : 0;
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 max-w-[1400px] mx-auto">
         <div className="flex items-center gap-3">
           <button onClick={() => setViewCattle(null)} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white"><FiArrowLeft size={20} /></button>
           <div>
@@ -728,7 +728,7 @@ export default function MilkRecords() {
 
   // ─── MAIN VIEW ───
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-[1400px] mx-auto">
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">

@@ -89,7 +89,7 @@ export default function HealthRecords() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-[1400px] mx-auto">
       {/* Header */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">

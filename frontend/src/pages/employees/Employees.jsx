@@ -244,7 +244,7 @@ export default function Employees() {
   // ═══════════════════════════════════════
   if (viewEmp) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 max-w-[1400px] mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <button onClick={() => { setViewEmp(null); setEmpHistory(null); }} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 flex-shrink-0"><FiArrowLeft size={20} /></button>
@@ -417,7 +417,7 @@ export default function Employees() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-[1400px] mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">👷 Employee Management</h1>

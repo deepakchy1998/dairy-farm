@@ -253,7 +253,7 @@ export default function AdminPanel() {
     const u = userDetail.user;
     const sub = userDetail.subscription?.current;
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 max-w-[1400px] mx-auto">
         <div className="flex items-center gap-3">
           <button onClick={() => setUserDetail(null)} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"><FiArrowLeft size={20} /></button>
           <div className="flex-1">
@@ -535,7 +535,7 @@ export default function AdminPanel() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-[1400px] mx-auto">
       <div className="flex items-center gap-3">
         <FiShield className="text-emerald-600" size={28} />
         <div><h1 className="text-2xl font-bold">Admin Panel</h1><p className="text-gray-500 text-sm">Full control over users, payments, subscriptions & system</p></div>

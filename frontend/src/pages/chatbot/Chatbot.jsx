@@ -112,7 +112,7 @@ export default function Chatbot() {
   const followUps = FOLLOW_UPS[context] || FOLLOW_UPS.default;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="flex flex-col h-[calc(100vh-8rem)] max-w-[1000px] mx-auto w-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
