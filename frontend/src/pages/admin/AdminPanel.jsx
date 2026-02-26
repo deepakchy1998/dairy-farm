@@ -7,7 +7,7 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 import Pagination from '../../components/Pagination';
 import toast from 'react-hot-toast';
 import {
-  FiUsers, FiHome, FiCreditCard, FiSettings, FiCheck, FiX, FiShield,
+  FiUsers, FiHome, FiCreditCard, FiCheck, FiX, FiShield,
   FiPlus, FiTrash2, FiSearch, FiEye, FiArrowLeft, FiAlertTriangle,
   FiRefreshCw, FiDownload, FiServer, FiLock, FiUnlock, FiKey, FiActivity,
 } from 'react-icons/fi';
@@ -21,9 +21,9 @@ export default function AdminPanel() {
   const [dashboard, setDashboard] = useState(null);
   const [users, setUsers] = useState([]);
   const [payments, setPayments] = useState([]);
-  const [settings, setSettings] = useState({});
+  const [settings, setSettings] = useState({}); // kept for website tab
   const [loading, setLoading] = useState(true);
-  const [settingsForm, setSettingsForm] = useState({});
+
   const [websiteForm, setWebsiteForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [usersPage, setUsersPage] = useState(1);
@@ -76,10 +76,9 @@ export default function AdminPanel() {
         const r = await api.get('/admin/payments', { params: { page: paymentsPage, limit: 20, status: paymentStatusFilter || undefined } });
         setPayments(r.data.data); setPaymentsPagination(r.data.pagination || {});
       }
-      if (tab === 'settings' || tab === 'website') {
+      if (tab === 'website') {
         const r = await api.get('/admin/settings');
-        if (tab === 'settings') { setSettings(r.data.data); setSettingsForm(r.data.data); }
-        if (tab === 'website') { setSettings(r.data.data); setWebsiteForm(r.data.data); }
+        setSettings(r.data.data); setWebsiteForm(r.data.data);
       }
       if (tab === 'app-config') {
         const r = await api.get('/app-config');
@@ -236,13 +235,7 @@ export default function AdminPanel() {
     } catch { toast.error('No screenshot available'); }
   };
 
-  // ─── SETTINGS ───
-  const saveSettings = async (e) => {
-    e.preventDefault(); setSaving(true);
-    try { await api.put('/admin/settings', settingsForm); toast.success('Settings saved'); }
-    catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
-    finally { setSaving(false); }
-  };
+
 
   if (loading && !dashboard) return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div></div>;
 
@@ -531,7 +524,7 @@ export default function AdminPanel() {
     { id: 'system', label: '🖥️ System' },
     { id: 'website', label: '🌐 Website' },
     { id: 'app-config', label: '🎛️ App Config' },
-    { id: 'settings', label: '⚙️ Settings' },
+
   ];
 
   return (
@@ -1624,24 +1617,7 @@ export default function AdminPanel() {
       )}
 
       {/* ═══ SETTINGS ═══ */}
-      {tab === 'settings' && (
-        <div className="card max-w-lg">
-          <h3 className="font-semibold mb-4">Platform Settings</h3>
-          <form onSubmit={saveSettings} className="space-y-4">
-            <div><label className="label">UPI ID *</label><input className="input" required value={settingsForm.upiId || ''} onChange={e => setSettingsForm({ ...settingsForm, upiId: e.target.value })} /></div>
-            <div><label className="label">UPI Name</label><input className="input" value={settingsForm.upiName || ''} onChange={e => setSettingsForm({ ...settingsForm, upiName: e.target.value })} /></div>
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-sm text-blue-700 dark:text-blue-400">
-              💡 <strong>Plan pricing</strong> is now managed from the <button onClick={() => setTab('plans')} className="underline font-semibold">📦 Plans tab</button>. Add, edit, or remove plans there.
-            </div>
-            <div><label className="label">Free Trial Days</label><input type="number" className="input" value={settingsForm.trialDays || ''} onChange={e => setSettingsForm({ ...settingsForm, trialDays: +e.target.value })} /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><label className="label">Support Email</label><input className="input" value={settingsForm.supportEmail || ''} onChange={e => setSettingsForm({ ...settingsForm, supportEmail: e.target.value })} /></div>
-              <div><label className="label">Support Phone</label><input className="input" value={settingsForm.supportPhone || ''} onChange={e => setSettingsForm({ ...settingsForm, supportPhone: e.target.value })} /></div>
-            </div>
-            <button type="submit" disabled={saving} className="btn-primary">{saving ? 'Saving...' : 'Save Settings'}</button>
-          </form>
-        </div>
-      )}
+
 
       {/* Screenshot Modal */}
       <Modal isOpen={!!screenshotModal} onClose={() => setScreenshotModal(null)} title="Payment Screenshot" size="lg">
