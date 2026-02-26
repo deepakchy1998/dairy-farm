@@ -237,7 +237,16 @@ export default function BreedingRecords() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div><label className="label">Cattle (Female) *</label><select className="input" required value={form.cattleId} onChange={e => setForm({ ...form, cattleId: e.target.value })}><option value="">Select cattle</option>{cattleList.map(c => <option key={c._id} value={c._id}>{c.tagNumber} - {c.breed}</option>)}</select></div>
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="label">Breeding Date *</label><input type="date" className="input" required value={form.breedingDate} onChange={e => setForm({ ...form, breedingDate: e.target.value })} /></div>
+            <div><label className="label">Breeding Date *</label><input type="date" className="input" required value={form.breedingDate} onChange={e => {
+              const bd = e.target.value;
+              const update = { ...form, breedingDate: bd };
+              if (bd) {
+                const d = new Date(bd);
+                d.setDate(d.getDate() + 283);
+                update.expectedDelivery = d.toISOString().slice(0, 10);
+              }
+              setForm(update);
+            }} /></div>
             <div><label className="label">Method</label><select className="input" value={form.method} onChange={e => setForm({ ...form, method: e.target.value })}><option value="natural">🐂 Natural</option><option value="artificial">🧪 Artificial Insemination</option></select></div>
           </div>
           <div><label className="label">Bull Details</label><input className="input" value={form.bullDetails} onChange={e => setForm({ ...form, bullDetails: e.target.value })} placeholder="Bull name/ID or semen details" /></div>
