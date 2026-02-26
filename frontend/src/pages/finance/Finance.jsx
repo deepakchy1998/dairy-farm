@@ -326,7 +326,7 @@ export default function Finance() {
           {isMilkSale && (
             <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 space-y-4">
               <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">🥛 Milk Sale Details</p>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="label">Sale Type *</label>
                   <select 

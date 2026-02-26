@@ -141,12 +141,12 @@ export default function HealthRecords() {
           setPeriod(p);
           setFilters({ ...filters, startDate: startDate || '', endDate: endDate || '', page: 1 });
         }} />
-        <div className="flex gap-3">
-          <select className="input w-auto" value={filters.type} onChange={e => setFilters({ ...filters, type: e.target.value, page: 1 })}>
+        <div className="grid grid-cols-2 sm:flex gap-3">
+          <select className="input sm:w-auto" value={filters.type} onChange={e => setFilters({ ...filters, type: e.target.value, page: 1 })}>
             <option value="">All Types</option>
             {types.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
-          <select className="input w-auto" value={filters.cattleId} onChange={e => setFilters({ ...filters, cattleId: e.target.value, page: 1 })}>
+          <select className="input sm:w-auto" value={filters.cattleId} onChange={e => setFilters({ ...filters, cattleId: e.target.value, page: 1 })}>
             <option value="">All Cattle</option>
             {cattleList.map(c => <option key={c._id} value={c._id}>{c.tagNumber} - {c.breed}</option>)}
           </select>
@@ -274,7 +274,7 @@ export default function HealthRecords() {
             <div><label className="label">Next Due Date</label><input type="date" className="input" value={form.nextDueDate} onChange={e => setForm({ ...form, nextDueDate: e.target.value })} /></div>
           </div>
           <div><label className="label">Description *</label><input className="input" required value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="e.g. FMD Vaccination" /></div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div><label className="label">Medicine</label><input className="input" value={form.medicine} onChange={e => setForm({ ...form, medicine: e.target.value })} placeholder="Name of medicine" /></div>
             <div><label className="label">Cost (₹)</label><input type="number" className="input" value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} /></div>
             <div><label className="label">Vet Name</label><input className="input" value={form.vetName} onChange={e => setForm({ ...form, vetName: e.target.value })} /></div>

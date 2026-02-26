@@ -149,7 +149,7 @@ export default function FeedRecords() {
         ) : (
           <>
             {/* Desktop */}
-            <div className="hidden md:block overflow-x-hidden max-h-[60vh] overflow-y-auto">
+            <div className="hidden md:block overflow-x-auto max-h-[60vh] overflow-y-auto">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10"><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
                   <th className="px-4 py-2 text-left">Date</th>
@@ -239,7 +239,7 @@ export default function FeedRecords() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div><label className="label">Date *</label><input type="date" className="input" required value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></div>
           <div><label className="label">Feed Type *</label><input className="input" required list="feedtype-list" value={form.feedType} onChange={e => setForm({ ...form, feedType: e.target.value })} placeholder="Select or type feed" /><datalist id="feedtype-list">{feedTypes.map(f => <option key={f} value={f} />)}</datalist></div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div><label className="label">Quantity *</label><input type="number" step="0.1" className="input" required value={form.quantity} onChange={e => setForm({ ...form, quantity: e.target.value })} /></div>
             <div><label className="label">Unit</label><select className="input" value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })}><option value="kg">Kg</option><option value="quintal">Quintal</option><option value="ton">Ton</option></select></div>
             <div><label className="label">Cost (₹)</label><input type="number" className="input" value={form.cost} onChange={e => setForm({ ...form, cost: e.target.value })} /></div>

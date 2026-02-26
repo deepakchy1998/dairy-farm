@@ -466,9 +466,9 @@ export default function MilkRecords() {
             {/* Period Buttons */}
             <div className="flex-1">
               <label className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 block">Period</label>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2 overflow-x-auto pb-1">
                 {PERIODS.map(p => (
-                  <button key={p.k} onClick={() => handleFilterChange(p.k)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${filterPeriod === p.k ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'}`}>{p.l}</button>
+                  <button key={p.k} onClick={() => handleFilterChange(p.k)} className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition whitespace-nowrap flex-shrink-0 ${filterPeriod === p.k ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'}`}>{p.l}</button>
                 ))}
               </div>
             </div>
@@ -684,19 +684,17 @@ export default function MilkRecords() {
       ) : (
         <div className="card p-0 overflow-hidden">
           {/* Desktop Table */}
-          <div className="hidden md:block overflow-auto max-h-[60vh]">
-            <table className="w-full text-sm">
+          <div className="hidden md:block overflow-x-auto overflow-y-auto max-h-[60vh]">
+            <table className="w-full text-sm min-w-[700px]">
               <thead className="sticky top-0 z-10">
                 <tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
                   <th className="px-3 py-2 text-left">Tag No</th>
                   <th className="px-2 py-2 text-left">Breed</th>
-                  <th className="px-2 py-2 text-center bg-blue-50 text-blue-600">Morn (L)</th>
-                  <th className="px-2 py-2 text-center bg-blue-50 text-blue-600">Fat%</th>
-                  <th className="px-2 py-2 text-center bg-orange-50 text-orange-600">Eve (L)</th>
-                  <th className="px-2 py-2 text-center bg-orange-50 text-orange-600">Fat%</th>
+                  <th className="px-2 py-2 text-center bg-blue-50 dark:bg-blue-900/20 text-blue-600">Morning</th>
+                  <th className="px-2 py-2 text-center bg-orange-50 dark:bg-orange-900/20 text-orange-600">Evening</th>
                   <th className="px-3 py-2 text-center text-emerald-600">Total</th>
-                  <th className="px-2 py-2 text-left">Status</th>
-                  <th className="px-2 py-2">Actions</th>
+                  <th className="px-2 py-2 text-center">Status</th>
+                  <th className="px-2 py-2 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -705,25 +703,25 @@ export default function MilkRecords() {
                   const hasToday = !!rec;
                   return (
                     <tr key={c._id} className={`border-b ${i % 2 === 0 ? 'bg-white dark:bg-transparent' : 'bg-gray-50/50 dark:bg-gray-800/20'}`}>
-                      <td className="px-3 py-2 font-mono font-medium dark:text-white">Tag No {c.tagNumber}</td>
+                      <td className="px-3 py-2 font-mono font-medium dark:text-white whitespace-nowrap">Tag No {c.tagNumber}</td>
                       <td className="px-2 py-2 text-gray-500 text-xs">{c.breed}</td>
-                      <td className="px-2 py-2 text-center">{hasToday ? (rec.morningYield > 0 ? rec.morningYield.toFixed(1) : '-') : '-'}</td>
-                      <td className="px-2 py-2 text-center text-xs text-gray-400">{hasToday ? (rec.morningFat ?? '-') : '-'}</td>
-                      <td className="px-2 py-2 text-center">{hasToday ? (rec.eveningYield > 0 ? rec.eveningYield.toFixed(1) : '-') : '-'}</td>
-                      <td className="px-2 py-2 text-center text-xs text-gray-400">{hasToday ? (rec.eveningFat ?? '-') : '-'}</td>
-                      <td className="px-3 py-2 text-center font-bold text-emerald-600">{hasToday ? rec.totalYield?.toFixed(1) : '-'}</td>
-                      <td className="px-2 py-2">
+                      <td className="px-2 py-2 text-center">{hasToday && rec.morningYield > 0 ? <span>{rec.morningYield.toFixed(1)}L {rec.morningFat ? <span className="text-[10px] text-gray-400">({rec.morningFat}%)</span> : ''}</span> : <span className="text-gray-300">-</span>}</td>
+                      <td className="px-2 py-2 text-center">{hasToday && rec.eveningYield > 0 ? <span>{rec.eveningYield.toFixed(1)}L {rec.eveningFat ? <span className="text-[10px] text-gray-400">({rec.eveningFat}%)</span> : ''}</span> : <span className="text-gray-300">-</span>}</td>
+                      <td className="px-3 py-2 text-center font-bold text-emerald-600">{hasToday ? rec.totalYield?.toFixed(1) + 'L' : '-'}</td>
+                      <td className="px-2 py-2 text-center">
                         {hasToday ? (
                           <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium">✓ Done</span>
                         ) : (
                           <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">Pending</span>
                         )}
                       </td>
-                      <td className="px-2 py-2 whitespace-nowrap">
-                        {!hasToday && <button onClick={() => openAddRecord(c)} className="text-emerald-600 hover:text-emerald-800 text-xs mr-2">Add</button>}
-                        <button onClick={() => openHistory(c)} className="text-blue-600 hover:text-blue-800 text-xs mr-2">View</button>
-                        <button onClick={() => handleSharePdf(c)} className="text-purple-600 hover:text-purple-800 text-xs mr-2">PDF</button>
-                        <button onClick={() => handleRemoveCattle(c._id)} className="text-red-500 hover:text-red-700 text-xs">Delete</button>
+                      <td className="px-2 py-2">
+                        <div className="flex gap-1.5 justify-center">
+                          {!hasToday && <button onClick={() => openAddRecord(c)} className="text-emerald-600 hover:text-emerald-800 text-xs font-medium">Add</button>}
+                          <button onClick={() => openHistory(c)} className="text-blue-600 hover:text-blue-800 text-xs">View</button>
+                          <button onClick={() => handleSharePdf(c)} className="text-purple-600 hover:text-purple-800 text-xs">PDF</button>
+                          <button onClick={() => handleRemoveCattle(c._id)} className="text-red-500 hover:text-red-700 text-xs">Del</button>
+                        </div>
                       </td>
                     </tr>
                   );

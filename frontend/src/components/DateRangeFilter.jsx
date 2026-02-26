@@ -50,37 +50,40 @@ export default function DateRangeFilter({ value, onChange, showCustom = true }) 
   const displayPeriods = showCustom ? periods : periods.filter(p => p.k !== 'custom');
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <FiCalendar size={15} className="text-gray-400 dark:text-gray-500 hidden sm:block" />
-      {displayPeriods.map(p => (
-        <button
-          key={p.k}
-          onClick={() => handlePeriodClick(p.k)}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
-            value === p.k
-              ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-200 dark:ring-emerald-800'
-              : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
-          }`}
-        >
-          {p.l}
-        </button>
-      ))}
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+        <FiCalendar size={15} className="text-gray-400 dark:text-gray-500 hidden sm:block flex-shrink-0" />
+        {displayPeriods.map(p => (
+          <button
+            key={p.k}
+            onClick={() => handlePeriodClick(p.k)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+              value === p.k
+                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-200 dark:ring-emerald-800'
+                : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
+            }`}
+          >
+            {p.l}
+          </button>
+        ))}
+      </div>
       {showCustom && value === 'custom' && (
-        <div className="flex items-center gap-2 ml-1">
-          <input
-            type="date"
-            className="input w-auto text-xs !py-1.5 !px-2.5"
-            value={customStart}
-            onChange={e => setCustomStart(e.target.value)}
-          />
-          <span className="text-gray-400 dark:text-gray-500 text-xs">to</span>
-          <input
-            type="date"
-            className="input w-auto text-xs !py-1.5 !px-2.5"
-            value={customEnd}
-            onChange={e => setCustomEnd(e.target.value)}
-          />
-          <button onClick={handleCustomApply} className="px-3.5 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 transition-colors shadow-sm">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <div className="grid grid-cols-2 gap-2 flex-1">
+            <input
+              type="date"
+              className="input text-xs !py-1.5 !px-2.5"
+              value={customStart}
+              onChange={e => setCustomStart(e.target.value)}
+            />
+            <input
+              type="date"
+              className="input text-xs !py-1.5 !px-2.5"
+              value={customEnd}
+              onChange={e => setCustomEnd(e.target.value)}
+            />
+          </div>
+          <button onClick={handleCustomApply} className="px-3.5 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold hover:bg-emerald-700 transition-colors shadow-sm w-full sm:w-auto">
             Apply
           </button>
         </div>
