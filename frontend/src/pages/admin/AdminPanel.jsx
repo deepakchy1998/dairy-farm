@@ -997,19 +997,15 @@ export default function AdminPanel() {
         return (
           <div className="space-y-5">
             {/* Header */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 border border-emerald-100 dark:border-gray-700 p-6">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-200/30 dark:bg-emerald-500/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl"></div>
-              <div className="relative flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">🎛️ App Configuration</h2>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Customize every dropdown, category & option in your app — no code needed</p>
-                  <div className="flex gap-3 mt-3">
-                    <span className="text-xs bg-white/70 dark:bg-white/10 text-gray-600 dark:text-gray-300 px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700">{configSections.length} sections</span>
-                    <span className="text-xs bg-white/70 dark:bg-white/10 text-gray-600 dark:text-gray-300 px-3 py-1 rounded-full border border-gray-200 dark:border-gray-700">{configSections.reduce((sum, s) => sum + getItems(s.key).length, 0)} total items</span>
-                  </div>
-                </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+              <div>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">🎛️ App Configuration</h2>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Customize every dropdown, category & option in your app</p>
+              </div>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <span className="text-xs text-gray-500 dark:text-gray-400">{configSections.length} sections · {configSections.reduce((sum, s) => sum + getItems(s.key).length, 0)} items</span>
                 <button onClick={saveConfig} disabled={savingConfig}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-semibold transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-50 flex items-center gap-2">
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2 rounded-xl font-semibold transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-50 flex items-center gap-2 text-sm">
                   {savingConfig ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Saving...</> : '💾 Save Changes'}
                 </button>
               </div>
