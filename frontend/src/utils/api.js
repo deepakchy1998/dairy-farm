@@ -24,13 +24,19 @@ api.interceptors.request.use((config) => {
       if (payload.exp * 1000 < Date.now()) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        const p = window.location.pathname;
+        if (!['/login', '/register', '/forgot-password'].some(x => p.startsWith(x)) && !p.startsWith('/reset-password')) {
+          window.location.href = '/login';
+        }
         return Promise.reject(new Error('Token expired'));
       }
     } catch {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      const p = window.location.pathname;
+      if (!['/login', '/register', '/forgot-password'].some(x => p.startsWith(x)) && !p.startsWith('/reset-password')) {
+        window.location.href = '/login';
+      }
       return Promise.reject(new Error('Invalid token'));
     }
     config.headers.Authorization = `Bearer ${token}`;
@@ -65,7 +71,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Only redirect if not already on an auth page to prevent reload loops
+      const path = window.location.pathname;
+      if (!['/login', '/register', '/forgot-password'].some(p => path.startsWith(p)) && !path.startsWith('/reset-password')) {
+        window.location.href = '/login';
+      }
     }
     // Blocked account — force logout with message
     if (error.response?.status === 403 && error.response?.data?.code === 'ACCOUNT_BLOCKED') {
