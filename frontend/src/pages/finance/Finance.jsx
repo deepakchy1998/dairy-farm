@@ -183,7 +183,7 @@ export default function Finance() {
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-hidden max-h-[60vh] overflow-y-auto">
+            <div className="hidden md:block overflow-x-auto max-h-[60vh] overflow-y-auto">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">

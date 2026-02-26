@@ -245,18 +245,20 @@ export default function Employees() {
   if (viewEmp) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <button onClick={() => { setViewEmp(null); setEmpHistory(null); }} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"><FiArrowLeft size={20} /></button>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold">{viewEmp.name}</h1>
-            <p className="text-gray-500 text-sm flex items-center gap-3">
-              <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full text-xs font-medium">{viewEmp.role}</span>
-              {viewEmp.phone && <span className="flex items-center gap-1"><FiPhone size={12} /> {viewEmp.phone}</span>}
-              {viewEmp.village && <span className="flex items-center gap-1"><FiMapPin size={12} /> {viewEmp.village}</span>}
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <button onClick={() => { setViewEmp(null); setEmpHistory(null); }} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 flex-shrink-0"><FiArrowLeft size={20} /></button>
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold truncate">{viewEmp.name}</h1>
+              <div className="flex items-center gap-2 flex-wrap text-sm text-gray-500">
+                <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full text-xs font-medium">{viewEmp.role}</span>
+                {viewEmp.phone && <span className="flex items-center gap-1 text-xs"><FiPhone size={11} /> {viewEmp.phone}</span>}
+                {viewEmp.village && <span className="flex items-center gap-1 text-xs"><FiMapPin size={11} /> {viewEmp.village}</span>}
+              </div>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button onClick={() => openEditEmp(viewEmp)} className="btn-secondary text-xs"><FiEdit2 size={14} /></button>
+          <div className="flex gap-2 flex-shrink-0">
+            <button onClick={() => openEditEmp(viewEmp)} className="btn-secondary text-xs flex items-center gap-1"><FiEdit2 size={14} /> Edit</button>
             <button onClick={() => openAdvance(viewEmp)} className="btn-secondary text-xs flex items-center gap-1"><FaIndianRupeeSign size={12} /> Advance</button>
           </div>
         </div>
@@ -295,34 +297,58 @@ export default function Employees() {
           ) : !empHistory?.records?.length ? (
             <div className="py-8 text-center text-gray-400 text-sm">No attendance records this month</div>
           ) : (
-            <div className="overflow-x-hidden">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 z-10"><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
-                  <th className="px-4 py-2 text-left">Date</th>
-                  <th className="px-3 py-2 text-center">Status</th>
-                  <th className="px-3 py-2 text-center">Check In</th>
-                  <th className="px-3 py-2 text-center">Check Out</th>
-                  <th className="px-3 py-2 text-center">OT (hrs)</th>
-                  <th className="px-3 py-2 text-left">Notes</th>
-                </tr></thead>
-                <tbody>
-                  {empHistory.records.map((r, i) => {
-                    const colors = { present: 'emerald', absent: 'red', 'half-day': 'amber', leave: 'blue', holiday: 'purple' };
-                    const c = colors[r.status] || 'gray';
-                    return (
-                      <tr key={r._id} className={`border-b ${i % 2 ? 'bg-gray-50/50 dark:bg-gray-800/20' : ''}`}>
-                        <td className="px-4 py-2">{formatDate(r.date)}</td>
-                        <td className="px-3 py-2 text-center"><span className={`text-xs bg-${c}-100 dark:bg-${c}-900/30 text-${c}-700 dark:text-${c}-400 px-2 py-0.5 rounded-full font-medium capitalize`}>{r.status}</span></td>
-                        <td className="px-3 py-2 text-center text-gray-500">{r.checkIn || '-'}</td>
-                        <td className="px-3 py-2 text-center text-gray-500">{r.checkOut || '-'}</td>
-                        <td className="px-3 py-2 text-center">{r.overtime > 0 ? <span className="text-amber-600 font-medium">{r.overtime}h</span> : '-'}</td>
-                        <td className="px-3 py-2 text-gray-400 text-xs">{r.notes || '-'}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto overflow-y-auto max-h-[60vh]">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 z-10"><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
+                    <th className="px-4 py-2 text-left">Date</th>
+                    <th className="px-3 py-2 text-center">Status</th>
+                    <th className="px-3 py-2 text-center">Check In</th>
+                    <th className="px-3 py-2 text-center">Check Out</th>
+                    <th className="px-3 py-2 text-center">OT (hrs)</th>
+                    <th className="px-3 py-2 text-left">Notes</th>
+                  </tr></thead>
+                  <tbody>
+                    {empHistory.records.map((r, i) => {
+                      const colors = { present: 'emerald', absent: 'red', 'half-day': 'amber', leave: 'blue', holiday: 'purple' };
+                      const c = colors[r.status] || 'gray';
+                      return (
+                        <tr key={r._id} className={`border-b ${i % 2 ? 'bg-gray-50/50 dark:bg-gray-800/20' : ''}`}>
+                          <td className="px-4 py-2">{formatDate(r.date)}</td>
+                          <td className="px-3 py-2 text-center"><span className={`text-xs bg-${c}-100 dark:bg-${c}-900/30 text-${c}-700 dark:text-${c}-400 px-2 py-0.5 rounded-full font-medium capitalize`}>{r.status}</span></td>
+                          <td className="px-3 py-2 text-center text-gray-500">{r.checkIn || '-'}</td>
+                          <td className="px-3 py-2 text-center text-gray-500">{r.checkOut || '-'}</td>
+                          <td className="px-3 py-2 text-center">{r.overtime > 0 ? <span className="text-amber-600 font-medium">{r.overtime}h</span> : '-'}</td>
+                          <td className="px-3 py-2 text-gray-400 text-xs">{r.notes || '-'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {/* Mobile Cards */}
+              <div className="md:hidden divide-y dark:divide-gray-800">
+                {empHistory.records.map(r => {
+                  const colors = { present: 'emerald', absent: 'red', 'half-day': 'amber', leave: 'blue', holiday: 'purple' };
+                  const c = colors[r.status] || 'gray';
+                  return (
+                    <div key={r._id} className="p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{formatDate(r.date)}</span>
+                        <span className={`text-xs bg-${c}-100 dark:bg-${c}-900/30 text-${c}-700 dark:text-${c}-400 px-2.5 py-0.5 rounded-full font-medium capitalize`}>{r.status}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                        {r.checkIn && <span>In: {r.checkIn}</span>}
+                        {r.checkOut && <span>Out: {r.checkOut}</span>}
+                        {r.overtime > 0 && <span className="text-amber-600 font-medium">OT: {r.overtime}h</span>}
+                      </div>
+                      {r.notes && <p className="text-xs text-gray-400 mt-1">{r.notes}</p>}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
 
@@ -452,7 +478,7 @@ export default function Employees() {
                       <p className={`text-sm font-bold ${e.totalAdvance > 0 ? 'text-amber-600' : 'text-gray-400'}`}>₹{(e.totalAdvance || 0).toLocaleString('en-IN')}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                  <div className="flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition">
                     <button onClick={ev => { ev.stopPropagation(); openEditEmp(e); }} className="flex-1 btn-secondary text-xs py-1.5 flex items-center justify-center gap-1"><FiEdit2 size={12} /> Edit</button>
                     <button onClick={ev => { ev.stopPropagation(); openAdvance(e); }} className="flex-1 btn-primary text-xs py-1.5 flex items-center justify-center gap-1"><FaIndianRupeeSign size={12} /> Advance</button>
                     <button onClick={ev => { ev.stopPropagation(); deleteEmployee(e); }} className="btn-danger text-xs py-1.5 px-2"><FiTrash2 size={14} /></button>
@@ -481,7 +507,7 @@ export default function Employees() {
             ) : (
               <>
                 {/* Desktop */}
-                <div className="hidden md:block overflow-x-hidden max-h-[60vh] overflow-y-auto">
+                <div className="hidden md:block overflow-x-auto max-h-[60vh] overflow-y-auto">
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 z-10"><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
                       <th className="px-4 py-2 text-left">Employee</th>
@@ -585,7 +611,7 @@ export default function Employees() {
               <div className="py-8 text-center text-gray-400">No salary data</div>
             ) : (
               <>
-                <div className="hidden md:block overflow-x-hidden max-h-[60vh] overflow-y-auto">
+                <div className="hidden md:block overflow-x-auto max-h-[60vh] overflow-y-auto">
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 z-10"><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
                       <th className="px-4 py-2 text-left">Employee</th>
