@@ -14,6 +14,7 @@ const revenueSchema = new mongoose.Schema({
   cattleTagNumber: { type: String },
   buyerName: { type: String },
   buyerPhone: { type: String },
+  buyerAddress: { type: String },
 }, { timestamps: true });
 
 revenueSchema.index({ farmId: 1, date: -1 });

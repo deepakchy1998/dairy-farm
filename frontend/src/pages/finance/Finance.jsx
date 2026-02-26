@@ -13,7 +13,7 @@ import { useAppConfig } from '../../context/AppConfigContext';
 import toast from 'react-hot-toast';
 
 const milkSaleTypes = ['retail', 'dairy', 'other'];
-const defaultForm = { date: new Date().toISOString().slice(0, 10), category: '', description: '', amount: '', milkSaleType: '', milkQuantity: '', milkRate: '', cattleId: '', cattleTagNumber: '', buyerName: '', buyerPhone: '' };
+const defaultForm = { date: new Date().toISOString().slice(0, 10), category: '', description: '', amount: '', milkSaleType: '', milkQuantity: '', milkRate: '', cattleId: '', cattleTagNumber: '', buyerName: '', buyerPhone: '', buyerAddress: '' };
 
 export default function Finance() {
   const { expenseCategories: expCategories, revenueCategories: revCategories } = useAppConfig();
@@ -68,7 +68,7 @@ export default function Finance() {
     try {
       const payload = { ...form };
       if (!isMilkSale) { delete payload.milkSaleType; delete payload.milkQuantity; delete payload.milkRate; }
-      if (!isCattleSale) { delete payload.cattleId; delete payload.cattleTagNumber; delete payload.buyerName; delete payload.buyerPhone; }
+      if (!isCattleSale) { delete payload.cattleId; delete payload.cattleTagNumber; delete payload.buyerName; delete payload.buyerPhone; delete payload.buyerAddress; }
       if (editId) { await api.put(`${endpoint}/${editId}`, payload); toast.success('Updated'); }
       else { await api.post(endpoint, payload); toast.success('Record added'); }
       setModalOpen(false); setForm({ ...defaultForm }); setEditId(null); fetchData();
@@ -76,7 +76,7 @@ export default function Finance() {
   };
 
   const handleEdit = (r) => {
-    setForm({ date: r.date?.slice(0, 10), category: r.category, description: r.description || '', amount: r.amount, milkSaleType: r.milkSaleType || '', milkQuantity: r.milkQuantity || '', milkRate: r.milkRate || '', cattleId: r.cattleId?._id || r.cattleId || '', cattleTagNumber: r.cattleTagNumber || '', buyerName: r.buyerName || '', buyerPhone: r.buyerPhone || '' });
+    setForm({ date: r.date?.slice(0, 10), category: r.category, description: r.description || '', amount: r.amount, milkSaleType: r.milkSaleType || '', milkQuantity: r.milkQuantity || '', milkRate: r.milkRate || '', cattleId: r.cattleId?._id || r.cattleId || '', cattleTagNumber: r.cattleTagNumber || '', buyerName: r.buyerName || '', buyerPhone: r.buyerPhone || '', buyerAddress: r.buyerAddress || '' });
     setEditId(r._id); setModalOpen(true);
   };
 
@@ -444,6 +444,10 @@ export default function Finance() {
                 <div>
                   <label className="label">Buyer Phone</label>
                   <input className="input" placeholder="+91..." value={form.buyerPhone} onChange={e => setForm({ ...form, buyerPhone: e.target.value })} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">Buyer Address</label>
+                  <input className="input" placeholder="Village, District, State" value={form.buyerAddress} onChange={e => setForm({ ...form, buyerAddress: e.target.value })} />
                 </div>
               </div>
             </div>
