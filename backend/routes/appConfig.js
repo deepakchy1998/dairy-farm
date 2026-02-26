@@ -19,6 +19,10 @@ router.get('/', auth, async (req, res, next) => {
     delete config.key;
     delete config.createdAt;
     delete config.updatedAt;
+    // Convert Map to plain object for frontend
+    if (config.modulesEnabled instanceof Map) {
+      config.modulesEnabled = Object.fromEntries(config.modulesEnabled);
+    }
     res.json({ success: true, data: config });
   } catch (err) { next(err); }
 });
@@ -36,7 +40,7 @@ router.put('/', auth, admin, async (req, res, next) => {
     const stringFields = [
       'maintenanceMessage', 'welcomeMessage', 'currencySymbol', 'dateFormat', 'milkUnit', 'weightUnit',
     ];
-    const boolFields = ['maintenanceMode'];
+    const boolFields = ['maintenanceMode', 'chatBubbleEnabled'];
 
     let config = await AppConfig.findOne({ key: 'global' });
     if (!config) config = new AppConfig({ key: 'global' });
@@ -57,6 +61,16 @@ router.put('/', auth, admin, async (req, res, next) => {
     }
     for (const field of boolFields) {
       if (req.body[field] !== undefined) config[field] = !!req.body[field];
+    }
+
+    // Module toggles (object of booleans)
+    if (req.body.modulesEnabled && typeof req.body.modulesEnabled === 'object') {
+      const allowed = ['cattle', 'milk', 'health', 'breeding', 'feed', 'finance', 'milkDelivery', 'employees', 'insurance', 'reports', 'chatbot'];
+      const modules = {};
+      for (const key of allowed) {
+        modules[key] = req.body.modulesEnabled[key] !== false;
+      }
+      config.modulesEnabled = modules;
     }
 
     await config.save();

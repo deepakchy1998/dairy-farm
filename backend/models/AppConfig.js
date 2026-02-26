@@ -24,6 +24,17 @@ const appConfigSchema = new mongoose.Schema({
   dateFormat: { type: String, default: 'DD/MM/YYYY' },
   milkUnit: { type: String, default: 'liters' },
   weightUnit: { type: String, default: 'kg' },
+  // Feature toggles
+  chatBubbleEnabled: { type: Boolean, default: true },
+  modulesEnabled: {
+    type: Map,
+    of: Boolean,
+    default: {
+      cattle: true, milk: true, health: true, breeding: true, feed: true,
+      finance: true, milkDelivery: true, employees: true, insurance: true,
+      reports: true, chatbot: true,
+    },
+  },
 }, { timestamps: true });
 
 export default mongoose.model('AppConfig', appConfigSchema);
