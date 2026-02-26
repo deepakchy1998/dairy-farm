@@ -229,52 +229,26 @@ export default function HealthRecords() {
             </div>
 
             {/* Mobile Cards */}
-            <div className="md:hidden divide-y dark:divide-gray-800">
+            <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
               {records.map((r, i) => (
-                <div key={r._id} className="p-4 space-y-3">
-                  {/* Header row: tag + type badge + actions */}
-                  <div className="flex items-center justify-between">
+                <div key={r._id} className="p-3 hover:bg-gray-50 dark:hover:bg-gray-800/30">
+                  <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-base dark:text-white">{r.cattleId?.tagNumber || '-'}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${typeBadge[r.type]}`}>{r.type}</span>
+                      <span className="text-sm font-semibold dark:text-white">{r.cattleId?.tagNumber || '-'}</span>
+                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${typeBadge[r.type]}`}>{r.type}</span>
                     </div>
-                    <div className="flex gap-1">
-                      <button onClick={() => handleEdit(r)} className="p-2 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors"><FiEdit2 size={16} /></button>
-                      <button onClick={() => handleDelete(r._id)} className="p-2 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"><FiTrash2 size={16} /></button>
-                    </div>
+                    <span className="text-xs text-gray-400">{formatDate(r.date)}</span>
                   </div>
-                  {/* Description */}
-                  <p className="text-sm text-gray-900 dark:text-gray-100">{r.description}</p>
-                  {/* Details grid — 2 columns */}
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    <div>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">Date</p>
-                      <p className="font-medium text-gray-700 dark:text-gray-300">{formatDate(r.date)}</p>
-                    </div>
-                    {r.medicine && (
-                      <div>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">Medicine</p>
-                        <p className="font-medium text-gray-700 dark:text-gray-300">{r.medicine}</p>
-                      </div>
-                    )}
-                    {r.cost ? (
-                      <div>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">Cost</p>
-                        <p className="font-bold text-red-600 dark:text-red-400">{formatCurrency(r.cost)}</p>
-                      </div>
-                    ) : null}
-                    {r.nextDueDate && (
-                      <div>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">Next Due</p>
-                        <p className="font-medium text-orange-600 dark:text-orange-400">{formatDate(r.nextDueDate)}</p>
-                      </div>
-                    )}
-                    {r.vetName && (
-                      <div>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">Vet</p>
-                        <p className="font-medium text-gray-700 dark:text-gray-300">{r.vetName}</p>
-                      </div>
-                    )}
+                  <p className="text-sm text-gray-800 dark:text-gray-200 mb-2 line-clamp-2">{r.description}</p>
+                  <div className="flex items-center gap-3 flex-wrap text-xs">
+                    {r.medicine && <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-lg">💊 {r.medicine}</span>}
+                    {r.cost ? <span className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-lg font-semibold">{formatCurrency(r.cost)}</span> : null}
+                    {r.nextDueDate && <span className="bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded-lg">📅 {formatDate(r.nextDueDate)}</span>}
+                    {r.vetName && <span className="text-gray-500 dark:text-gray-400">🩺 {r.vetName}</span>}
+                  </div>
+                  <div className="flex justify-end gap-3 mt-1.5">
+                    <button onClick={() => handleEdit(r)} className="text-blue-500 text-xs font-medium">✏️ Edit</button>
+                    <button onClick={() => handleDelete(r._id)} className="text-red-400 text-xs font-medium">🗑️ Delete</button>
                   </div>
                 </div>
               ))}
