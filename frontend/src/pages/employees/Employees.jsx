@@ -362,6 +362,47 @@ export default function Employees() {
         )}
 
         <ConfirmDialog isOpen={confirm.open} onClose={() => setConfirm({ ...confirm, open: false })} title={confirm.title} message={confirm.message} variant={confirm.variant} onConfirm={confirm.onConfirm} />
+
+        {/* Edit Employee Modal (must be in detail view since it's an early return) */}
+        <Modal isOpen={empModal} onClose={() => setEmpModal(false)} title={editEmpId ? 'Edit Employee' : 'Add Employee'} size="xl">
+          <form onSubmit={saveEmployee} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div><label className="label">Name *</label><input className="input" required value={empForm.name} onChange={e => setEmpForm({ ...empForm, name: e.target.value })} /></div>
+              <div><label className="label">Phone</label><input className="input" value={empForm.phone} onChange={e => setEmpForm({ ...empForm, phone: e.target.value })} placeholder="+91..." /></div>
+              <div><label className="label">Role *</label>
+                <select className="input" value={empForm.role} onChange={e => setEmpForm({ ...empForm, role: e.target.value })}>
+                  {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div><label className="label">Village</label><input className="input" value={empForm.village} onChange={e => setEmpForm({ ...empForm, village: e.target.value })} /></div>
+              <div><label className="label">Monthly Salary (₹) *</label><input type="number" min="0" className="input" required value={empForm.monthlySalary} onChange={e => setEmpForm({ ...empForm, monthlySalary: e.target.value })} placeholder="e.g., 10000" /></div>
+              <div><label className="label">Daily Wage (₹) <span className="text-xs text-gray-400">(0 = monthly)</span></label><input type="number" min="0" className="input" value={empForm.dailyWage} onChange={e => setEmpForm({ ...empForm, dailyWage: e.target.value })} placeholder="0" /></div>
+              <div><label className="label">Join Date</label><input type="date" className="input" value={empForm.joinDate} onChange={e => setEmpForm({ ...empForm, joinDate: e.target.value })} /></div>
+              <div><label className="label">Emergency Contact</label><input className="input" value={empForm.emergencyContact} onChange={e => setEmpForm({ ...empForm, emergencyContact: e.target.value })} /></div>
+              <div><label className="label">Aadhar Number</label><input className="input" value={empForm.aadhar} onChange={e => setEmpForm({ ...empForm, aadhar: e.target.value })} /></div>
+              <div><label className="label">Bank Account</label><input className="input" value={empForm.bankAccount} onChange={e => setEmpForm({ ...empForm, bankAccount: e.target.value })} /></div>
+              <div><label className="label">IFSC Code</label><input className="input" value={empForm.ifsc} onChange={e => setEmpForm({ ...empForm, ifsc: e.target.value })} /></div>
+              <div><label className="label">Address</label><input className="input" value={empForm.address} onChange={e => setEmpForm({ ...empForm, address: e.target.value })} /></div>
+            </div>
+            <div><label className="label">Notes</label><textarea className="input" rows={2} value={empForm.notes} onChange={e => setEmpForm({ ...empForm, notes: e.target.value })} /></div>
+            <div className="flex justify-end gap-3 pt-2 border-t">
+              <button type="button" onClick={() => setEmpModal(false)} className="btn-secondary">Cancel</button>
+              <button type="submit" disabled={savingEmp} className="btn-primary">{savingEmp ? 'Saving...' : editEmpId ? 'Update' : 'Add Employee'}</button>
+            </div>
+          </form>
+        </Modal>
+
+        {/* Advance Modal */}
+        <Modal isOpen={advModal} onClose={() => setAdvModal(false)} title="💸 Record Advance" size="md">
+          <form onSubmit={saveAdvance} className="space-y-4">
+            <div><label className="label">Amount (₹) *</label><input type="number" min="1" className="input" required value={advForm.amount} onChange={e => setAdvForm({ ...advForm, amount: e.target.value })} /></div>
+            <div><label className="label">Notes</label><input className="input" value={advForm.notes} onChange={e => setAdvForm({ ...advForm, notes: e.target.value })} placeholder="Reason for advance" /></div>
+            <div className="flex justify-end gap-3 pt-2 border-t">
+              <button type="button" onClick={() => setAdvModal(false)} className="btn-secondary">Cancel</button>
+              <button type="submit" className="btn-primary">Record Advance</button>
+            </div>
+          </form>
+        </Modal>
       </div>
     );
   }
