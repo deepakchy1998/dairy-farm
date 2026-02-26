@@ -7,6 +7,19 @@ const api = axios.create({
   timeout: 30000,
 });
 
+// ─── Auth event bus ───
+// Instead of using window.location.href (which causes full page reloads and
+// potential infinite loops), we emit events that AuthContext listens to.
+// React's ProtectedRoute component handles the actual redirect via <Navigate>.
+const AUTH_EVENT = 'dairypro:auth';
+export const onAuthEvent = (callback) => {
+  window.addEventListener(AUTH_EVENT, callback);
+  return () => window.removeEventListener(AUTH_EVENT, callback);
+};
+function emitAuthEvent(reason) {
+  window.dispatchEvent(new CustomEvent(AUTH_EVENT, { detail: { reason } }));
+}
+
 // ─── Request deduplication for GET requests ───
 const pendingRequests = new Map();
 
@@ -15,28 +28,28 @@ function getRequestKey(config) {
   return `${config.method}:${config.baseURL}${config.url}:${JSON.stringify(config.params || {})}`;
 }
 
+// Track if we already emitted a logout to prevent multiple events per cycle
+let logoutEmitted = false;
+
+function clearTokens() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+}
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
-    // Check if token is expired
+    // Check if token is expired before even making the request
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       if (payload.exp * 1000 < Date.now()) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        const p = window.location.pathname;
-        if (!['/login', '/register', '/forgot-password'].some(x => p.startsWith(x)) && !p.startsWith('/reset-password')) {
-          window.location.href = '/login';
-        }
+        clearTokens();
+        if (!logoutEmitted) { logoutEmitted = true; emitAuthEvent('expired'); }
         return Promise.reject(new Error('Token expired'));
       }
     } catch {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      const p = window.location.pathname;
-      if (!['/login', '/register', '/forgot-password'].some(x => p.startsWith(x)) && !p.startsWith('/reset-password')) {
-        window.location.href = '/login';
-      }
+      clearTokens();
+      if (!logoutEmitted) { logoutEmitted = true; emitAuthEvent('invalid'); }
       return Promise.reject(new Error('Invalid token'));
     }
     config.headers.Authorization = `Bearer ${token}`;
@@ -60,41 +73,34 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (res) => {
-    // Clean up dedup tracking
     if (res.config._dedupeKey) pendingRequests.delete(res.config._dedupeKey);
+    logoutEmitted = false; // Reset on successful response
     return res;
   },
   (error) => {
-    // Clean up dedup tracking
     if (error.config?._dedupeKey) pendingRequests.delete(error.config._dedupeKey);
 
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      // Only redirect if not already on an auth page to prevent reload loops
-      const path = window.location.pathname;
-      if (!['/login', '/register', '/forgot-password'].some(p => path.startsWith(p)) && !path.startsWith('/reset-password')) {
-        window.location.href = '/login';
-      }
+      clearTokens();
+      if (!logoutEmitted) { logoutEmitted = true; emitAuthEvent('unauthorized'); }
     }
-    // Blocked account — force logout with message
+
+    // Blocked account
     if (error.response?.status === 403 && error.response?.data?.code === 'ACCOUNT_BLOCKED') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login?reason=blocked';
+      clearTokens();
+      if (!logoutEmitted) { logoutEmitted = true; emitAuthEvent('blocked'); }
     }
-    // Subscription expired — redirect to subscription page
+
+    // Subscription expired
     if (error.response?.status === 403 && error.response?.data?.code === 'SUBSCRIPTION_EXPIRED') {
-      // Don't redirect if already on subscription/settings/payment page
-      const path = window.location.pathname;
-      if (!['/subscription', '/settings', '/payment'].some(p => path.startsWith(p))) {
-        window.location.href = '/subscription';
-      }
+      emitAuthEvent('subscription_expired');
     }
-    // Network error — provide a user-friendly message
+
+    // Network error
     if (!error.response && error.message !== 'canceled') {
       error.userMessage = 'Network error. Please check your internet connection.';
     }
+
     return Promise.reject(error);
   }
 );

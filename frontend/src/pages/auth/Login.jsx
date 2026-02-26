@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 import { FiEye, FiEyeOff, FiMail, FiLock } from 'react-icons/fi';
 
 export default function Login() {
-  const { login, getSavedEmail, isRemembered } = useAuth();
+  const { login, getSavedEmail, isRemembered, consumeAuthReason } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
-  // Show logout reason message
+  // Show logout reason message (from React state, not URL params — no reload needed)
   useEffect(() => {
-    const reason = searchParams.get('reason');
+    const reason = consumeAuthReason();
     if (reason === 'inactive') toast('You were logged out due to inactivity', { icon: '⏰', duration: 5000 });
     if (reason === 'blocked') toast.error('Your account has been suspended. Contact support.', { duration: 8000 });
+    if (reason === 'expired') toast('Your session expired. Please log in again.', { icon: '🔒', duration: 4000 });
   }, []);
 
   const [form, setForm] = useState({ email: '', password: '' });

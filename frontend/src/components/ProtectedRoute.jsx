@@ -1,8 +1,9 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function ProtectedRoute({ children, adminOnly = false }) {
-  const { user, loading } = useAuth();
+  const { user, loading, authReason } = useAuth();
+  const location = useLocation();
 
   if (loading) return (
     <div className="flex items-center justify-center h-screen">
@@ -10,8 +11,16 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
     </div>
   );
 
-  if (!user) return <Navigate to="/login" />;
-  if (adminOnly && user.role !== 'admin') return <Navigate to="/dashboard" />;
+  // Not logged in → go to login (React Navigate, no page reload)
+  if (!user) return <Navigate to="/login" replace />;
+
+  // Admin check
+  if (adminOnly && user.role !== 'admin') return <Navigate to="/dashboard" replace />;
+
+  // Subscription expired → redirect to subscription page (unless already there)
+  if (authReason === 'subscription_expired' && !['/subscription', '/settings'].includes(location.pathname)) {
+    return <Navigate to="/subscription" replace />;
+  }
 
   return children;
 }
