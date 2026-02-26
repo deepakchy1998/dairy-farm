@@ -440,9 +440,21 @@ APP MODULES (12 total — guide users to the right section):
 11. 🤖 AI Assistant — That's you! Real-time farm data analysis, recommendations, alerts.
 12. ⚙️ Settings — Farm profile, data backup/restore, theme, notification preferences.
 
+NEW PLATFORM FEATURES:
+1. **Custom Plan Builder** — Users can build their own subscription plan by selecting only the modules they need. Price auto-calculates based on selected modules with a minimum monthly price. Available on the landing page. Admin configures module prices.
+
+2. **Per-User Settings** — Admin can configure individual user settings (enable/disable modules, set usage limits like max cattle/employees/customers, chatbot bubble toggle) from Admin Panel → User Detail → User Settings.
+
+3. **Farm Module Toggles** — Admin can enable/disable specific modules globally from App Config. Users won't see disabled modules in their sidebar.
+
+4. **Personal Farm Toggle** — Admin users can disable their own farm management features from Settings → Profile if they only manage the platform.
+
+5. **Input Validation** — All inputs are now validated with Zod (proper error messages for invalid data).
+
 SUBSCRIPTION & PAYMENTS:
 - Free trial available (admin-configurable days).
-- Plans: Monthly, Half Yearly, Yearly (prices set by admin, dynamic).
+- Plans: Monthly, Half Yearly (monthly × 6), Yearly (monthly × 12) (prices set by admin, dynamic).
+- Custom Plan option: users can pick specific modules and pay only for what they use with minimum price enforced (admin-configurable).
 - Payment via Razorpay: UPI, QR code, debit/credit cards, Paytm, PhonePe, wallets, net banking, EMI, Pay Later.
 - Subscription activates instantly after payment.
 - If user asks about payment/subscription, guide them to the Subscription page.
@@ -471,6 +483,8 @@ NAVIGATION HELP (when users ask "where" or "how"):
 - "How to add customer?" → Go to Dudh Khata → Add Customer
 - "How to mark attendance?" → Go to Employees → Click attendance icon
 - "How to pay/subscribe?" → Go to Subscription page → Choose plan → Pay via Razorpay
+- "How to build custom plan?" → Visit landing page → Scroll to 'Build Your Own Plan' → Select modules → Choose period
+- "How to change my settings?" → Go to Settings → Profile tab → Toggle chatbot bubble, farm modules
 - "How to export data?" → Each section has Export CSV/PDF buttons with date range filters
 - "How to backup?" → Go to Settings → Backup section
 
@@ -537,6 +551,53 @@ ${farmContext}`;
 // ─── Quick commands (instant, no AI call) ───
 function handleQuickCommand(message, farmContext) {
   const lower = message.trim().toLowerCase();
+
+  // Help command - return formatted list of all quick commands
+  if (lower === '/help' || lower === 'help') {
+    return `🤖 **DairyPro AI Quick Commands:**
+
+**Farm Status:**
+- **/alerts** — View active farm alerts
+- **/milk** — Today's milk production summary  
+- **/staff** — Employee status and attendance
+- **/dues** — Customer outstanding dues (Dudh Khata)
+
+**App Modules:**
+- **/modules** — List all 12 app modules with descriptions
+
+**What I Can Do:**
+✅ Real-time farm data analysis & insights
+✅ Smart alerts & recommendations  
+✅ Milk production trends & comparisons
+✅ Health & vaccination reminders
+✅ Breeding cycle predictions
+✅ Financial profit/loss analysis
+✅ Employee attendance tracking
+✅ Customer payment collection tips
+✅ Hindi & English support (Hinglish OK!)
+
+Just ask me anything about your farm in natural language! 🐄`;
+  }
+
+  // Modules command - return list of all 12 modules
+  if (lower === '/modules') {
+    return `📋 **DairyPro App Modules (12 Total):**
+
+1. 🐄 **Cattle Management** — Add/manage cattle with full profiles
+2. 🥛 **Milk Records** — Track daily yield with fat/SNF analysis
+3. 💉 **Health & Vaccination** — Medical records & reminder system
+4. 🐣 **Breeding** — AI/natural breeding & pregnancy tracking
+5. 💰 **Finance** — Revenue/expense tracking with profit analysis
+6. 🌾 **Feed Management** — Feed costs & quantity optimization
+7. 🏘️ **Dudh Khata** — Milk delivery & customer payment system
+8. 👷 **Employees** — Staff management & attendance tracking
+9. 🛡️ **Insurance** — Policy management & expiry alerts
+10. 📊 **Reports** — 10+ interactive dashboards & analytics
+11. 🤖 **AI Assistant** — That's me! Smart farming insights
+12. ⚙️ **Settings** — Farm profile & system configuration
+
+💡 **New:** Custom Plan Builder lets you pay only for modules you need!`;
+  }
 
   // Direct shortcuts for ultra-fast response
   if (lower === '/alerts' || lower === 'alerts') {
