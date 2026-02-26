@@ -545,6 +545,60 @@ router.put('/users/:id/role', async (req, res, next) => {
 });
 
 // ════════════════════════════════════════
+//  USER-SPECIFIC OVERRIDES
+// ════════════════════════════════════════
+
+// Get user overrides
+router.get('/users/:id/overrides', async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id).select('name email userOverrides farmEnabled chatBubbleEnabled').lean();
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    // Convert Map to plain object
+    const overrides = user.userOverrides || {};
+    if (overrides.modulesEnabled instanceof Map) {
+      overrides.modulesEnabled = Object.fromEntries(overrides.modulesEnabled);
+    }
+    res.json({ success: true, data: { ...overrides, farmEnabled: user.farmEnabled, chatBubbleEnabled: user.chatBubbleEnabled } });
+  } catch (err) { next(err); }
+});
+
+// Update user overrides
+router.put('/users/:id/overrides', async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const { modulesEnabled, chatBubbleEnabled, farmEnabled, maxCattle, maxEmployees, maxCustomers, customNotes } = req.body;
+
+    // Direct user fields
+    if (chatBubbleEnabled !== undefined) user.chatBubbleEnabled = !!chatBubbleEnabled;
+    if (farmEnabled !== undefined) user.farmEnabled = !!farmEnabled;
+
+    // Build overrides object
+    const overrides = user.userOverrides || {};
+
+    if (modulesEnabled && typeof modulesEnabled === 'object') {
+      const allowed = ['cattle', 'milk', 'health', 'breeding', 'feed', 'finance', 'milkDelivery', 'employees', 'insurance', 'reports', 'chatbot'];
+      const modules = {};
+      for (const key of allowed) {
+        if (modulesEnabled[key] !== undefined) modules[key] = !!modulesEnabled[key];
+      }
+      overrides.modulesEnabled = modules;
+    }
+    if (maxCattle !== undefined) overrides.maxCattle = Number(maxCattle) || null;
+    if (maxEmployees !== undefined) overrides.maxEmployees = Number(maxEmployees) || null;
+    if (maxCustomers !== undefined) overrides.maxCustomers = Number(maxCustomers) || null;
+    if (customNotes !== undefined) overrides.customNotes = String(customNotes || '');
+
+    user.userOverrides = overrides;
+    await user.save();
+
+    console.log(`[ADMIN] User overrides updated: user=${user._id} by admin=${req.user._id}`);
+    res.json({ success: true, message: 'User settings updated', data: user.userOverrides });
+  } catch (err) { next(err); }
+});
+
+// ════════════════════════════════════════
 //  AUDIT LOGS
 // ════════════════════════════════════════
 

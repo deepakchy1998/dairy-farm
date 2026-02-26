@@ -133,14 +133,21 @@ export default function Layout({ children }) {
   const appConfig = useAppConfig();
   const modules = appConfig.modulesEnabled || {};
 
-  // Filter nav items based on admin module toggles
-  const filteredNavItems = navItems.filter(item => !item.module || modules[item.module] !== false);
+  // Merge global modules with per-user overrides
+  const userModules = user?.userOverrides?.modulesEnabled || {};
+  const effectiveModules = { ...modules };
+  // Per-user overrides take priority: if admin set a module to false for this user, it's off
+  for (const key of Object.keys(userModules)) {
+    if (userModules[key] === false) effectiveModules[key] = false;
+  }
 
-  // If user (especially admin) has disabled their personal farm, hide all farm modules
+  const filteredNavItems = navItems.filter(item => !item.module || effectiveModules[item.module] !== false);
+
+  // If user has disabled their personal farm, hide all farm modules
   const personalFarmEnabled = user?.farmEnabled !== false;
   const visibleNavItems = personalFarmEnabled
     ? filteredNavItems
-    : filteredNavItems.filter(item => !item.module); // only show Dashboard, Subscription
+    : filteredNavItems.filter(item => !item.module);
 
   const allItems = user?.role === 'admin' ? [...visibleNavItems, ...adminItems] : visibleNavItems;
 

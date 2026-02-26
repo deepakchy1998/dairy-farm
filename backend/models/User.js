@@ -19,6 +19,19 @@ const userSchema = new mongoose.Schema({
   lockUntil: { type: Date },
   farmEnabled: { type: Boolean, default: true }, // admin can disable personal farm usage
   chatBubbleEnabled: { type: Boolean, default: true }, // per-user chatbot bubble preference
+  // Per-user overrides (set by admin for individual users)
+  userOverrides: {
+    type: new mongoose.Schema({
+      modulesEnabled: { type: Map, of: Boolean },
+      chatBubbleEnabled: { type: Boolean },
+      farmEnabled: { type: Boolean },
+      maxCattle: { type: Number },
+      maxEmployees: { type: Number },
+      maxCustomers: { type: Number },
+      customNotes: { type: String },
+    }, { _id: false }),
+    default: null,
+  },
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

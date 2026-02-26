@@ -53,6 +53,8 @@ export default function AdminPanel() {
   const [screenshotModal, setScreenshotModal] = useState(null);
   const [grantModal, setGrantModal] = useState(false);
   const [grantForm, setGrantForm] = useState({ plan: 'monthly', days: 30 });
+  const [userOverridesForm, setUserOverridesForm] = useState({});
+  const [savingOverrides, setSavingOverrides] = useState(false);
   const [auditLogs, setAuditLogs] = useState([]);
   const [systemHealth, setSystemHealth] = useState(null);
 
@@ -115,14 +117,27 @@ export default function AdminPanel() {
   const viewUserDetail = async (userId) => {
     setDetailLoading(true);
     try {
-      const [res, plansRes] = await Promise.all([
+      const [res, plansRes, overridesRes] = await Promise.all([
         api.get(`/admin/users/${userId}/detail`),
         adminPlans.length ? null : api.get('/admin/plans'),
+        api.get(`/admin/users/${userId}/overrides`),
       ]);
       setUserDetail(res.data.data);
       if (plansRes) setAdminPlans(plansRes.data.data);
+      setUserOverridesForm(overridesRes.data.data || {});
     } catch { toast.error('Failed to load user details'); }
     finally { setDetailLoading(false); }
+  };
+
+  const saveUserOverrides = async () => {
+    if (!userDetail?.user?._id) return;
+    setSavingOverrides(true);
+    try {
+      await api.put(`/admin/users/${userDetail.user._id}/overrides`, userOverridesForm);
+      toast.success('User settings saved!');
+      viewUserDetail(userDetail.user._id);
+    } catch { toast.error('Failed to save user settings'); }
+    finally { setSavingOverrides(false); }
   };
 
   const toggleBlock = async (userId, isBlocked) => {
@@ -338,6 +353,107 @@ export default function AdminPanel() {
             </div>
           </div>
         )}
+
+        {/* ── Per-User Settings ── */}
+        <div className="card">
+          <h3 className="font-semibold text-sm mb-4 text-blue-700 dark:text-blue-400 flex items-center gap-2">⚙️ User Settings <span className="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full font-normal">Per-user overrides</span></h3>
+
+          {/* Toggles */}
+          <div className="space-y-3 mb-4">
+            <div className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+              <div>
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">🤖 Chatbot Bubble</p>
+                <p className="text-[10px] text-emerald-600 dark:text-emerald-400">Show floating chatbot for this user</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked={userOverridesForm.chatBubbleEnabled !== false}
+                  onChange={e => setUserOverridesForm({ ...userOverridesForm, chatBubbleEnabled: e.target.checked })}
+                  className="sr-only peer" />
+                <div className="w-10 h-5 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+              </label>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-300">🐄 Farm Modules</p>
+                <p className="text-[10px] text-blue-600 dark:text-blue-400">Enable/disable dairy farm features for this user</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked={userOverridesForm.farmEnabled !== false}
+                  onChange={e => setUserOverridesForm({ ...userOverridesForm, farmEnabled: e.target.checked })}
+                  className="sr-only peer" />
+                <div className="w-10 h-5 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+              </label>
+            </div>
+          </div>
+
+          {/* Per-user Module Toggles */}
+          <div className="mb-4">
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Module Access (override global settings for this user)</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {[
+                { key: 'cattle', label: 'Cattle', icon: '🐄' },
+                { key: 'milk', label: 'Milk Records', icon: '🥛' },
+                { key: 'health', label: 'Health', icon: '💉' },
+                { key: 'breeding', label: 'Breeding', icon: '🐣' },
+                { key: 'feed', label: 'Feed', icon: '🌾' },
+                { key: 'finance', label: 'Finance', icon: '💰' },
+                { key: 'milkDelivery', label: 'Dudh Khata', icon: '🏘️' },
+                { key: 'employees', label: 'Employees', icon: '👷' },
+                { key: 'insurance', label: 'Insurance', icon: '🛡️' },
+                { key: 'reports', label: 'Reports', icon: '📊' },
+                { key: 'chatbot', label: 'Farm Assistant', icon: '🤖' },
+              ].map(mod => {
+                const modules = userOverridesForm.modulesEnabled || {};
+                const enabled = modules[mod.key] !== false;
+                return (
+                  <label key={mod.key} className={`flex items-center gap-1.5 p-2 rounded-lg border cursor-pointer text-xs transition-all ${enabled ? 'bg-white dark:bg-gray-800 border-blue-200 dark:border-blue-700' : 'bg-gray-100 dark:bg-gray-900 border-gray-200 dark:border-gray-700 opacity-50'}`}>
+                    <input type="checkbox" checked={enabled}
+                      onChange={e => setUserOverridesForm({ ...userOverridesForm, modulesEnabled: { ...modules, [mod.key]: e.target.checked } })}
+                      className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                    <span>{mod.icon}</span>
+                    <span className="font-medium dark:text-white">{mod.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Limits */}
+          <div className="mb-4">
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Usage Limits (leave empty for unlimited)</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="text-[10px] text-gray-500 dark:text-gray-400">Max Cattle</label>
+                <input type="number" className="input text-sm" placeholder="∞" value={userOverridesForm.maxCattle || ''}
+                  onChange={e => setUserOverridesForm({ ...userOverridesForm, maxCattle: e.target.value ? Number(e.target.value) : null })} />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 dark:text-gray-400">Max Employees</label>
+                <input type="number" className="input text-sm" placeholder="∞" value={userOverridesForm.maxEmployees || ''}
+                  onChange={e => setUserOverridesForm({ ...userOverridesForm, maxEmployees: e.target.value ? Number(e.target.value) : null })} />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-500 dark:text-gray-400">Max Customers</label>
+                <input type="number" className="input text-sm" placeholder="∞" value={userOverridesForm.maxCustomers || ''}
+                  onChange={e => setUserOverridesForm({ ...userOverridesForm, maxCustomers: e.target.value ? Number(e.target.value) : null })} />
+              </div>
+            </div>
+          </div>
+
+          {/* Admin Notes */}
+          <div className="mb-4">
+            <label className="text-[10px] text-gray-500 dark:text-gray-400">Admin Notes (visible only to admins)</label>
+            <textarea className="input text-sm" rows={2} placeholder="Internal notes about this user..."
+              value={userOverridesForm.customNotes || ''}
+              onChange={e => setUserOverridesForm({ ...userOverridesForm, customNotes: e.target.value })} />
+          </div>
+
+          <button onClick={saveUserOverrides} disabled={savingOverrides}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+            {savingOverrides ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Saving...</> : '💾 Save User Settings'}
+          </button>
+        </div>
 
         {/* Admin Actions */}
         <div className="card">
