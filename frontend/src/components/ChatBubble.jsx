@@ -21,8 +21,9 @@ export default function ChatBubble() {
   const { user } = useAuth();
   const appConfig = useAppConfig();
 
-  // If chatbot bubble is disabled by admin, don't render
+  // If chatbot bubble is disabled globally by admin OR by the user personally, don't render
   if (appConfig.chatBubbleEnabled === false) return null;
+  if (user?.chatBubbleEnabled === false) return null;
   const { ref: btnRef, style: btnStyle, handlers: btnHandlers, hasMoved: btnHasMoved } = useDraggable({ x: null, y: null });
 
   // Track viewport height changes (keyboard open/close on mobile)

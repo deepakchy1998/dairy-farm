@@ -17,7 +17,7 @@ export default function Settings() {
 
   useEffect(() => {
     if (user) {
-      setProfileForm({ name: user.name || '', email: user.email || '', phone: user.phone || '', farmEnabled: user.farmEnabled !== false });
+      setProfileForm({ name: user.name || '', email: user.email || '', phone: user.phone || '', farmEnabled: user.farmEnabled !== false, chatBubbleEnabled: user.chatBubbleEnabled !== false });
       setPhotoPreview(user.profilePhoto || '');
     }
   }, [user]);
@@ -46,7 +46,7 @@ export default function Settings() {
     e.preventDefault();
     setSaving(true);
     try {
-      const payload = { ...profileForm, profilePhoto: photoPreview, farmEnabled: profileForm.farmEnabled !== false };
+      const payload = { ...profileForm, profilePhoto: photoPreview, farmEnabled: profileForm.farmEnabled !== false, chatBubbleEnabled: profileForm.chatBubbleEnabled !== false };
       const res = await api.put('/auth/profile', payload);
       setUser(res.data.data);
       localStorage.setItem('user', JSON.stringify(res.data.data));
@@ -170,6 +170,26 @@ export default function Settings() {
             <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 text-sm text-gray-500 dark:text-gray-400">
               <p><strong>Role:</strong> <span className="capitalize">{user?.role}</span></p>
               <p><strong>Member since:</strong> {formatDate(user?.createdAt)}</p>
+            </div>
+
+            {/* Chatbot Bubble Toggle — All users */}
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-semibold text-sm text-emerald-800 dark:text-emerald-300 flex items-center gap-2">🤖 Chatbot Bubble</h4>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+                    {profileForm.chatBubbleEnabled !== false
+                      ? 'Floating AI chatbot bubble is shown on all pages'
+                      : 'Chatbot bubble is hidden — you can still access it from the sidebar'}
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={profileForm.chatBubbleEnabled !== false}
+                    onChange={e => setProfileForm({ ...profileForm, chatBubbleEnabled: e.target.checked })}
+                    className="sr-only peer" />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
             </div>
 
             {/* Personal Farm Toggle — Admin only */}

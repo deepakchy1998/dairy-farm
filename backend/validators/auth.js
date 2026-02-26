@@ -28,6 +28,7 @@ export const updateProfileSchema = z.object({
   phone: z.string().max(20).optional(),
   profilePhoto: z.string().max(3 * 1024 * 1024).optional(), // ~2MB base64
   farmEnabled: z.boolean().optional(),
+  chatBubbleEnabled: z.boolean().optional(),
 });
 
 export const changePasswordSchema = z.object({

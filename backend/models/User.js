@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema({
   loginAttempts: { type: Number, default: 0 },
   lockUntil: { type: Date },
   farmEnabled: { type: Boolean, default: true }, // admin can disable personal farm usage
+  chatBubbleEnabled: { type: Boolean, default: true }, // per-user chatbot bubble preference
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {
