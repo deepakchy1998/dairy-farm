@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { auth } from '../middleware/auth.js';
 import { checkSubscription } from '../middleware/subscription.js';
+import { validate, validateQuery } from '../middleware/validate.js';
+import { createCattleSchema, updateCattleSchema, addWeightSchema, cattleQuerySchema } from '../validators/cattle.js';
 import Cattle from '../models/Cattle.js';
 import MilkRecord from '../models/MilkRecord.js';
 import HealthRecord from '../models/HealthRecord.js';
@@ -11,7 +13,7 @@ const router = Router();
 router.use(auth, checkSubscription);
 
 // List cattle
-router.get('/', async (req, res, next) => {
+router.get('/', validateQuery(cattleQuerySchema), async (req, res, next) => {
   try {
     const farmId = req.user.farmId;
     const { search, category, status, gender, page, limit } = req.query;
@@ -64,7 +66,7 @@ router.get('/:id', async (req, res, next) => {
 });
 
 // Create cattle
-router.post('/', async (req, res, next) => {
+router.post('/', validate(createCattleSchema), async (req, res, next) => {
   try {
     const farmId = req.user.farmId;
     const exists = await Cattle.findOne({ farmId, tagNumber: req.body.tagNumber });
@@ -76,7 +78,7 @@ router.post('/', async (req, res, next) => {
 });
 
 // Update cattle
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', validate(updateCattleSchema), async (req, res, next) => {
   try {
     // Auto-increment lactation number when lastCalvingDate is set
     if (req.body.lastCalvingDate) {
@@ -179,11 +181,9 @@ router.get('/:id/lactation', async (req, res, next) => {
 });
 
 // POST /api/cattle/:id/weight — Add weight entry
-router.post('/:id/weight', async (req, res, next) => {
+router.post('/:id/weight', validate(addWeightSchema), async (req, res, next) => {
   try {
     const { date, weight, notes } = req.body;
-    if (!date || !weight) return res.status(400).json({ success: false, message: 'Date and weight required' });
-    if (weight <= 0 || weight > 2000) return res.status(400).json({ success: false, message: 'Weight must be between 0 and 2000 kg' });
     
     const cattle = await Cattle.findOneAndUpdate(
       { _id: req.params.id, farmId: req.user.farmId },

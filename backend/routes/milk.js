@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { auth } from '../middleware/auth.js';
 import { checkSubscription } from '../middleware/subscription.js';
+import { validate } from '../middleware/validate.js';
+import { createMilkRecordSchema, updateMilkRecordSchema, calculateRateSchema } from '../validators/milk.js';
 import MilkRecord from '../models/MilkRecord.js';
 import Cattle from '../models/Cattle.js';
 import { paginate, dateFilter, logActivity } from '../utils/helpers.js';
@@ -101,12 +103,9 @@ router.get('/pdf-report', async (req, res, next) => {
 });
 
 // POST /api/milk/calculate-rate — Calculate milk payment based on fat/SNF
-router.post('/calculate-rate', async (req, res, next) => {
+router.post('/calculate-rate', validate(calculateRateSchema), async (req, res, next) => {
   try {
-    const { quantity, fat, snf, ratePerFat = 7.5, baseRate = 0 } = req.body;
-    if (!quantity || !fat) {
-      return res.status(400).json({ success: false, message: 'Quantity and fat% are required' });
-    }
+    const { quantity, fat, snf, ratePerFat, baseRate } = req.body;
     const fatBasedAmount = quantity * fat * ratePerFat;
     const ts = fat + (snf || 8.5);
     const tsBasedRate = ts * 0.4;
@@ -126,22 +125,10 @@ router.post('/calculate-rate', async (req, res, next) => {
 });
 
 // Create milk record (upsert by cattle+date)
-router.post('/', async (req, res, next) => {
+router.post('/', validate(createMilkRecordSchema), async (req, res, next) => {
   try {
     const farmId = req.user.farmId;
     const { cattleId, date, morningYield, morningFat, morningSNF, afternoonYield, afternoonFat, afternoonSNF, eveningYield, eveningFat, eveningSNF } = req.body;
-    if (!cattleId || !date) return res.status(400).json({ success: false, message: 'Cattle and date required' });
-
-    // Validate yields (max 100L per session is extreme but safe upper bound)
-    const yields = [morningYield, afternoonYield, eveningYield].filter(y => y != null);
-    if (yields.some(y => y < 0 || y > 100)) {
-      return res.status(400).json({ success: false, message: 'Milk yield must be between 0 and 100 litres' });
-    }
-    // Validate fat% (0-15 is realistic range)
-    const fats = [morningFat, afternoonFat, eveningFat].filter(f => f != null && f !== '');
-    if (fats.some(f => f < 0 || f > 15)) {
-      return res.status(400).json({ success: false, message: 'Fat percentage must be between 0 and 15%' });
-    }
 
     const recordDate = new Date(date); recordDate.setHours(0, 0, 0, 0);
     let record = await MilkRecord.findOne({ farmId, cattleId, date: recordDate });
@@ -158,7 +145,7 @@ router.post('/', async (req, res, next) => {
 });
 
 // Update
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', validate(updateMilkRecordSchema), async (req, res, next) => {
   try {
     const record = await MilkRecord.findOne({ _id: req.params.id, farmId: req.user.farmId });
     if (!record) return res.status(404).json({ success: false, message: 'Record not found' });

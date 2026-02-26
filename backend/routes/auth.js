@@ -6,30 +6,17 @@ import Farm from '../models/Farm.js';
 import Subscription from '../models/Subscription.js';
 import AppConfig from '../models/AppConfig.js';
 import { auth } from '../middleware/auth.js';
+import { validate } from '../middleware/validate.js';
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, updateProfileSchema, changePasswordSchema } from '../validators/auth.js';
 
 const router = Router();
 
 const signToken = (user) => jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
 // Register
-router.post('/register', async (req, res, next) => {
+router.post('/register', validate(registerSchema), async (req, res, next) => {
   try {
     const { name, email, password, phone, farmName } = req.body;
-    if (!name || !email || !password) {
-      return res.status(400).json({ success: false, message: 'Name, email and password are required' });
-    }
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ success: false, message: 'Please enter a valid email address' });
-    }
-    // Password strength check
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long' });
-    }
-    if (name.length > 100 || email.length > 255) {
-      return res.status(400).json({ success: false, message: 'Input too long' });
-    }
     const exists = await User.findOne({ email: email.toLowerCase() });
     if (exists) return res.status(400).json({ success: false, message: 'Email already registered' });
 
@@ -61,13 +48,9 @@ router.post('/register', async (req, res, next) => {
 });
 
 // Login
-router.post('/login', async (req, res, next) => {
+router.post('/login', validate(loginSchema), async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ success: false, message: 'Email and password required' });
-    if (typeof email !== 'string' || typeof password !== 'string') {
-      return res.status(400).json({ success: false, message: 'Invalid input' });
-    }
     const user = await User.findOne({ email: email.toLowerCase() });
 
     // Check account lockout
@@ -105,9 +88,9 @@ router.post('/login', async (req, res, next) => {
 });
 
 // Forgot password
-router.post('/forgot-password', async (req, res, next) => {
+router.post('/forgot-password', validate(forgotPasswordSchema), async (req, res, next) => {
   try {
-    const user = await User.findOne({ email: req.body.email?.toLowerCase() });
+    const user = await User.findOne({ email: req.body.email });
     if (!user) return res.json({ success: true, message: 'If an account exists with that email, a password reset link will be sent.' });
     const token = crypto.randomBytes(32).toString('hex');
     user.resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
@@ -118,10 +101,9 @@ router.post('/forgot-password', async (req, res, next) => {
 });
 
 // Reset password
-router.post('/reset-password', async (req, res, next) => {
+router.post('/reset-password', validate(resetPasswordSchema), async (req, res, next) => {
   try {
     const { token, password } = req.body;
-    if (!token || !password) return res.status(400).json({ success: false, message: 'Token and password required' });
     const hashed = crypto.createHash('sha256').update(token).digest('hex');
     const user = await User.findOne({ resetPasswordToken: hashed, resetPasswordExpires: { $gt: Date.now() } });
     if (!user) return res.status(400).json({ success: false, message: 'Invalid or expired token' });
@@ -142,7 +124,7 @@ router.get('/me', auth, async (req, res, next) => {
 });
 
 // Update profile
-router.put('/profile', auth, async (req, res, next) => {
+router.put('/profile', auth, validate(updateProfileSchema), async (req, res, next) => {
   try {
     const { name, email, phone, profilePhoto } = req.body;
     const user = await User.findById(req.user._id);
@@ -171,15 +153,12 @@ router.put('/profile', auth, async (req, res, next) => {
 });
 
 // Change password
-router.put('/change-password', auth, async (req, res, next) => {
+router.put('/change-password', auth, validate(changePasswordSchema), async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
     const user = await User.findById(req.user._id);
     if (!(await user.comparePassword(currentPassword))) {
       return res.status(400).json({ success: false, message: 'Current password is incorrect' });
-    }
-    if (!newPassword || newPassword.length < 6) {
-      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
     }
     user.password = newPassword;
     await user.save();
