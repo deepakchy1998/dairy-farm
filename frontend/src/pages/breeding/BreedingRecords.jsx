@@ -18,6 +18,8 @@ const statusBadge = {
 };
 const statusIcons = { pending: '⏳', confirmed: '✅', delivered: '🐣', failed: '❌' };
 const defaultForm = { cattleId: '', breedingDate: '', bullDetails: '', method: 'natural', expectedDelivery: '', status: 'pending', notes: '' };
+const defaultCalfForm = { tagNumber: '', gender: 'female', breed: '', dateOfBirth: new Date().toISOString().slice(0, 10), weight: '', source: 'born_on_farm', motherTag: '', category: 'calf' };
+const statusFlow = { pending: 'confirmed', confirmed: 'delivered' };
 
 export default function BreedingRecords() {
   const [records, setRecords] = useState([]);
@@ -33,6 +35,9 @@ export default function BreedingRecords() {
   const [saving, setSaving] = useState(false);
   const [summary, setSummary] = useState({ count: 0, byStatus: {}, byMethod: {} });
   const [confirm, setConfirm] = useState({ open: false, title: '', message: '', onConfirm: null, variant: 'danger' });
+  const [calfModalOpen, setCalfModalOpen] = useState(false);
+  const [calfForm, setCalfForm] = useState(defaultCalfForm);
+  const [savingCalf, setSavingCalf] = useState(false);
 
   useEffect(() => { api.get('/cattle', { params: { limit: 500, gender: 'female' } }).then(r => setCattleList(r.data.data)).catch(() => {}); }, []);
 
@@ -59,8 +64,40 @@ export default function BreedingRecords() {
     try {
       if (editId) { await api.put(`/breeding/${editId}`, form); toast.success('Updated'); }
       else { await api.post('/breeding', form); toast.success('Breeding record added'); }
+      const wasDelivered = form.status === 'delivered';
+      const motherId = form.cattleId;
       setModalOpen(false); setForm(defaultForm); setEditId(null); fetch();
+      if (wasDelivered && motherId) {
+        const mother = cattleList.find(c => c._id === motherId);
+        setCalfForm({ ...defaultCalfForm, dateOfBirth: new Date().toISOString().slice(0, 10), breed: mother?.breed || 'Crossbred', motherTag: mother?.tagNumber || '', source: 'born_on_farm', category: 'calf' });
+        setCalfModalOpen(true);
+      }
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); } finally { setSaving(false); }
+  };
+
+  const handleSaveCalf = async (e) => {
+    e.preventDefault(); setSavingCalf(true);
+    try {
+      await api.post('/cattle', { tagNumber: calfForm.tagNumber, gender: calfForm.gender, breed: calfForm.breed, dateOfBirth: calfForm.dateOfBirth, weight: calfForm.weight ? Number(calfForm.weight) : undefined, source: calfForm.source, motherTag: calfForm.motherTag, category: calfForm.category });
+      toast.success('🐣 Calf added to cattle list!');
+      setCalfModalOpen(false); setCalfForm(defaultCalfForm);
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed to add calf'); } finally { setSavingCalf(false); }
+  };
+
+  const handleQuickToggle = async (record) => {
+    const nextStatus = statusFlow[record.status];
+    if (!nextStatus) return;
+    try {
+      await api.put(`/breeding/${record._id}`, { ...record, cattleId: record.cattleId?._id || record.cattleId, breedingDate: record.breedingDate?.slice(0, 10), expectedDelivery: record.expectedDelivery?.slice(0, 10) || '', status: nextStatus });
+      toast.success(`Status → ${nextStatus}`);
+      if (nextStatus === 'delivered' && record.cattleId) {
+        const motherId = record.cattleId?._id || record.cattleId;
+        const mother = cattleList.find(c => c._id === motherId);
+        setCalfForm({ ...defaultCalfForm, dateOfBirth: new Date().toISOString().slice(0, 10), breed: mother?.breed || 'Crossbred', motherTag: mother?.tagNumber || record.cattleId?.tagNumber || '', source: 'born_on_farm', category: 'calf' });
+        setCalfModalOpen(true);
+      }
+      fetch();
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
   };
 
   const handleEdit = (r) => {
@@ -181,7 +218,7 @@ export default function BreedingRecords() {
                         ) : <span className="text-gray-400">-</span>}
                       </td>
                       <td className="px-3 py-2 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge[r.status]}`}>
+                        <span onClick={() => statusFlow[r.status] && handleQuickToggle(r)} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge[r.status]} ${statusFlow[r.status] ? 'cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-current transition-all' : ''}`} title={statusFlow[r.status] ? `Click to change to ${statusFlow[r.status]}` : ''}>
                           {statusIcons[r.status]} {r.status}
                         </span>
                       </td>
@@ -206,7 +243,7 @@ export default function BreedingRecords() {
                       <p className="font-semibold text-sm dark:text-white">{r.cattleId?.tagNumber || '-'}</p>
                       <p className="text-xs text-gray-400">{formatDate(r.breedingDate)}</p>
                     </div>
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge[r.status]}`}>
+                    <span onClick={() => statusFlow[r.status] && handleQuickToggle(r)} className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${statusBadge[r.status]} ${statusFlow[r.status] ? 'cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-current transition-all' : ''}`} title={statusFlow[r.status] ? `Click to change to ${statusFlow[r.status]}` : ''}>
                       {statusIcons[r.status]} {r.status}
                     </span>
                   </div>
@@ -263,6 +300,26 @@ export default function BreedingRecords() {
       </Modal>
 
       <ConfirmDialog isOpen={confirm.open} onClose={() => setConfirm({ ...confirm, open: false })} title={confirm.title} message={confirm.message} variant={confirm.variant} onConfirm={confirm.onConfirm} />
+
+      {/* Add Calf Modal */}
+      <Modal isOpen={calfModalOpen} onClose={() => setCalfModalOpen(false)} title="🐣 Add Newborn Calf">
+        <form onSubmit={handleSaveCalf} className="space-y-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3">Mother: <strong>{calfForm.motherTag}</strong> — Add the newborn calf to your cattle list</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="label">Tag Number *</label><input className="input" required value={calfForm.tagNumber} onChange={e => setCalfForm({ ...calfForm, tagNumber: e.target.value })} placeholder="e.g., C-101" /></div>
+            <div><label className="label">Gender</label><select className="input" value={calfForm.gender} onChange={e => setCalfForm({ ...calfForm, gender: e.target.value })}><option value="female">Female</option><option value="male">Male</option></select></div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="label">Breed</label><input className="input" value={calfForm.breed} onChange={e => setCalfForm({ ...calfForm, breed: e.target.value })} /></div>
+            <div><label className="label">Date of Birth</label><input type="date" className="input" value={calfForm.dateOfBirth} onChange={e => setCalfForm({ ...calfForm, dateOfBirth: e.target.value })} /></div>
+          </div>
+          <div><label className="label">Weight (kg)</label><input type="number" step="0.1" className="input" value={calfForm.weight} onChange={e => setCalfForm({ ...calfForm, weight: e.target.value })} placeholder="Optional" /></div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" onClick={() => setCalfModalOpen(false)} className="btn-secondary">Skip</button>
+            <button type="submit" disabled={savingCalf} className="btn-primary">{savingCalf ? 'Adding...' : '🐣 Add Calf'}</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

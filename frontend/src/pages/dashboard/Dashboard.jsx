@@ -220,6 +220,42 @@ export default function Dashboard() {
         ))}
       </div>
 
+      {/* Today's Pending Actions */}
+      {(() => {
+        const pendingItems = [];
+        const vaccCount = stats.upcomingVaccinations?.length || 0;
+        const deliveryCount = stats.expectedDeliveries?.length || 0;
+        if (vaccCount > 0) pendingItems.push({ label: 'Upcoming Vaccinations', count: vaccCount, color: vaccCount > 3 ? 'red' : 'amber', icon: '💉', link: '/health' });
+        if (deliveryCount > 0) pendingItems.push({ label: 'Expected Deliveries', count: deliveryCount, color: 'pink', icon: '🐣', link: '/breeding' });
+        const milkingCattle = (stats.cattleByCategory?.milking || 0) + (stats.cattleByCategory?.['milking-pregnant'] || 0);
+        const todayRecords = stats.todayMilk?.count || 0;
+        const missingMilk = milkingCattle > 0 ? Math.max(0, milkingCattle - todayRecords) : 0;
+        if (missingMilk > 0) pendingItems.push({ label: 'Cattle without milk entry today', count: missingMilk, color: 'red', icon: '🥛', link: '/milk' });
+        if (stats.customerStats?.totalDue > 0) pendingItems.push({ label: 'Milk delivery dues pending', count: `₹${stats.customerStats.totalDue.toLocaleString('en-IN')}`, color: 'amber', icon: '💰', link: '/milk-delivery' });
+        if (pendingItems.length === 0) return null;
+        return (
+          <div className="card !p-4 hover:shadow-md transition-shadow border-l-4 border-l-amber-400">
+            <div className="flex items-center gap-2 mb-3">
+              <FiAlertCircle className="text-amber-500" size={18} />
+              <h3 className="text-lg font-bold dark:text-white">Today's Pending</h3>
+              <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 px-2 py-0.5 rounded-full font-semibold">{pendingItems.length} items</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {pendingItems.map((item, i) => (
+                <Link key={i} to={item.link} className={`flex items-center gap-3 p-3 rounded-xl bg-${item.color}-50 dark:bg-${item.color}-900/20 border border-${item.color}-100 dark:border-${item.color}-900/30 hover:shadow-sm transition group`}>
+                  <span className="text-xl">{item.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-lg font-bold text-${item.color}-700 dark:text-${item.color}-300`}>{item.count}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{item.label}</p>
+                  </div>
+                  <FiArrowRight className="text-gray-300 group-hover:text-gray-500 transition" size={14} />
+                </Link>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Per-Liter Analytics */}
       {stats.analytics && stats.analytics.totalMilkPeriod > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

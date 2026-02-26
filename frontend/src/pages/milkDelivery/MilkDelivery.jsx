@@ -8,7 +8,7 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 import toast from 'react-hot-toast';
 import {
   FiPlus, FiSearch, FiFilter, FiDownload, FiEdit2, FiTrash2, FiUser,
-  FiPhone, FiMapPin, FiCalendar, FiArrowLeft, FiCheck, FiClock, FiDollarSign,
+  FiPhone, FiMapPin, FiCalendar, FiArrowLeft, FiCheck, FiClock, FiDollarSign, FiShare2,
 } from 'react-icons/fi';
 import { GiMilkCarton } from 'react-icons/gi';
 import { FaIndianRupeeSign } from 'react-icons/fa6';
@@ -73,7 +73,7 @@ export default function MilkDelivery() {
     setSheetLoading(true);
     try {
       const res = await api.get('/milk-delivery/deliveries/daily-sheet', { params: { date: dailyDate, session: dailySession } });
-      setSheet(res.data.data.map(s => ({ ...s, _qty: String(s.quantity) })));
+      setSheet(res.data.data.map(s => ({ ...s, _qty: s.quantity ? String(s.quantity) : (s.recorded ? '0' : String(s.dailyQuantity || '')) })));
     } catch { toast.error('Failed to load daily sheet'); }
     finally { setSheetLoading(false); }
   };
@@ -438,6 +438,17 @@ export default function MilkDelivery() {
                 toast.success('Copied yesterday\'s quantities');
               } catch { toast.error('Failed to fetch yesterday\'s data'); }
             }} className="btn-secondary text-xs flex items-center gap-1">📋 Copy Yesterday</button>
+            <button onClick={() => {
+              let filled = 0;
+              setSheet(prev => prev.map(s => {
+                if ((!s._qty || s._qty === '0' || s._qty === '') && s.dailyQuantity) {
+                  filled++;
+                  return { ...s, _qty: String(s.dailyQuantity) };
+                }
+                return s;
+              }));
+              toast.success(`Auto-filled ${filled} entries with default quantities`);
+            }} className="btn-secondary text-xs flex items-center gap-1">⚡ Auto-fill Defaults</button>
             <div className="flex-1" />
             <div className="flex items-center gap-3 text-sm">
               <span className="text-gray-500">Total: <strong className="text-emerald-600">{sheetTotal.qty.toFixed(1)} L</strong></span>
@@ -611,6 +622,14 @@ export default function MilkDelivery() {
             <input type="month" className="input w-auto text-sm" value={ledgerMonth} onChange={e => setLedgerMonth(e.target.value)} />
             <button onClick={exportLedgerCsv} className="btn-secondary text-xs flex items-center gap-1"><FiDownload size={14} /> CSV</button>
             <button onClick={exportLedgerPdf} className="btn-secondary text-xs flex items-center gap-1"><FiDownload size={14} /> PDF</button>
+            <button onClick={() => {
+              if (!ledger?.ledger?.length) { toast.error('No data'); return; }
+              const [y, m] = ledgerMonth.split('-');
+              const monthName = new Date(y, m - 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+              const lines = ledger.ledger.map(c => `👤 ${c.name}: ${c.totalQuantity.toFixed(1)}L · ₹${c.totalAmount.toFixed(0)} · Paid ₹${c.totalPaid.toFixed(0)} · Due ₹${c.due.toFixed(0)}`).join('\n');
+              const msg = `🥛 Monthly Milk Ledger - ${monthName}\n\n${lines}\n\n📊 Total: ${ledger.totals.totalQuantity.toFixed(1)}L · ₹${ledger.totals.totalAmount.toFixed(0)} · Due ₹${ledger.totals.totalDue.toFixed(0)}\n- DairyPro`;
+              window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+            }} className="btn-secondary text-xs flex items-center gap-1 text-green-600">📱 WhatsApp All</button>
           </div>
 
           {/* Summary Cards */}
@@ -673,7 +692,16 @@ export default function MilkDelivery() {
                           <td className="px-3 py-2 text-center text-green-600">₹{c.totalPaid.toFixed(0)}</td>
                           <td className={`px-3 py-2 text-center font-bold ${c.due > 0 ? 'text-red-600' : 'text-green-600'}`}>₹{c.due.toFixed(0)}</td>
                           <td className="px-3 py-2" onClick={e => e.stopPropagation()}>
-                            <button onClick={() => openPayment(c)} className="text-xs text-emerald-600 hover:underline font-medium">💰 Pay</button>
+                            <div className="flex gap-2">
+                              <button onClick={() => openPayment(c)} className="text-xs text-emerald-600 hover:underline font-medium">💰 Pay</button>
+                              <button onClick={() => {
+                                const [y, m] = ledgerMonth.split('-');
+                                const monthName = new Date(y, m - 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+                                const msg = `🥛 Monthly Milk Bill - ${monthName}\nCustomer: ${c.name}\nTotal Milk: ${c.totalQuantity.toFixed(1)} L\nRate: ₹${c.ratePerLiter}/L\nTotal Amount: ₹${c.totalAmount.toFixed(0)}\nPaid: ₹${c.totalPaid.toFixed(0)}\nDue: ₹${c.due.toFixed(0)}\n- DairyPro`;
+                                const phone = c.phone ? c.phone.replace(/[^0-9]/g, '') : '';
+                                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+                              }} className="text-xs text-green-600 hover:underline font-medium">📱 Share</button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -699,9 +727,19 @@ export default function MilkDelivery() {
                           <p className="font-semibold text-sm">{c.name}</p>
                           <p className="text-xs text-gray-400">{c.village || ''} {c.phone ? `• ${c.phone}` : ''}</p>
                         </div>
-                        <div className="text-right">
-                          <p className={`text-lg font-bold ${c.due > 0 ? 'text-red-600' : 'text-green-600'}`}>₹{c.due.toFixed(0)}</p>
-                          <p className="text-[10px] text-gray-400">due</p>
+                        <div className="flex items-center gap-2">
+                          <button onClick={(e) => {
+                            e.stopPropagation();
+                            const [y, m] = ledgerMonth.split('-');
+                            const monthName = new Date(y, m - 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+                            const msg = `🥛 Monthly Milk Bill - ${monthName}\nCustomer: ${c.name}\nTotal Milk: ${c.totalQuantity.toFixed(1)} L\nRate: ₹${c.ratePerLiter}/L\nTotal Amount: ₹${c.totalAmount.toFixed(0)}\nPaid: ₹${c.totalPaid.toFixed(0)}\nDue: ₹${c.due.toFixed(0)}\n- DairyPro`;
+                            const phone = c.phone ? c.phone.replace(/[^0-9]/g, '') : '';
+                            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+                          }} className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30"><FiShare2 size={14} /></button>
+                          <div className="text-right">
+                            <p className={`text-lg font-bold ${c.due > 0 ? 'text-red-600' : 'text-green-600'}`}>₹{c.due.toFixed(0)}</p>
+                            <p className="text-[10px] text-gray-400">due</p>
+                          </div>
                         </div>
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-center">
