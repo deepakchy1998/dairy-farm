@@ -406,7 +406,7 @@ export default function AdminPanel() {
         <div><h1 className="text-2xl font-bold">Admin Panel</h1><p className="text-gray-500 text-sm">Full control over users, payments, subscriptions & system</p></div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+      <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} className={`px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap ${tab === t.id ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-200 dark:ring-emerald-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'}`}>{t.label}</button>
         ))}
