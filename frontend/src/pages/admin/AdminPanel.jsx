@@ -1296,8 +1296,8 @@ export default function AdminPanel() {
 
           {/* ── Custom Plan Builder ── */}
           <div className="card mt-6">
-            {/* Header row */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            {/* Header row — stacks on mobile, horizontal on md+ */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
               <div className="flex items-center gap-3">
                 <h3 className="font-semibold text-lg flex items-center gap-2">🛠️ Custom Plan Builder
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${appConfigForm.customPlanEnabled !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
@@ -1305,8 +1305,8 @@ export default function AdminPanel() {
                   </span>
                 </h3>
               </div>
-              {/* Enable toggle + Min/Max prices — all inline in header */}
-              <div className="flex flex-wrap items-center gap-4">
+              {/* Enable toggle + Min/Max prices */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <label className="relative inline-flex items-center cursor-pointer" title="Enable Custom Plans">
                   <input type="checkbox" checked={appConfigForm.customPlanEnabled !== false}
                     onChange={e => setAppConfigForm({ ...appConfigForm, customPlanEnabled: e.target.checked })}
@@ -1314,32 +1314,39 @@ export default function AdminPanel() {
                   <div className="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                   <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">Show on pages</span>
                 </label>
-                <div className="flex items-center gap-2">
-                  <label className="text-[10px] text-gray-500 whitespace-nowrap">Min ₹</label>
-                  <input type="number" className="input w-20 text-sm" placeholder="200"
-                    value={appConfigForm.customPlanMinPrice || ''}
-                    onChange={e => setAppConfigForm({ ...appConfigForm, customPlanMinPrice: +e.target.value })} />
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-[10px] text-gray-500 whitespace-nowrap">Max ₹</label>
-                  <input type="number" className="input w-20 text-sm" placeholder="5000"
-                    value={appConfigForm.customPlanMaxPrice || ''}
-                    onChange={e => setAppConfigForm({ ...appConfigForm, customPlanMaxPrice: +e.target.value })} />
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <label className="text-[10px] text-gray-500 whitespace-nowrap">Min ₹</label>
+                    <input type="number" className="input w-full text-sm" placeholder="200"
+                      value={appConfigForm.customPlanMinPrice || ''}
+                      onChange={e => setAppConfigForm({ ...appConfigForm, customPlanMinPrice: +e.target.value })} />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[10px] text-gray-500 whitespace-nowrap">Max ₹</label>
+                    <input type="number" className="input w-full text-sm" placeholder="5000"
+                      value={appConfigForm.customPlanMaxPrice || ''}
+                      onChange={e => setAppConfigForm({ ...appConfigForm, customPlanMaxPrice: +e.target.value })} />
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Auto-generate — horizontal bar */}
-            <div className="flex flex-wrap items-center gap-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl px-4 py-3 border border-indigo-200 dark:border-indigo-800 mb-5">
-              <p className="text-xs font-semibold text-indigo-800 dark:text-indigo-300 whitespace-nowrap">⚡ Auto-Generate Prices</p>
-              <span className="text-[10px] text-indigo-500 dark:text-indigo-400 hidden sm:inline">Distribute by complexity →</span>
-              <div className="flex items-center gap-2">
-                <label className="text-[10px] text-indigo-500">Lower ₹</label>
-                <input type="number" className="input w-20 text-sm" placeholder="20" id="autoGenLower2" defaultValue={20} />
+            {/* Auto-generate — stacks on mobile, horizontal bar on sm+ */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl px-4 py-3 border border-indigo-200 dark:border-indigo-800 mb-5">
+              <div className="flex-shrink-0">
+                <p className="text-xs font-semibold text-indigo-800 dark:text-indigo-300">⚡ Auto-Generate Prices</p>
+                <p className="text-[10px] text-indigo-500 dark:text-indigo-400 sm:hidden">Distribute by module complexity</p>
               </div>
-              <div className="flex items-center gap-2">
-                <label className="text-[10px] text-indigo-500">Upper ₹</label>
-                <input type="number" className="input w-20 text-sm" placeholder="80" id="autoGenUpper2" defaultValue={80} />
+              <span className="text-[10px] text-indigo-500 dark:text-indigo-400 hidden sm:inline flex-shrink-0">Distribute by complexity →</span>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2 flex-1">
+                <div className="flex items-center gap-2">
+                  <label className="text-[10px] text-indigo-500 whitespace-nowrap">Lower ₹</label>
+                  <input type="number" className="input w-full sm:w-20 text-sm" placeholder="20" id="autoGenLower2" defaultValue={20} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-[10px] text-indigo-500 whitespace-nowrap">Upper ₹</label>
+                  <input type="number" className="input w-full sm:w-20 text-sm" placeholder="80" id="autoGenUpper2" defaultValue={80} />
+                </div>
               </div>
               <button type="button" onClick={() => {
                 const lo = Math.min(Number(document.getElementById('autoGenLower2').value) || 20, Number(document.getElementById('autoGenUpper2').value) || 80);
@@ -1350,7 +1357,7 @@ export default function AdminPanel() {
                 const prices = {};
                 for (const [k, w] of Object.entries(weights)) prices[k] = Math.round(lo + ((w - minW) / range) * (hi - lo));
                 setAppConfigForm(prev => ({ ...prev, customPlanModulePrices: prices }));
-              }} className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition whitespace-nowrap">
+              }} className="w-full sm:w-auto px-4 py-2 sm:py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition whitespace-nowrap">
                 ⚡ Generate
               </button>
             </div>
@@ -1382,7 +1389,7 @@ export default function AdminPanel() {
             </div>
 
             {/* AI chatbot price + Save — horizontal footer */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               {(() => {
                 const prices = Object.values(appConfigForm.customPlanModulePrices || {}).sort((a, b) => a - b);
                 const m = Math.floor(prices.length / 2);
@@ -1399,7 +1406,7 @@ export default function AdminPanel() {
                 );
               })()}
               <button onClick={async () => { setSaving(true); try { await api.put('/app-config', appConfigForm); toast.success('Custom plan settings saved!'); } catch { toast.error('Failed'); } finally { setSaving(false); } }}
-                disabled={saving} className="btn-primary px-8 py-2.5">{saving ? 'Saving...' : '💾 Save Custom Plan Settings'}</button>
+                disabled={saving} className="btn-primary w-full sm:w-auto px-8 py-2.5">{saving ? 'Saving...' : '💾 Save Custom Plan Settings'}</button>
             </div>
           </div>
 
