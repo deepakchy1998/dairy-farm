@@ -66,6 +66,12 @@ export default function MilkRecords() {
 
   const [confirmDialog, setConfirmDialog] = useState({ open: false, title: '', message: '', onConfirm: null, variant: 'danger', confirmText: 'Confirm' });
 
+  // Bulk entry state
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkDate, setBulkDate] = useState(todayStr());
+  const [bulkEntries, setBulkEntries] = useState([]);
+  const [savingBulk, setSavingBulk] = useState(false);
+
   // Filter state for main records view
   const [showRecords, setShowRecords] = useState(false);
   const [filterPeriod, setFilterPeriod] = useState('month');
@@ -255,6 +261,41 @@ export default function MilkRecords() {
     } catch { toast.error('Failed to generate PDF', { id: 'pdf' }); }
   };
 
+  const openBulkEntry = () => {
+    setBulkEntries(milkCattle.map(c => ({
+      cattleId: c._id, tagNumber: c.tagNumber, breed: c.breed,
+      morningYield: '', morningFat: '', eveningYield: '', eveningFat: '',
+    })));
+    setBulkDate(todayStr());
+    setBulkMode(true);
+  };
+
+  const updateBulkEntry = (idx, field, value) => {
+    setBulkEntries(prev => prev.map((e, i) => i === idx ? { ...e, [field]: value } : e));
+  };
+
+  const saveBulkEntries = async () => {
+    const toSave = bulkEntries.filter(e => e.morningYield || e.eveningYield);
+    if (!toSave.length) { toast.error('Enter at least one record'); return; }
+    setSavingBulk(true);
+    let saved = 0, failed = 0;
+    for (const e of toSave) {
+      try {
+        await api.post('/milk', {
+          cattleId: e.cattleId, date: bulkDate,
+          morningYield: e.morningYield || '', morningFat: e.morningFat || '',
+          eveningYield: e.eveningYield || '', eveningFat: e.eveningFat || '',
+        });
+        saved++;
+      } catch { failed++; }
+    }
+    setSavingBulk(false);
+    if (saved) toast.success(`Saved ${saved} records`);
+    if (failed) toast.error(`${failed} failed`);
+    refreshSummary();
+    setBulkMode(false);
+  };
+
   const formTotal = (parseFloat(form.morningYield) || 0) + (parseFloat(form.afternoonYield) || 0) + (parseFloat(form.eveningYield) || 0);
   const availableCattle = allCattle.filter(c => !milkCattle.find(m => m._id === c._id));
 
@@ -262,6 +303,102 @@ export default function MilkRecords() {
   const filteredTotal = filteredRecords.reduce((s, r) => s + r.totalYield, 0);
   const filteredMorning = filteredRecords.reduce((s, r) => s + r.morningYield, 0);
   const filteredEvening = filteredRecords.reduce((s, r) => s + r.eveningYield, 0);
+
+  // ─── BULK ENTRY VIEW ───
+  if (bulkMode) {
+    const bulkTotal = bulkEntries.reduce((s, e) => s + (parseFloat(e.morningYield) || 0) + (parseFloat(e.eveningYield) || 0), 0);
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <button onClick={() => setBulkMode(false)} className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white"><FiArrowLeft size={20} /></button>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold">📝 Bulk Milk Entry</h1>
+            <p className="text-gray-500 text-sm">Enter milk records for all cattle at once</p>
+          </div>
+          <input type="date" className="input w-auto text-sm" value={bulkDate} onChange={e => setBulkDate(e.target.value)} />
+        </div>
+
+        {bulkTotal > 0 && (
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 text-center">
+            <span className="text-sm text-emerald-600 font-medium">Grand Total: </span>
+            <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{bulkTotal.toFixed(1)} L</span>
+          </div>
+        )}
+
+        {/* Desktop Table */}
+        <div className="card p-0 hidden md:block overflow-x-auto max-h-[65vh] overflow-y-auto">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
+                <th className="px-3 py-2 text-left">Tag No</th>
+                <th className="px-3 py-2 text-left">Breed</th>
+                <th className="px-2 py-2 text-center bg-blue-50 dark:bg-blue-900/20 text-blue-600">Morning (L)</th>
+                <th className="px-2 py-2 text-center bg-blue-50 dark:bg-blue-900/20 text-blue-600">Morning Fat%</th>
+                <th className="px-2 py-2 text-center bg-orange-50 dark:bg-orange-900/20 text-orange-600">Evening (L)</th>
+                <th className="px-2 py-2 text-center bg-orange-50 dark:bg-orange-900/20 text-orange-600">Evening Fat%</th>
+                <th className="px-3 py-2 text-center text-emerald-600">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bulkEntries.map((e, i) => {
+                const total = (parseFloat(e.morningYield) || 0) + (parseFloat(e.eveningYield) || 0);
+                return (
+                  <tr key={e.cattleId} className={`border-b ${i % 2 ? 'bg-gray-50/50 dark:bg-gray-800/20' : ''}`}>
+                    <td className="px-3 py-2 font-mono font-medium whitespace-nowrap">Tag No {e.tagNumber}</td>
+                    <td className="px-3 py-2 text-gray-500 text-xs">{e.breed}</td>
+                    <td className="px-2 py-1"><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="0" value={e.morningYield} onChange={ev => updateBulkEntry(i, 'morningYield', ev.target.value)} /></td>
+                    <td className="px-2 py-1"><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="3.5" value={e.morningFat} onChange={ev => updateBulkEntry(i, 'morningFat', ev.target.value)} /></td>
+                    <td className="px-2 py-1"><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="0" value={e.eveningYield} onChange={ev => updateBulkEntry(i, 'eveningYield', ev.target.value)} /></td>
+                    <td className="px-2 py-1"><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="3.5" value={e.eveningFat} onChange={ev => updateBulkEntry(i, 'eveningFat', ev.target.value)} /></td>
+                    <td className="px-3 py-2 text-center font-bold text-emerald-600">{total > 0 ? total.toFixed(1) + 'L' : '-'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-3">
+          {bulkEntries.map((e, i) => {
+            const total = (parseFloat(e.morningYield) || 0) + (parseFloat(e.eveningYield) || 0);
+            return (
+              <div key={e.cattleId} className="card !p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-mono font-semibold text-sm">Tag No {e.tagNumber}</p>
+                    <p className="text-xs text-gray-400">{e.breed}</p>
+                  </div>
+                  {total > 0 && <span className="text-lg font-bold text-emerald-600">{total.toFixed(1)}L</span>}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-blue-50 dark:bg-blue-900/10 rounded-lg p-2">
+                    <p className="text-[10px] text-blue-500 font-medium mb-1">☀️ Morning</p>
+                    <div className="grid grid-cols-2 gap-1">
+                      <div><label className="text-[10px] text-gray-400">Liters</label><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="0" value={e.morningYield} onChange={ev => updateBulkEntry(i, 'morningYield', ev.target.value)} /></div>
+                      <div><label className="text-[10px] text-gray-400">Fat%</label><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="3.5" value={e.morningFat} onChange={ev => updateBulkEntry(i, 'morningFat', ev.target.value)} /></div>
+                    </div>
+                  </div>
+                  <div className="bg-orange-50 dark:bg-orange-900/10 rounded-lg p-2">
+                    <p className="text-[10px] text-orange-500 font-medium mb-1">🌙 Evening</p>
+                    <div className="grid grid-cols-2 gap-1">
+                      <div><label className="text-[10px] text-gray-400">Liters</label><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="0" value={e.eveningYield} onChange={ev => updateBulkEntry(i, 'eveningYield', ev.target.value)} /></div>
+                      <div><label className="text-[10px] text-gray-400">Fat%</label><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="3.5" value={e.eveningFat} onChange={ev => updateBulkEntry(i, 'eveningFat', ev.target.value)} /></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex justify-end gap-3 pt-2">
+          <button onClick={() => setBulkMode(false)} className="btn-secondary">Cancel</button>
+          <button onClick={saveBulkEntries} disabled={savingBulk} className="btn-primary">{savingBulk ? 'Saving...' : `Save All (${bulkEntries.filter(e => e.morningYield || e.eveningYield).length} records)`}</button>
+        </div>
+      </div>
+    );
+  }
 
   // ─── PER-CATTLE HISTORY VIEW ───
   if (viewCattle) {
@@ -644,6 +781,7 @@ export default function MilkRecords() {
             });
           }} className="btn-secondary flex items-center justify-center gap-1 text-xs">📄 PDF</button>
           <button onClick={() => setCalcModal(true)} className="btn-secondary flex items-center justify-center gap-1 text-xs sm:text-sm">💰 Calculator</button>
+          <button onClick={openBulkEntry} disabled={!milkCattle.length} className="btn-secondary flex items-center justify-center gap-1 text-xs sm:text-sm">📝 Bulk Entry</button>
           <button onClick={openRecordsView} className="btn-secondary flex items-center justify-center gap-1 text-xs sm:text-sm"><FiFilter size={14} /> All Records</button>
         </div>
       </div>

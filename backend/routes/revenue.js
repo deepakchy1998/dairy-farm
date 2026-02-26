@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { auth } from '../middleware/auth.js';
 import { checkSubscription } from '../middleware/subscription.js';
 import Revenue from '../models/Revenue.js';
+import Cattle from '../models/Cattle.js';
 import { paginate, dateFilter, logActivity } from '../utils/helpers.js';
 
 const router = Router();
@@ -25,6 +26,13 @@ router.get('/', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     const record = await Revenue.create({ ...req.body, farmId: req.user.farmId });
+    // Auto-update cattle status to 'sold' when recording a cattle sale
+    if (record.category === 'cattle_sale' && record.cattleId) {
+      await Cattle.findOneAndUpdate(
+        { _id: record.cattleId, farmId: req.user.farmId },
+        { status: 'sold' }
+      );
+    }
     await logActivity(req.user.farmId, 'revenue', '💰', `Revenue: ${record.category.replace('_',' ')} — ₹${record.amount}`);
     res.status(201).json({ success: true, data: record });
   } catch (err) { next(err); }

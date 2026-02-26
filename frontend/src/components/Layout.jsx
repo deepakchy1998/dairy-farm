@@ -130,6 +130,13 @@ export default function Layout({ children }) {
 
   const severityIcon = { critical: <FiAlertTriangle size={16} className="text-red-500" />, warning: <FiAlertCircle size={16} className="text-orange-500" />, info: <FiInfo size={16} className="text-blue-500" /> };
 
+  const [healthDueCount, setHealthDueCount] = useState(0);
+  useEffect(() => {
+    api.get('/health/upcoming', { params: { days: 3 } })
+      .then(r => setHealthDueCount((r.data.data || []).length))
+      .catch(() => {});
+  }, []);
+
   const appConfig = useAppConfig();
   const modules = appConfig.modulesEnabled || {};
 
@@ -185,6 +192,11 @@ export default function Layout({ children }) {
               >
                 <Icon size={18} />
                 {item.label}
+                {item.path === '/health' && healthDueCount > 0 && (
+                  <span className="ml-auto w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {healthDueCount > 9 ? '9+' : healthDueCount}
+                  </span>
+                )}
               </Link>
             );
           })}
