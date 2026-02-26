@@ -6,9 +6,9 @@ export const createCattleSchema = z.object({
   gender: z.enum(['female', 'male']).optional().default('female'),
   category: z.enum(['milking', 'dry', 'heifer', 'calf', 'bull']).optional().default('milking'),
   dateOfBirth: z.string().optional(),
-  weight: z.coerce.number().min(0).max(2000).optional().or(z.literal('')),
+  weight: z.preprocess((v) => (v === '' || v === null || v === undefined) ? undefined : Number(v), z.number().min(0).max(2000).optional()),
   purchaseDate: z.string().optional(),
-  purchasePrice: z.coerce.number().min(0).optional().or(z.literal('')),
+  purchasePrice: z.preprocess((v) => (v === '' || v === null || v === undefined) ? undefined : Number(v), z.number().min(0).optional()),
   status: z.enum(['active', 'sold', 'deceased', 'transferred']).optional().default('active'),
   notes: z.string().max(2000).optional(),
 }).passthrough(); // allow additional model fields

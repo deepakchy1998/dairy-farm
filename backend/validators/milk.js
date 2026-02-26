@@ -1,8 +1,13 @@
 import { z } from 'zod';
 
-const yieldField = z.coerce.number().min(0).max(100, 'Yield must be 0-100L').optional().nullable().or(z.literal('').transform(() => null));
-const fatField = z.coerce.number().min(0).max(15, 'Fat must be 0-15%').optional().nullable().or(z.literal('').transform(() => null));
-const snfField = z.coerce.number().min(0).max(20).optional().nullable().or(z.literal('').transform(() => null));
+// Empty strings and null should become null (not recorded), valid numbers should be coerced
+const numericOrNull = (min, max, msg) => z.preprocess(
+  (val) => (val === '' || val === null || val === undefined) ? null : Number(val),
+  z.number().min(min).max(max, msg).nullable().optional()
+);
+const yieldField = numericOrNull(0, 100, 'Yield must be 0-100L');
+const fatField = numericOrNull(0, 15, 'Fat must be 0-15%');
+const snfField = numericOrNull(0, 20, 'SNF must be 0-20%');
 
 export const createMilkRecordSchema = z.object({
   cattleId: z.string().min(1, 'Cattle is required'),
