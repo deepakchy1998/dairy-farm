@@ -120,12 +120,26 @@ export default function CattleList() {
     try {
       toast.loading('Generating PDF...', { id: 'pdf' });
       const res = await api.get(`/cattle/${id}/pdf`, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url; link.download = `cattle-${tagNumber}-profile.pdf`; link.click();
-      window.URL.revokeObjectURL(url);
-      toast.success('PDF downloaded!', { id: 'pdf' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/html' }));
+      const w = window.open(url, '_blank');
+      setTimeout(() => { if (w) w.print(); }, 800);
+      toast.success('PDF ready — print or save!', { id: 'pdf' });
     } catch { toast.error('Failed to generate PDF', { id: 'pdf' }); }
+  };
+
+  const handleDownloadCsv = (c) => {
+    const rows = [
+      ['Field', 'Value'],
+      ['Tag No', c.tagNumber], ['Breed', c.breed], ['Category', c.category], ['Gender', c.gender],
+      ['Status', c.status], ['Weight', c.weight ? c.weight + ' kg' : '-'],
+      ['Source', c.source === 'purchased' ? 'Purchased' : 'Born on Farm'],
+      ...(c.lactationNumber > 0 ? [['Lactation', 'L-' + c.lactationNumber]] : []),
+      ...(c.generation ? [['Generation', c.generation]] : []),
+      ...(c.dateOfBirth ? [['Date of Birth', new Date(c.dateOfBirth).toLocaleDateString('en-IN')]] : []),
+    ];
+    const csv = '\ufeff' + rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `cattle-${c.tagNumber}.csv`; a.click();
   };
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
