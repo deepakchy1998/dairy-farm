@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../../utils/api';
 import { formatDate, formatCurrency, formatLiters } from '../../utils/helpers';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { FiArrowLeft, FiDroplet, FiHeart, FiActivity, FiCalendar, FiInfo, FiTrendingUp } from 'react-icons/fi';
+import { FiArrowLeft, FiDroplet, FiHeart, FiActivity, FiCalendar, FiInfo, FiTrendingUp, FiDownload, FiFileText } from 'react-icons/fi';
 import { FaIndianRupeeSign } from 'react-icons/fa6';
 import { GiCow, GiMilkCarton } from 'react-icons/gi';
 import toast from 'react-hot-toast';
@@ -117,6 +117,47 @@ export default function CattleProfile() {
               {c.weight && <span><strong>Weight:</strong> {c.weight} kg</span>}
               {c.lactationNumber > 0 && <span><strong>Lactation:</strong> L-{c.lactationNumber}</span>}
               {c.source && <span><strong>Source:</strong> {c.source === 'born_on_farm' ? '🏠 Born on Farm' : '🛒 Purchased'}</span>}
+            </div>
+            {/* Export buttons */}
+            <div className="flex gap-2 mt-3">
+              <button onClick={() => {
+                const rows = [
+                  ['Field', 'Value'],
+                  ['Tag No', c.tagNumber], ['Breed', c.breed], ['Category', c.category], ['Gender', c.gender],
+                  ['Status', c.status], ['Weight', c.weight ? c.weight + ' kg' : '-'], ['Age', calcAge(c.dateOfBirth)],
+                  ['Source', c.source === 'purchased' ? 'Purchased' : 'Born on Farm'],
+                  ...(c.lactationNumber > 0 ? [['Lactation', 'L-' + c.lactationNumber]] : []),
+                  ...(c.generation ? [['Generation', c.generation]] : []),
+                  ...(c.motherTag ? [['Mother Tag', c.motherTag]] : []),
+                  [], ['--- Milk Records (Last 90 Days) ---', ''],
+                  ['Date', 'Morning (L)', 'Evening (L)', 'Total (L)'],
+                  ...milkRecords.map(r => [formatDate(r.date), r.morningYield?.toFixed(1) || '-', r.eveningYield?.toFixed(1) || '-', r.totalYield?.toFixed(1)]),
+                  [], ['--- Health Records ---', ''],
+                  ['Date', 'Type', 'Description', 'Medicine', 'Cost'],
+                  ...healthRecords.map(r => [formatDate(r.date), r.type, r.description, r.medicine || '-', r.cost || 0]),
+                  [], ['--- Breeding Records ---', ''],
+                  ['Date', 'Method', 'Bull Details', 'Status', 'Expected Delivery'],
+                  ...breedingRecords.map(r => [formatDate(r.breedingDate), r.method, r.bullDetails || '-', r.status, r.expectedDelivery ? formatDate(r.expectedDelivery) : '-']),
+                ];
+                const csv = '\ufeff' + rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `cattle-${c.tagNumber}-profile.csv`; a.click();
+                toast.success('CSV downloaded!');
+              }} className="btn-secondary text-xs flex items-center gap-1.5">
+                <FiFileText size={14} /> CSV
+              </button>
+              <button onClick={async () => {
+                try {
+                  toast.loading('Generating PDF...', { id: 'cpdf' });
+                  const res = await api.get(`/cattle/${c._id}/pdf`, { responseType: 'blob' });
+                  const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/html' }));
+                  const w = window.open(url, '_blank');
+                  setTimeout(() => { if (w) w.print(); }, 800);
+                  toast.success('PDF ready!', { id: 'cpdf' });
+                } catch { toast.error('Failed to generate PDF', { id: 'cpdf' }); }
+              }} className="btn-primary text-xs flex items-center gap-1.5">
+                <FiDownload size={14} /> PDF
+              </button>
             </div>
           </div>
         </div>
