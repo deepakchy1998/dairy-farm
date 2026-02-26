@@ -27,6 +27,7 @@ export const updateProfileSchema = z.object({
   email: z.string().email().max(255).toLowerCase().optional(),
   phone: z.string().max(20).optional(),
   profilePhoto: z.string().max(3 * 1024 * 1024).optional(), // ~2MB base64
+  farmEnabled: z.boolean().optional(),
 });
 
 export const changePasswordSchema = z.object({

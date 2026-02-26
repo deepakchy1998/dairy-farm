@@ -146,8 +146,9 @@ router.put('/profile', auth, validate(updateProfileSchema), async (req, res, nex
       }
       user.profilePhoto = profilePhoto;
     }
+    if (req.body.farmEnabled !== undefined) user.farmEnabled = !!req.body.farmEnabled;
     await user.save();
-    const userData = { _id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, farmId: user.farmId, profilePhoto: user.profilePhoto, createdAt: user.createdAt };
+    const userData = { _id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role, farmId: user.farmId, profilePhoto: user.profilePhoto, farmEnabled: user.farmEnabled, createdAt: user.createdAt };
     res.json({ success: true, data: userData });
   } catch (err) { next(err); }
 });

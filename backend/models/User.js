@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema({
   lastLogin: { type: Date },
   loginAttempts: { type: Number, default: 0 },
   lockUntil: { type: Date },
+  farmEnabled: { type: Boolean, default: true }, // admin can disable personal farm usage
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

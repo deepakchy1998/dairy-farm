@@ -135,7 +135,14 @@ export default function Layout({ children }) {
 
   // Filter nav items based on admin module toggles
   const filteredNavItems = navItems.filter(item => !item.module || modules[item.module] !== false);
-  const allItems = user?.role === 'admin' ? [...filteredNavItems, ...adminItems] : filteredNavItems;
+
+  // If user (especially admin) has disabled their personal farm, hide all farm modules
+  const personalFarmEnabled = user?.farmEnabled !== false;
+  const visibleNavItems = personalFarmEnabled
+    ? filteredNavItems
+    : filteredNavItems.filter(item => !item.module); // only show Dashboard, Subscription
+
+  const allItems = user?.role === 'admin' ? [...visibleNavItems, ...adminItems] : visibleNavItems;
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
