@@ -27,6 +27,25 @@ const landingContentSchema = new mongoose.Schema({
     milkRecords: { type: String, default: '10L+' },
     uptime: { type: String, default: '99.9%' },
   },
+  customPlanConfig: {
+    enabled: { type: Boolean, default: true },
+    heading: { type: String, default: '🛠️ Build Your Own Plan' },
+    subheading: { type: String, default: 'Select only the modules you need. Pay for what you use!' },
+    minMonthlyPrice: { type: Number, default: 200 },
+    modulePrices: {
+      cattle: { type: Number, default: 50 },
+      milk: { type: Number, default: 50 },
+      health: { type: Number, default: 40 },
+      breeding: { type: Number, default: 40 },
+      feed: { type: Number, default: 30 },
+      finance: { type: Number, default: 40 },
+      milkDelivery: { type: Number, default: 50 },
+      employees: { type: Number, default: 40 },
+      insurance: { type: Number, default: 30 },
+      reports: { type: Number, default: 40 },
+      chatbot: { type: Number, default: 60 },
+    },
+  },
 }, { timestamps: true });
 
 export default mongoose.model('LandingContent', landingContentSchema);

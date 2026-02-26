@@ -62,4 +62,83 @@ router.get('/current', auth, subscriptionStatus, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Custom plan calculator — public endpoint for pricing calculation
+router.post('/custom-plan', async (req, res, next) => {
+  try {
+    const { modules, period = 'monthly' } = req.body;
+
+    if (!Array.isArray(modules) || modules.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please select at least one module'
+      });
+    }
+
+    if (!['monthly', 'halfyearly', 'yearly'].includes(period)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid period. Must be monthly, halfyearly, or yearly'
+      });
+    }
+
+    // Get pricing config from database
+    const content = await LandingContent.findOne();
+    const config = content?.customPlanConfig;
+    
+    if (!config || !config.enabled) {
+      return res.status(404).json({
+        success: false,
+        error: 'Custom plans are not available'
+      });
+    }
+
+    // Calculate monthly price
+    let monthlyPrice = 0;
+    const modulePrices = config.modulePrices || {};
+    
+    for (const module of modules) {
+      if (modulePrices[module]) {
+        monthlyPrice += modulePrices[module];
+      }
+    }
+
+    // Apply minimum price
+    if (monthlyPrice < config.minMonthlyPrice) {
+      monthlyPrice = config.minMonthlyPrice;
+    }
+
+    // Calculate total price based on period
+    let totalPrice = monthlyPrice;
+    let days = 30;
+
+    switch (period) {
+      case 'halfyearly':
+        totalPrice = monthlyPrice * 6;
+        days = 180;
+        break;
+      case 'yearly':
+        totalPrice = monthlyPrice * 12;
+        days = 365;
+        break;
+      default: // monthly
+        days = 30;
+        break;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        monthlyPrice,
+        totalPrice,
+        period,
+        days,
+        modules
+      }
+    });
+
+  } catch (err) { 
+    next(err); 
+  }
+});
+
 export default router;

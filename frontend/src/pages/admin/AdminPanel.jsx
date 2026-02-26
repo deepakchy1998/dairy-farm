@@ -1464,6 +1464,67 @@ export default function AdminPanel() {
             </div>
           </div>
 
+          {/* Custom Plan Builder */}
+          <div className="card">
+            <h3 className="font-semibold mb-4">🛠️ Custom Plan Builder</h3>
+            <p className="text-xs text-gray-500 mb-3">Configure the custom plan feature where users can select specific modules</p>
+            <div className="space-y-4">
+              <div>
+                <label className="flex items-center gap-2">
+                  <input 
+                    type="checkbox" 
+                    checked={websiteForm.customPlanEnabled !== false}
+                    onChange={e => setWebsiteForm({ ...websiteForm, customPlanEnabled: e.target.checked })}
+                    className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500" 
+                  />
+                  <span className="text-sm font-medium">Enable Custom Plan Builder</span>
+                </label>
+              </div>
+              
+              <div><label className="label">Heading</label><input className="input" value={websiteForm.customPlanHeading || ''} onChange={e => setWebsiteForm({ ...websiteForm, customPlanHeading: e.target.value })} placeholder="🛠️ Build Your Own Plan" /></div>
+              
+              <div><label className="label">Subheading</label><textarea className="input" rows={2} value={websiteForm.customPlanSubheading || ''} onChange={e => setWebsiteForm({ ...websiteForm, customPlanSubheading: e.target.value })} placeholder="Select only the modules you need. Pay for what you use!" /></div>
+              
+              <div><label className="label">Minimum Monthly Price (₹)</label><input type="number" className="input" value={websiteForm.customPlanMinPrice || ''} onChange={e => setWebsiteForm({ ...websiteForm, customPlanMinPrice: +e.target.value })} placeholder="200" /></div>
+
+              <div>
+                <h4 className="font-semibold text-sm mb-3">Module Prices (₹/month)</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { id: 'cattle', name: 'Cattle Management', icon: '🐄' },
+                    { id: 'milk', name: 'Milk Recording', icon: '🥛' },
+                    { id: 'health', name: 'Health & Vaccination', icon: '💉' },
+                    { id: 'breeding', name: 'Breeding Tracker', icon: '🐣' },
+                    { id: 'feed', name: 'Feed Management', icon: '🌾' },
+                    { id: 'finance', name: 'Finance & Accounting', icon: '💰' },
+                    { id: 'milkDelivery', name: 'Dudh Khata', icon: '🏘️' },
+                    { id: 'employees', name: 'Employee Management', icon: '👷' },
+                    { id: 'insurance', name: 'Insurance Tracking', icon: '🛡️' },
+                    { id: 'reports', name: 'Reports & Analytics', icon: '📊' },
+                    { id: 'chatbot', name: 'AI Farm Assistant', icon: '🤖' }
+                  ].map(module => (
+                    <div key={module.id} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                      <span className="text-lg">{module.icon}</span>
+                      <div className="flex-1">
+                        <label className="text-xs font-medium text-gray-700 dark:text-gray-300">{module.name}</label>
+                        <input 
+                          type="number" 
+                          className="input mt-1" 
+                          placeholder="50"
+                          value={websiteForm[`customPlan${module.id.charAt(0).toUpperCase() + module.id.slice(1)}Price`] || ''} 
+                          onChange={e => setWebsiteForm({ 
+                            ...websiteForm, 
+                            [`customPlan${module.id.charAt(0).toUpperCase() + module.id.slice(1)}Price`]: +e.target.value 
+                          })} 
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* FAQ Management */}
           <div className="card">
             <div className="flex items-center justify-between mb-4">

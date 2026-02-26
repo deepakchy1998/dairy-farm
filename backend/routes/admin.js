@@ -357,7 +357,7 @@ router.get('/settings', async (req, res, next) => {
   try {
     let content = await LandingContent.findOne().lean();
     if (!content) content = {};
-    // Flatten pricing for frontend
+    // Flatten pricing and custom plan config for frontend
     res.json({
       success: true,
       data: {
@@ -369,6 +369,22 @@ router.get('/settings', async (req, res, next) => {
         halfyearlyPrice: content.pricing?.halfyearly || 2499,
         yearlyPrice: content.pricing?.yearly || 4499,
         trialDays: content.pricing?.trialDays || 5,
+        // Custom plan config flattened
+        customPlanEnabled: content.customPlanConfig?.enabled !== false,
+        customPlanHeading: content.customPlanConfig?.heading || '🛠️ Build Your Own Plan',
+        customPlanSubheading: content.customPlanConfig?.subheading || 'Select only the modules you need. Pay for what you use!',
+        customPlanMinPrice: content.customPlanConfig?.minMonthlyPrice || 200,
+        customPlanCattlePrice: content.customPlanConfig?.modulePrices?.cattle || 50,
+        customPlanMilkPrice: content.customPlanConfig?.modulePrices?.milk || 50,
+        customPlanHealthPrice: content.customPlanConfig?.modulePrices?.health || 40,
+        customPlanBreedingPrice: content.customPlanConfig?.modulePrices?.breeding || 40,
+        customPlanFeedPrice: content.customPlanConfig?.modulePrices?.feed || 30,
+        customPlanFinancePrice: content.customPlanConfig?.modulePrices?.finance || 40,
+        customPlanMilkDeliveryPrice: content.customPlanConfig?.modulePrices?.milkDelivery || 50,
+        customPlanEmployeesPrice: content.customPlanConfig?.modulePrices?.employees || 40,
+        customPlanInsurancePrice: content.customPlanConfig?.modulePrices?.insurance || 30,
+        customPlanReportsPrice: content.customPlanConfig?.modulePrices?.reports || 40,
+        customPlanChatbotPrice: content.customPlanConfig?.modulePrices?.chatbot || 60,
       },
     });
   } catch (err) { next(err); }
@@ -377,7 +393,15 @@ router.get('/settings', async (req, res, next) => {
 // Update settings
 router.put('/settings', async (req, res, next) => {
   try {
-    const { upiId, upiName, monthlyPrice, quarterlyPrice, halfyearlyPrice, yearlyPrice, trialDays, supportEmail, supportPhone, contactAddress, heroTitle, heroSubtitle, testimonials, statsActiveFarms, statsCattleManaged, statsMilkRecords, statsUptime } = req.body;
+    const { 
+      upiId, upiName, monthlyPrice, quarterlyPrice, halfyearlyPrice, yearlyPrice, trialDays, 
+      supportEmail, supportPhone, contactAddress, heroTitle, heroSubtitle, testimonials, 
+      statsActiveFarms, statsCattleManaged, statsMilkRecords, statsUptime,
+      customPlanEnabled, customPlanHeading, customPlanSubheading, customPlanMinPrice,
+      customPlanCattlePrice, customPlanMilkPrice, customPlanHealthPrice, customPlanBreedingPrice,
+      customPlanFeedPrice, customPlanFinancePrice, customPlanMilkDeliveryPrice, customPlanEmployeesPrice,
+      customPlanInsurancePrice, customPlanReportsPrice, customPlanChatbotPrice
+    } = req.body;
     
     let content = await LandingContent.findOne();
     if (!content) content = new LandingContent();
@@ -405,6 +429,30 @@ router.put('/settings', async (req, res, next) => {
       yearly: yearlyPrice || content.pricing?.yearly || 4499,
       trialDays: trialDays || content.pricing?.trialDays || 5,
     };
+    
+    // Custom Plan Configuration
+    if (customPlanEnabled !== undefined || customPlanHeading !== undefined || customPlanSubheading !== undefined || 
+        customPlanMinPrice !== undefined || customPlanCattlePrice !== undefined) {
+      content.customPlanConfig = {
+        enabled: customPlanEnabled !== undefined ? customPlanEnabled : content.customPlanConfig?.enabled !== false,
+        heading: customPlanHeading !== undefined ? customPlanHeading : content.customPlanConfig?.heading || '🛠️ Build Your Own Plan',
+        subheading: customPlanSubheading !== undefined ? customPlanSubheading : content.customPlanConfig?.subheading || 'Select only the modules you need. Pay for what you use!',
+        minMonthlyPrice: customPlanMinPrice !== undefined ? customPlanMinPrice : content.customPlanConfig?.minMonthlyPrice || 200,
+        modulePrices: {
+          cattle: customPlanCattlePrice !== undefined ? customPlanCattlePrice : content.customPlanConfig?.modulePrices?.cattle || 50,
+          milk: customPlanMilkPrice !== undefined ? customPlanMilkPrice : content.customPlanConfig?.modulePrices?.milk || 50,
+          health: customPlanHealthPrice !== undefined ? customPlanHealthPrice : content.customPlanConfig?.modulePrices?.health || 40,
+          breeding: customPlanBreedingPrice !== undefined ? customPlanBreedingPrice : content.customPlanConfig?.modulePrices?.breeding || 40,
+          feed: customPlanFeedPrice !== undefined ? customPlanFeedPrice : content.customPlanConfig?.modulePrices?.feed || 30,
+          finance: customPlanFinancePrice !== undefined ? customPlanFinancePrice : content.customPlanConfig?.modulePrices?.finance || 40,
+          milkDelivery: customPlanMilkDeliveryPrice !== undefined ? customPlanMilkDeliveryPrice : content.customPlanConfig?.modulePrices?.milkDelivery || 50,
+          employees: customPlanEmployeesPrice !== undefined ? customPlanEmployeesPrice : content.customPlanConfig?.modulePrices?.employees || 40,
+          insurance: customPlanInsurancePrice !== undefined ? customPlanInsurancePrice : content.customPlanConfig?.modulePrices?.insurance || 30,
+          reports: customPlanReportsPrice !== undefined ? customPlanReportsPrice : content.customPlanConfig?.modulePrices?.reports || 40,
+          chatbot: customPlanChatbotPrice !== undefined ? customPlanChatbotPrice : content.customPlanConfig?.modulePrices?.chatbot || 60,
+        },
+      };
+    }
     
     await content.save();
     res.json({ success: true, data: content });

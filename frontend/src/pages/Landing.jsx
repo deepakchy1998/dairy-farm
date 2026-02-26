@@ -36,6 +36,180 @@ const features = [
   { icon: '💳', title: 'Secure Payments', desc: 'Pay via UPI, QR code, cards, Paytm, PhonePe, net banking, EMI. Powered by Razorpay with instant activation.' },
 ];
 
+// Custom Plan Builder Component
+function CustomPlanBuilder({ content }) {
+  const [selectedModules, setSelectedModules] = useState(new Set());
+  const [period, setPeriod] = useState('monthly');
+
+  const modules = [
+    { id: 'cattle', icon: '🐄', name: 'Cattle Management' },
+    { id: 'milk', icon: '🥛', name: 'Milk Recording' },
+    { id: 'health', icon: '💉', name: 'Health & Vaccination' },
+    { id: 'breeding', icon: '🐣', name: 'Breeding Tracker' },
+    { id: 'feed', icon: '🌾', name: 'Feed Management' },
+    { id: 'finance', icon: '💰', name: 'Finance & Accounting' },
+    { id: 'milkDelivery', icon: '🏘️', name: 'Dudh Khata' },
+    { id: 'employees', icon: '👷', name: 'Employee Management' },
+    { id: 'insurance', icon: '🛡️', name: 'Insurance Tracking' },
+    { id: 'reports', icon: '📊', name: 'Reports & Analytics' },
+    { id: 'chatbot', icon: '🤖', name: 'AI Farm Assistant' },
+  ];
+
+  const modulePrices = content?.customPlanConfig?.modulePrices || {
+    cattle: 50, milk: 50, health: 40, breeding: 40, feed: 30, finance: 40,
+    milkDelivery: 50, employees: 40, insurance: 30, reports: 40, chatbot: 60
+  };
+  const minMonthlyPrice = content?.customPlanConfig?.minMonthlyPrice || 200;
+
+  const toggleModule = (moduleId) => {
+    const newSet = new Set(selectedModules);
+    if (newSet.has(moduleId)) {
+      newSet.delete(moduleId);
+    } else {
+      newSet.add(moduleId);
+    }
+    setSelectedModules(newSet);
+  };
+
+  const selectAll = () => setSelectedModules(new Set(modules.map(m => m.id)));
+  const clearAll = () => setSelectedModules(new Set());
+
+  // Calculate pricing
+  let monthlyPrice = Array.from(selectedModules).reduce((total, moduleId) => {
+    return total + (modulePrices[moduleId] || 0);
+  }, 0);
+
+  if (monthlyPrice > 0 && monthlyPrice < minMonthlyPrice) {
+    monthlyPrice = minMonthlyPrice;
+  }
+
+  const periodMultipliers = { monthly: 1, halfyearly: 6, yearly: 12 };
+  const periodDays = { monthly: 30, halfyearly: 180, yearly: 365 };
+  const totalPrice = monthlyPrice * periodMultipliers[period];
+  const perDayPrice = totalPrice > 0 ? Math.round(totalPrice / periodDays[period] * 100) / 100 : 0;
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Module Selection */}
+      <div className="lg:col-span-2">
+        <FadeIn>
+          <div className="mb-6 flex items-center justify-between">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Select Modules</h3>
+            <div className="flex gap-2">
+              <button onClick={selectAll} className="text-sm text-emerald-600 dark:text-emerald-400 hover:underline">Select All</button>
+              <span className="text-gray-300 dark:text-gray-600">|</span>
+              <button onClick={clearAll} className="text-sm text-gray-500 dark:text-gray-400 hover:underline">Clear All</button>
+            </div>
+          </div>
+        </FadeIn>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {modules.map((module, i) => (
+            <FadeIn key={module.id} delay={i * 0.05}>
+              <motion.div
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => toggleModule(module.id)}
+                className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                  selectedModules.has(module.id)
+                    ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-emerald-300 dark:hover:border-emerald-700'
+                }`}>
+                <div className="text-center">
+                  <span className="text-2xl block mb-2">{module.icon}</span>
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">{module.name}</h4>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                    ₹{modulePrices[module.id] || 0}/mo
+                  </p>
+                </div>
+              </motion.div>
+            </FadeIn>
+          ))}
+        </div>
+        
+        <FadeIn delay={0.3}>
+          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              <span className="font-semibold">📱 Dashboard</span> is always included free with every plan.
+            </p>
+          </div>
+        </FadeIn>
+      </div>
+
+      {/* Price Calculator */}
+      <div className="lg:col-span-1">
+        <FadeIn delay={0.2}>
+          <div className="sticky top-8 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Custom Plan</h3>
+            
+            {/* Period Selector */}
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Billing Period</p>
+              <div className="grid grid-cols-3 gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                {['monthly', 'halfyearly', 'yearly'].map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPeriod(p)}
+                    className={`py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                      period === p
+                        ? 'bg-emerald-600 text-white'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}>
+                    {p === 'monthly' ? 'Monthly' : p === 'halfyearly' ? 'Half Yearly' : 'Yearly'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Pricing Display */}
+            <div className="space-y-3 mb-6">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Monthly Price</span>
+                <span className="font-semibold text-gray-900 dark:text-white">₹{monthlyPrice.toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Total Price</span>
+                <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">₹{totalPrice.toLocaleString('en-IN')}</span>
+              </div>
+              {perDayPrice > 0 && (
+                <div className="flex justify-between items-center pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <span className="text-xs text-gray-500 dark:text-gray-500">Per day</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-500">₹{perDayPrice}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Warnings and CTA */}
+            {selectedModules.size === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-amber-600 dark:text-amber-400 mb-4">Select at least one module</p>
+              </div>
+            ) : monthlyPrice < minMonthlyPrice && Array.from(selectedModules).reduce((total, moduleId) => total + (modulePrices[moduleId] || 0), 0) > 0 ? (
+              <div className="text-center py-2 mb-4">
+                <p className="text-xs text-blue-600 dark:text-blue-400">Minimum ₹{minMonthlyPrice}/month applied</p>
+              </div>
+            ) : null}
+
+            <Link 
+              to="/register"
+              className={`block w-full py-3 rounded-lg font-semibold text-center transition-all ${
+                selectedModules.size > 0
+                  ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg'
+                  : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+              }`}>
+              Start with Custom Plan →
+            </Link>
+            
+            <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
+              {content?.pricing?.trialDays || 5}-day free trial • No credit card required
+            </p>
+          </div>
+        </FadeIn>
+      </div>
+    </div>
+  );
+}
+
 export default function Landing() {
   const [content, setContent] = useState(null);
   const [dark, setDark] = useState(() => {
@@ -98,6 +272,7 @@ export default function Landing() {
           <div className="hidden md:flex items-center gap-8 text-sm text-gray-600 dark:text-gray-400">
             <a href="#features" className="hover:text-emerald-600 transition">Features</a>
             <a href="#pricing" className="hover:text-emerald-600 transition">Pricing</a>
+            <a href="#custom-plan" className="hover:text-emerald-600 transition">Custom Plan</a>
             <a href="#testimonials" className="hover:text-emerald-600 transition">Testimonials</a>
             <a href="#contact" className="hover:text-emerald-600 transition">Contact</a>
           </div>
@@ -285,6 +460,26 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* ─── Custom Plan Builder ─── */}
+      {content?.customPlanConfig?.enabled !== false && (
+        <section id="custom-plan" className="py-20 px-4 bg-white dark:bg-gray-950">
+          <div className="max-w-7xl mx-auto">
+            <FadeIn>
+              <div className="text-center mb-12">
+                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
+                  {content?.customPlanConfig?.heading || '🛠️ Build Your Own Plan'}
+                </h2>
+                <p className="mt-4 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                  {content?.customPlanConfig?.subheading || 'Select only the modules you need. Pay for what you use!'}
+                </p>
+              </div>
+            </FadeIn>
+            
+            <CustomPlanBuilder content={content} />
+          </div>
+        </section>
+      )}
 
       {/* ─── Testimonials ─── */}
       <section id="testimonials" className="py-20 px-4 bg-white dark:bg-gray-950">
