@@ -89,7 +89,7 @@ export default function Insurance() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">🛡️ Insurance</h1>
@@ -99,11 +99,23 @@ export default function Insurance() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="card !p-4 text-center"><p className="text-xs text-gray-500">Active Policies</p><p className="text-2xl font-bold text-emerald-600">{activeCount}</p></div>
-        <div className="card !p-4 text-center"><p className="text-xs text-gray-500">Total Insured</p><p className="text-2xl font-bold text-blue-600">{formatCurrency(totalInsured)}</p></div>
-        <div className="card !p-4 text-center"><p className="text-xs text-gray-500">Expiring Soon</p><p className="text-2xl font-bold text-orange-600">{expiringSoon.length}</p></div>
-        <div className="card !p-4 text-center"><p className="text-xs text-gray-500">Total Records</p><p className="text-2xl font-bold">{pagination.total || records.length}</p></div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 text-center">
+          <p className="text-xs text-emerald-500">Active Policies</p>
+          <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{activeCount}</p>
+        </div>
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 text-center">
+          <p className="text-xs text-blue-500">Total Insured</p>
+          <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{formatCurrency(totalInsured)}</p>
+        </div>
+        <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-3 text-center">
+          <p className="text-xs text-orange-500">Expiring Soon</p>
+          <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{expiringSoon.length}</p>
+        </div>
+        <div className="bg-gray-50 dark:bg-gray-900/20 rounded-xl p-3 text-center">
+          <p className="text-xs text-gray-500">Total Records</p>
+          <p className="text-2xl font-bold text-gray-700 dark:text-gray-300">{pagination.total || records.length}</p>
+        </div>
       </div>
 
       {/* Expiring Soon Alert */}
@@ -124,59 +136,102 @@ export default function Insurance() {
       <div className="flex gap-2 flex-wrap">
         {['', 'active', 'expired', 'claimed'].map(s => (
           <button key={s} onClick={() => setFilters({ ...filters, status: s, page: 1 })}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${filters.status === s ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200'}`}>
+            className={`px-3 py-2 rounded-lg text-xs font-medium transition ${filters.status === s ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200'}`}>
             {s || 'All'}
           </button>
         ))}
       </div>
 
       {/* Table */}
-      <div className="card p-0 overflow-auto max-h-[60vh]">
+      <div className="card p-0 overflow-hidden">
         {loading ? (
-          <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div></div>
+          <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div></div>
         ) : records.length === 0 ? (
           <div className="text-center py-12 text-gray-400">
             <FiShield size={40} className="mx-auto mb-3 opacity-30" />
             <p>No insurance records found</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 z-10">
-              <tr className="bg-gray-50 dark:bg-gray-800/50 border-b text-xs text-gray-500 uppercase">
-                <th className="px-4 py-3 text-left">Cattle</th>
-                <th className="px-3 py-3 text-left">Provider</th>
-                <th className="px-3 py-3 text-left">Policy #</th>
-                <th className="px-3 py-3 text-right">Insured</th>
-                <th className="px-3 py-3 text-right">Premium</th>
-                <th className="px-3 py-3 text-center">Period</th>
-                <th className="px-3 py-3 text-center">Status</th>
-                <th className="px-3 py-3 text-center">Scheme</th>
-                <th className="px-3 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {records.map(r => {
+          <>
+            {/* Desktop */}
+            <div className="hidden md:block overflow-x-hidden max-h-[60vh] overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 z-10">
+                  <tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
+                    <th className="px-4 py-3 text-left">Cattle</th>
+                    <th className="px-3 py-3 text-left">Provider</th>
+                    <th className="px-3 py-3 text-left">Policy #</th>
+                    <th className="px-3 py-3 text-right">Insured</th>
+                    <th className="px-3 py-3 text-right">Premium</th>
+                    <th className="px-3 py-3 text-center">Period</th>
+                    <th className="px-3 py-3 text-center">Status</th>
+                    <th className="px-3 py-3 text-center">Scheme</th>
+                    <th className="px-3 py-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {records.map((r, i) => {
+                    const daysLeft = Math.ceil((new Date(r.endDate) - new Date()) / 86400000);
+                    const statusColor = { active: 'bg-green-100 text-green-700', expired: 'bg-red-100 text-red-700', claimed: 'bg-blue-100 text-blue-700', cancelled: 'bg-gray-100 text-gray-700' };
+                    return (
+                      <tr key={r._id} className={`border-b ${i % 2 ? 'bg-gray-50/50 dark:bg-gray-800/20' : ''} hover:bg-gray-50 dark:hover:bg-gray-800/50`}>
+                        <td className="px-4 py-3 font-medium">Tag {r.cattleId?.tagNumber || '-'}<br/><span className="text-xs text-gray-400">{r.cattleId?.breed}</span></td>
+                        <td className="px-3 py-3">{r.provider}</td>
+                        <td className="px-3 py-3 font-mono text-xs">{r.policyNumber}</td>
+                        <td className="px-3 py-3 text-right font-semibold">{formatCurrency(r.sumInsured)}</td>
+                        <td className="px-3 py-3 text-right">{formatCurrency(r.premium)}</td>
+                        <td className="px-3 py-3 text-center text-xs">{formatDate(r.startDate)}<br/>to {formatDate(r.endDate)}{r.status === 'active' && daysLeft <= 30 && <span className="block text-orange-500 font-medium">{daysLeft}d left</span>}</td>
+                        <td className="px-3 py-3 text-center"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[r.status] || ''}`}>{r.status}</span></td>
+                        <td className="px-3 py-3 text-xs text-center">{r.govtScheme || '-'}</td>
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          <button onClick={() => openEdit(r)} className="text-blue-500 hover:text-blue-700 mr-2"><FiEdit2 size={14} /></button>
+                          <button onClick={() => handleDelete(r._id)} className="text-red-400 hover:text-red-600"><FiTrash2 size={14} /></button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile */}
+            <div className="md:hidden divide-y dark:divide-gray-800">
+              {records.map((r, i) => {
                 const daysLeft = Math.ceil((new Date(r.endDate) - new Date()) / 86400000);
                 const statusColor = { active: 'bg-green-100 text-green-700', expired: 'bg-red-100 text-red-700', claimed: 'bg-blue-100 text-blue-700', cancelled: 'bg-gray-100 text-gray-700' };
                 return (
-                  <tr key={r._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <td className="px-4 py-3 font-medium">Tag {r.cattleId?.tagNumber || '-'}<br/><span className="text-xs text-gray-400">{r.cattleId?.breed}</span></td>
-                    <td className="px-3 py-3">{r.provider}</td>
-                    <td className="px-3 py-3 font-mono text-xs">{r.policyNumber}</td>
-                    <td className="px-3 py-3 text-right font-semibold">{formatCurrency(r.sumInsured)}</td>
-                    <td className="px-3 py-3 text-right">{formatCurrency(r.premium)}</td>
-                    <td className="px-3 py-3 text-center text-xs">{formatDate(r.startDate)}<br/>to {formatDate(r.endDate)}{r.status === 'active' && daysLeft <= 30 && <span className="block text-orange-500 font-medium">{daysLeft}d left</span>}</td>
-                    <td className="px-3 py-3 text-center"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[r.status] || ''}`}>{r.status}</span></td>
-                    <td className="px-3 py-3 text-xs text-center">{r.govtScheme || '-'}</td>
-                    <td className="px-3 py-3 whitespace-nowrap">
-                      <button onClick={() => openEdit(r)} className="text-blue-500 hover:text-blue-700 mr-2"><FiEdit2 size={14} /></button>
-                      <button onClick={() => handleDelete(r._id)} className="text-red-400 hover:text-red-600"><FiTrash2 size={14} /></button>
-                    </td>
-                  </tr>
+                  <div key={r._id} className="p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">Tag {r.cattleId?.tagNumber || '-'}</p>
+                        <p className="text-xs text-gray-400">{r.cattleId?.breed} • {r.provider}</p>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[r.status] || ''}`}>{r.status}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-gray-400">Sum Insured</p>
+                        <p className="font-semibold">{formatCurrency(r.sumInsured)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-400">Premium</p>
+                        <p className="font-semibold">{formatCurrency(r.premium)}</p>
+                      </div>
+                    </div>
+                    {r.status === 'active' && daysLeft <= 30 && (
+                      <div className="text-xs text-orange-600 bg-orange-50 rounded px-2 py-1">
+                        ⚠️ Expires in {daysLeft} days ({formatDate(r.endDate)})
+                      </div>
+                    )}
+                    <div className="flex gap-2 pt-2">
+                      <button onClick={() => openEdit(r)} className="flex-1 btn-secondary text-xs py-1.5 flex items-center justify-center gap-1"><FiEdit2 size={12} /> Edit</button>
+                      <button onClick={() => handleDelete(r._id)} className="btn-danger text-xs py-1.5 px-2"><FiTrash2 size={14} /></button>
+                    </div>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
         <Pagination page={pagination.page} pages={pagination.pages} total={pagination.total} onPageChange={p => setFilters({ ...filters, page: p })} />
       </div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../utils/api';
 import { formatDate, formatCurrency } from '../../utils/helpers';
 import Modal from '../../components/Modal';
-import DataTable from '../../components/DataTable';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import Pagination from '../../components/Pagination';
 import { FiPlus, FiEdit2, FiTrash2, FiAlertCircle, FiDownload, FiFileText, FiHeart, FiLayers, FiClock } from 'react-icons/fi';
 import { FaIndianRupeeSign } from 'react-icons/fa6';
@@ -32,6 +32,9 @@ export default function HealthRecords() {
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [summary, setSummary] = useState({ totalCost: 0, count: 0, byType: {} });
+  
+  // Confirm dialog state
+  const [confirm, setConfirm] = useState({ open: false, title: '', message: '', onConfirm: null, variant: 'danger' });
 
   useEffect(() => { api.get('/cattle', { params: { limit: 500 } }).then(r => setCattleList(r.data.data)).catch(() => {}); }, []);
 
@@ -66,40 +69,27 @@ export default function HealthRecords() {
     setEditId(r._id); setModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this record?')) return;
-    try { await api.delete(`/health/${id}`); toast.success('Deleted'); fetch(); } catch { toast.error('Failed'); }
+  const handleDelete = (id) => {
+    setConfirm({ 
+      open: true, 
+      title: 'Delete Record?', 
+      message: 'This health record will be permanently deleted.', 
+      variant: 'danger', 
+      onConfirm: async () => {
+        try { await api.delete(`/health/${id}`); toast.success('Deleted'); fetch(); } catch { toast.error('Failed'); }
+      }
+    });
   };
 
-  const columns = [
-    { key: 'date', label: 'Date', render: r => <span className="text-gray-600 dark:text-gray-400">{formatDate(r.date)}</span> },
-    { key: 'cattle', label: 'Cattle', render: r => <span className="font-semibold dark:text-white">{r.cattleId?.tagNumber || '-'}</span> },
-    { key: 'type', label: 'Type', render: r => <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${typeBadge[r.type]}`}>{r.type}</span> },
-    { key: 'description', label: 'Description', render: r => <span className="truncate max-w-[200px] block dark:text-gray-300">{r.description}</span> },
-    { key: 'medicine', label: 'Medicine', render: r => <span className="dark:text-gray-400">{r.medicine || '-'}</span> },
-    { key: 'cost', label: 'Cost', render: r => r.cost ? <span className="font-bold text-red-600 dark:text-red-400">{formatCurrency(r.cost)}</span> : <span className="text-gray-400">-</span> },
-    { key: 'nextDue', label: 'Next Due', render: r => r.nextDueDate ? (
-      <span className="text-xs font-semibold px-2 py-1 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400">
-        {formatDate(r.nextDueDate)}
-      </span>
-    ) : <span className="text-gray-400">-</span> },
-    { key: 'actions', label: '', render: r => (
-      <div className="flex gap-1.5">
-        <button onClick={() => handleEdit(r)} className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors"><FiEdit2 size={15} /></button>
-        <button onClick={() => handleDelete(r._id)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"><FiTrash2 size={15} /></button>
-      </div>
-    )},
-  ];
-
   const summaryCardsData = [
-    { label: 'Total Records', value: summary.count, icon: FiLayers, gradient: 'from-blue-500 to-cyan-600' },
-    { label: 'Total Cost', value: formatCurrency(summary.totalCost), icon: FaIndianRupeeSign, gradient: 'from-red-500 to-rose-600' },
-    ...(summary.byType.vaccination ? [{ label: 'Vaccinations', value: summary.byType.vaccination, icon: FiHeart, gradient: 'from-indigo-500 to-blue-600' }] : []),
-    ...(summary.byType.treatment ? [{ label: 'Treatments', value: summary.byType.treatment, icon: FiHeart, gradient: 'from-amber-500 to-orange-600' }] : []),
+    { label: 'Total Records', value: summary.count, color: 'blue' },
+    { label: 'Total Cost', value: formatCurrency(summary.totalCost), color: 'red' },
+    ...(summary.byType.vaccination ? [{ label: 'Vaccinations', value: summary.byType.vaccination, color: 'indigo' }] : []),
+    ...(summary.byType.treatment ? [{ label: 'Treatments', value: summary.byType.treatment, color: 'amber' }] : []),
   ];
 
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
@@ -107,37 +97,39 @@ export default function HealthRecords() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Health Records 💉</h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm">Vaccinations, treatments & checkups</p>
           </div>
-          <button onClick={() => { setForm(defaultForm); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2"><FiPlus size={16} /> Add Record</button>
-        </div>
-        <div className="flex gap-2 justify-center">
-          <button onClick={() => exportCsv({
-            filename: 'health_records',
-            headers: ['Date', 'Cattle', 'Type', 'Description', 'Medicine', 'Cost', 'Vet', 'Next Due'],
-            rows: records.map(r => [formatDate(r.date), r.cattleId?.tagNumber || '-', r.type, r.description, r.medicine || '', r.cost || 0, r.vetName || '', r.nextDueDate ? formatDate(r.nextDueDate) : '']),
-          })} className="btn-secondary flex items-center gap-2 text-sm"><FiFileText size={15} /> Export CSV</button>
-          <button onClick={() => exportPdf({
-            title: 'Health Records Report',
-            period: `${filters.startDate || 'All'} to ${filters.endDate || 'Now'}`,
-            summaryCards: summaryCardsData.map(s => ({ label: s.label, value: s.value })),
-            tableHeaders: ['Date', 'Cattle', 'Type', 'Description', 'Medicine', 'Cost', 'Next Due'],
-            tableRows: records.map(r => [formatDate(r.date), r.cattleId?.tagNumber || '-', r.type, r.description, r.medicine || '-', r.cost ? formatCurrency(r.cost) : '-', r.nextDueDate ? formatDate(r.nextDueDate) : '-']),
-          })} className="btn-secondary flex items-center gap-2 text-sm"><FiDownload size={15} /> Export PDF</button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => exportCsv({
+              filename: 'health_records',
+              headers: ['Date', 'Cattle', 'Type', 'Description', 'Medicine', 'Cost', 'Vet', 'Next Due'],
+              rows: records.map(r => [formatDate(r.date), r.cattleId?.tagNumber || '-', r.type, r.description, r.medicine || '', r.cost || 0, r.vetName || '', r.nextDueDate ? formatDate(r.nextDueDate) : '']),
+            })} className="btn-secondary flex items-center gap-2 text-sm"><FiFileText size={15} /> Export CSV</button>
+            <button onClick={() => exportPdf({
+              title: 'Health Records Report',
+              period: `${filters.startDate || 'All'} to ${filters.endDate || 'Now'}`,
+              summaryCards: summaryCardsData.map(s => ({ label: s.label, value: s.value })),
+              tableHeaders: ['Date', 'Cattle', 'Type', 'Description', 'Medicine', 'Cost', 'Next Due'],
+              tableRows: records.map(r => [formatDate(r.date), r.cattleId?.tagNumber || '-', r.type, r.description, r.medicine || '-', r.cost ? formatCurrency(r.cost) : '-', r.nextDueDate ? formatDate(r.nextDueDate) : '-']),
+            })} className="btn-secondary flex items-center gap-2 text-sm"><FiDownload size={15} /> Export PDF</button>
+            <button onClick={() => { setForm(defaultForm); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2"><FiPlus size={16} /> Add Record</button>
+          </div>
         </div>
       </div>
 
       {/* Upcoming Vaccinations Alert */}
       {upcoming.length > 0 && (
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 p-5 text-white shadow-lg">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-12 translate-x-12" />
-          <div className="relative z-10">
-            <h3 className="font-bold flex items-center gap-2 mb-3"><FiAlertCircle size={18} /> Upcoming Due — Next 14 Days</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {upcoming.slice(0, 6).map((u, i) => (
-                <div key={i} className="bg-white/15 backdrop-blur-sm rounded-xl p-3 text-sm">
-                  <p className="font-semibold">{u.cattleId?.tagNumber}</p>
-                  <p className="text-white/80 text-xs">{u.description} — {formatDate(u.nextDueDate)}</p>
-                </div>
-              ))}
+        <div className="bg-orange-100 border-l-4 border-orange-500 p-4 rounded-lg dark:bg-orange-900/20 dark:border-orange-400">
+          <div className="flex items-start">
+            <FiAlertCircle className="text-orange-500 dark:text-orange-400 mt-0.5 mr-3" size={18} />
+            <div className="flex-1">
+              <h3 className="font-semibold text-orange-800 dark:text-orange-200 text-sm">Upcoming Due — Next 14 Days</h3>
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {upcoming.slice(0, 6).map((u, i) => (
+                  <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-2 text-sm">
+                    <p className="font-medium text-gray-900 dark:text-white">{u.cattleId?.tagNumber}</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-xs">{u.description} — {formatDate(u.nextDueDate)}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -163,30 +155,110 @@ export default function HealthRecords() {
 
       {/* Summary Cards */}
       {!loading && records.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {summaryCardsData.map((s, i) => (
-            <div key={i} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${s.gradient} p-5 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5`}>
-              <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
-              <div className="relative z-10">
-                <s.icon size={20} className="mb-2 opacity-80" />
-                <p className="text-2xl font-extrabold">{s.value}</p>
-                <p className="text-white/80 text-xs mt-1">{s.label}</p>
-              </div>
+            <div key={i} className={`bg-${s.color}-50 dark:bg-${s.color}-900/20 rounded-xl p-3 text-center`}>
+              <p className={`text-xs text-${s.color}-500`}>{s.label}</p>
+              <p className={`text-2xl font-bold text-${s.color}-700 dark:text-${s.color}-300`}>{s.value}</p>
             </div>
           ))}
         </div>
       )}
 
       {/* Table */}
-      <div className="card !p-0 overflow-hidden">
+      <div className="card p-0 overflow-hidden">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <div className="animate-spin rounded-full h-10 w-10 border-3 border-emerald-200 dark:border-emerald-900 border-t-emerald-600"></div>
-            <p className="text-sm text-gray-400 dark:text-gray-500">Loading records...</p>
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
           </div>
+        ) : records.length === 0 ? (
+          <div className="py-8 text-center text-gray-400">No health records found</div>
         ) : (
           <>
-            <DataTable columns={columns} data={records} emptyMessage="No health records found" />
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
+                  <th className="px-4 py-2 text-left">Date</th>
+                  <th className="px-3 py-2 text-left">Cattle</th>
+                  <th className="px-3 py-2 text-left">Type</th>
+                  <th className="px-3 py-2 text-left">Description</th>
+                  <th className="px-3 py-2 text-left">Medicine</th>
+                  <th className="px-3 py-2 text-left">Cost</th>
+                  <th className="px-3 py-2 text-left">Next Due</th>
+                  <th className="px-3 py-2">Actions</th>
+                </tr></thead>
+                <tbody>
+                  {records.map((r, i) => (
+                    <tr key={r._id} className={`border-b ${i % 2 ? 'bg-gray-50/50 dark:bg-gray-800/20' : ''}`}>
+                      <td className="px-4 py-2">
+                        <span className="text-gray-600 dark:text-gray-400">{formatDate(r.date)}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className="font-semibold dark:text-white">{r.cattleId?.tagNumber || '-'}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${typeBadge[r.type]}`}>{r.type}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className="truncate max-w-[200px] block dark:text-gray-300">{r.description}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className="dark:text-gray-400">{r.medicine || '-'}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        {r.cost ? <span className="font-bold text-red-600 dark:text-red-400">{formatCurrency(r.cost)}</span> : <span className="text-gray-400">-</span>}
+                      </td>
+                      <td className="px-3 py-2">
+                        {r.nextDueDate ? (
+                          <span className="text-xs font-semibold px-2 py-1 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400">
+                            {formatDate(r.nextDueDate)}
+                          </span>
+                        ) : <span className="text-gray-400">-</span>}
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex gap-1.5">
+                          <button onClick={() => handleEdit(r)} className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors"><FiEdit2 size={15} /></button>
+                          <button onClick={() => handleDelete(r._id)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"><FiTrash2 size={15} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden divide-y dark:divide-gray-800">
+              {records.map((r, i) => (
+                <div key={r._id} className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold dark:text-white">{r.cattleId?.tagNumber || '-'}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${typeBadge[r.type]}`}>{r.type}</span>
+                      </div>
+                      <p className="text-xs text-gray-400">{formatDate(r.date)}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <button onClick={() => handleEdit(r)} className="p-2 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors"><FiEdit2 size={16} /></button>
+                      <button onClick={() => handleDelete(r._id)} className="p-2 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"><FiTrash2 size={16} /></button>
+                    </div>
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    <p className="text-gray-900 dark:text-gray-100">{r.description}</p>
+                    {r.medicine && <p className="text-gray-600 dark:text-gray-400"><strong>Medicine:</strong> {r.medicine}</p>}
+                    {r.cost && <p className="font-bold text-red-600 dark:text-red-400"><strong>Cost:</strong> {formatCurrency(r.cost)}</p>}
+                    {r.nextDueDate && (
+                      <p className="text-orange-700 dark:text-orange-400">
+                        <strong>Next Due:</strong> {formatDate(r.nextDueDate)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
             <Pagination page={pagination.page} pages={pagination.pages} total={pagination.total} onPageChange={p => setFilters({ ...filters, page: p })} />
           </>
         )}
@@ -213,6 +285,16 @@ export default function HealthRecords() {
           </div>
         </form>
       </Modal>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog 
+        isOpen={confirm.open} 
+        onClose={() => setConfirm({ ...confirm, open: false })} 
+        title={confirm.title} 
+        message={confirm.message} 
+        variant={confirm.variant} 
+        onConfirm={confirm.onConfirm} 
+      />
     </div>
   );
 }

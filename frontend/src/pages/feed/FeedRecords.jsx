@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../utils/api';
 import { formatDate, formatCurrency } from '../../utils/helpers';
 import Modal from '../../components/Modal';
-import DataTable from '../../components/DataTable';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import Pagination from '../../components/Pagination';
 import { FiPlus, FiEdit2, FiTrash2, FiDownload, FiFileText, FiPackage, FiLayers, FiDatabase } from 'react-icons/fi';
 import { FaIndianRupeeSign } from 'react-icons/fa6';
@@ -27,6 +27,7 @@ export default function FeedRecords() {
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [summary, setSummary] = useState({ totalCost: 0, totalQty: 0, count: 0, byType: {} });
+  const [confirm, setConfirm] = useState({ open: false, title: '', message: '', onConfirm: null, variant: 'danger' });
 
   const fetch = () => {
     setLoading(true);
@@ -60,37 +61,19 @@ export default function FeedRecords() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this record?')) return;
-    try { await api.delete(`/feed/${id}`); toast.success('Deleted'); fetch(); } catch { toast.error('Failed'); }
+    setConfirm({ 
+      open: true, 
+      title: 'Delete Record?', 
+      message: 'Delete this feed record? This action cannot be undone.', 
+      variant: 'danger',
+      onConfirm: async () => {
+        try { await api.delete(`/feed/${id}`); toast.success('Deleted'); fetch(); } catch { toast.error('Failed'); }
+      }
+    });
   };
 
-  const columns = [
-    { key: 'date', label: 'Date', render: r => <span className="text-gray-600 dark:text-gray-400">{formatDate(r.date)}</span> },
-    { key: 'feedType', label: 'Feed Type', render: r => (
-      <span className="inline-flex items-center gap-1.5 font-semibold text-gray-800 dark:text-gray-200">
-        <FiPackage size={13} className="text-emerald-500" /> {r.feedType}
-      </span>
-    )},
-    { key: 'quantity', label: 'Quantity', render: r => <span className="font-medium dark:text-gray-300">{r.quantity} {r.unit || 'kg'}</span> },
-    { key: 'cost', label: 'Cost', render: r => <span className="font-bold text-orange-600 dark:text-orange-400">{formatCurrency(r.cost)}</span> },
-    { key: 'notes', label: 'Notes', render: r => <span className="text-gray-500 dark:text-gray-400 truncate max-w-[150px] block">{r.notes || '-'}</span> },
-    { key: 'actions', label: '', render: r => (
-      <div className="flex gap-1.5">
-        <button onClick={() => handleEdit(r)} className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors" title="Edit"><FiEdit2 size={15} /></button>
-        <button onClick={() => handleDelete(r._id)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" title="Delete"><FiTrash2 size={15} /></button>
-      </div>
-    )},
-  ];
-
-  const summaryCards = [
-    { label: 'Total Feed Cost', value: formatCurrency(summary.totalCost), icon: FaIndianRupeeSign, gradient: 'from-orange-500 to-amber-600' },
-    { label: 'Total Quantity', value: `${summary.totalQty.toFixed(1)} kg`, icon: FiDatabase, gradient: 'from-emerald-500 to-teal-600' },
-    { label: 'Records', value: summary.count, icon: FiLayers, gradient: 'from-blue-500 to-cyan-600' },
-    { label: 'Feed Types', value: Object.keys(summary.byType).length, icon: FiPackage, gradient: 'from-violet-500 to-purple-600' },
-  ];
-
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
@@ -98,21 +81,26 @@ export default function FeedRecords() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Feed Management 🌾</h1>
             <p className="text-gray-500 dark:text-gray-400 text-sm">Track feed usage, types & costs</p>
           </div>
-          <button onClick={() => { setForm(defaultForm); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2"><FiPlus size={16} /> Add Record</button>
-        </div>
-        <div className="flex gap-2 justify-center">
-          <button onClick={() => exportCsv({
-            filename: 'feed_records',
-            headers: ['Date', 'Feed Type', 'Quantity', 'Unit', 'Cost', 'Notes'],
-            rows: records.map(r => [formatDate(r.date), r.feedType, r.quantity, r.unit || 'kg', r.cost || 0, r.notes || '']),
-          })} className="btn-secondary flex items-center gap-2 text-sm"><FiFileText size={15} /> Export CSV</button>
-          <button onClick={() => exportPdf({
-            title: 'Feed Records Report',
-            period: `${filters.startDate || 'All'} to ${filters.endDate || 'Now'}`,
-            summaryCards: summaryCards.map(s => ({ label: s.label, value: s.value })),
-            tableHeaders: ['Date', 'Feed Type', 'Quantity', 'Cost', 'Notes'],
-            tableRows: records.map(r => [formatDate(r.date), r.feedType, `${r.quantity} ${r.unit || 'kg'}`, formatCurrency(r.cost), r.notes || '-']),
-          })} className="btn-secondary flex items-center gap-2 text-sm"><FiDownload size={15} /> Export PDF</button>
+          <div className="flex gap-2">
+            <button onClick={() => exportCsv({
+              filename: 'feed_records',
+              headers: ['Date', 'Feed Type', 'Quantity', 'Unit', 'Cost', 'Notes'],
+              rows: records.map(r => [formatDate(r.date), r.feedType, r.quantity, r.unit || 'kg', r.cost || 0, r.notes || '']),
+            })} className="btn-secondary flex items-center gap-2 text-sm"><FiFileText size={15} /> Export CSV</button>
+            <button onClick={() => exportPdf({
+              title: 'Feed Records Report',
+              period: `${filters.startDate || 'All'} to ${filters.endDate || 'Now'}`,
+              summaryCards: [
+                { label: 'Total Feed Cost', value: formatCurrency(summary.totalCost) },
+                { label: 'Total Quantity', value: `${summary.totalQty.toFixed(1)} kg` },
+                { label: 'Records', value: summary.count },
+                { label: 'Feed Types', value: Object.keys(summary.byType).length }
+              ],
+              tableHeaders: ['Date', 'Feed Type', 'Quantity', 'Cost', 'Notes'],
+              tableRows: records.map(r => [formatDate(r.date), r.feedType, `${r.quantity} ${r.unit || 'kg'}`, formatCurrency(r.cost), r.notes || '-']),
+            })} className="btn-secondary flex items-center gap-2 text-sm"><FiDownload size={15} /> Export PDF</button>
+            <button onClick={() => { setForm(defaultForm); setEditId(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2"><FiPlus size={16} /> Add Record</button>
+          </div>
         </div>
       </div>
 
@@ -126,30 +114,121 @@ export default function FeedRecords() {
 
       {/* Summary Cards */}
       {!loading && records.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {summaryCards.map((s, i) => (
-            <div key={i} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${s.gradient} p-5 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5`}>
-              <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
-              <div className="relative z-10">
-                <s.icon size={20} className="mb-2 opacity-80" />
-                <p className="text-2xl font-extrabold">{s.value}</p>
-                <p className="text-white/80 text-xs mt-1">{s.label}</p>
-              </div>
-            </div>
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-3 text-center">
+            <p className="text-xs text-orange-500">Total Feed Cost</p>
+            <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{formatCurrency(summary.totalCost)}</p>
+          </div>
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 text-center">
+            <p className="text-xs text-emerald-500">Total Quantity</p>
+            <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{summary.totalQty.toFixed(1)} kg</p>
+          </div>
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 text-center">
+            <p className="text-xs text-blue-500">Records</p>
+            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{summary.count}</p>
+          </div>
+          <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-3 text-center">
+            <p className="text-xs text-purple-500">Feed Types</p>
+            <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{Object.keys(summary.byType).length}</p>
+          </div>
         </div>
       )}
 
       {/* Table */}
-      <div className="card !p-0 overflow-hidden">
+      <div className="card p-0 overflow-hidden">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <div className="animate-spin rounded-full h-10 w-10 border-3 border-emerald-200 dark:border-emerald-900 border-t-emerald-600"></div>
             <p className="text-sm text-gray-400 dark:text-gray-500">Loading records...</p>
           </div>
+        ) : records.length === 0 ? (
+          <div className="py-8 text-center text-gray-400">
+            <p className="mb-3">No feed records found</p>
+            <button onClick={() => { setForm(defaultForm); setEditId(null); setModalOpen(true); }} className="btn-primary text-sm"><FiPlus size={14} className="inline mr-1" /> Add Record</button>
+          </div>
         ) : (
           <>
-            <DataTable columns={columns} data={records} emptyMessage="No feed records found" />
+            {/* Desktop */}
+            <div className="hidden md:block overflow-x-hidden max-h-[60vh] overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 z-10"><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
+                  <th className="px-4 py-2 text-left">Date</th>
+                  <th className="px-3 py-2 text-left">Feed Type</th>
+                  <th className="px-3 py-2 text-center">Quantity</th>
+                  <th className="px-3 py-2 text-center">Cost</th>
+                  <th className="px-3 py-2 text-left">Notes</th>
+                  <th className="px-3 py-2 text-center">Actions</th>
+                </tr></thead>
+                <tbody>
+                  {records.map((r, i) => (
+                    <tr key={r._id} className={`border-b ${i % 2 ? 'bg-gray-50/50 dark:bg-gray-800/20' : ''}`}>
+                      <td className="px-4 py-2">
+                        <span className="text-gray-600 dark:text-gray-400">{formatDate(r.date)}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className="inline-flex items-center gap-1.5 font-semibold text-gray-800 dark:text-gray-200">
+                          <FiPackage size={13} className="text-emerald-500" /> {r.feedType}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <span className="font-medium dark:text-gray-300">{r.quantity} {r.unit || 'kg'}</span>
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <span className="font-bold text-orange-600 dark:text-orange-400">{formatCurrency(r.cost)}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className="text-gray-500 dark:text-gray-400 truncate max-w-[150px] block">{r.notes || '-'}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex gap-1.5 justify-center">
+                          <button onClick={() => handleEdit(r)} className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors" title="Edit">
+                            <FiEdit2 size={15} />
+                          </button>
+                          <button onClick={() => handleDelete(r._id)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" title="Delete">
+                            <FiTrash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile */}
+            <div className="md:hidden divide-y dark:divide-gray-800">
+              {records.map((r, i) => (
+                <div key={r._id} className="p-3 space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <FiPackage size={14} className="text-emerald-500" />
+                        <span className="font-semibold text-gray-800 dark:text-gray-200">{r.feedType}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{formatDate(r.date)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-orange-600 dark:text-orange-400">{formatCurrency(r.cost)}</p>
+                      <p className="text-xs text-gray-500">{r.quantity} {r.unit || 'kg'}</p>
+                    </div>
+                  </div>
+                  {r.notes && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded px-2 py-1">
+                      {r.notes}
+                    </p>
+                  )}
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={() => handleEdit(r)} className="flex-1 btn-secondary text-xs py-1.5 flex items-center justify-center gap-1">
+                      <FiEdit2 size={12} /> Edit
+                    </button>
+                    <button onClick={() => handleDelete(r._id)} className="btn-danger text-xs py-1.5 px-3">
+                      <FiTrash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
             <Pagination page={pagination.page} pages={pagination.pages} total={pagination.total} onPageChange={p => setFilters({ ...filters, page: p })} />
           </>
         )}
@@ -172,6 +251,15 @@ export default function FeedRecords() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog 
+        isOpen={confirm.open} 
+        onClose={() => setConfirm({ ...confirm, open: false })} 
+        title={confirm.title} 
+        message={confirm.message} 
+        variant={confirm.variant} 
+        onConfirm={confirm.onConfirm} 
+      />
     </div>
   );
 }
