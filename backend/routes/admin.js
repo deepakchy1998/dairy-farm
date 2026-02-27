@@ -1302,4 +1302,77 @@ router.post('/seed-dummy-data', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ═══════════════════════════════════════
+// DELETE DUMMY DATA (admin only)
+// ═══════════════════════════════════════
+router.delete('/seed-dummy-data', async (req, res, next) => {
+  try {
+    const farmDoc = await Farm.findOne({ userId: req.user.id }) || await Farm.findOne();
+    if (!farmDoc) return res.status(400).json({ success: false, message: 'No farm found' });
+    const farmId = farmDoc._id;
+
+    // Known dummy tag numbers and names
+    const dummyTags = ['GIR-001', 'HF-002', 'SAH-003', 'JER-004', 'MUR-005', 'CB-006', 'GIR-007', 'HF-008', 'SAH-009', 'JER-010'];
+    const dummyEmployees = ['Raju Yadav', 'Sita Devi', 'Mohan Lal', 'Bhim Singh', 'Lakshmi Bai', 'Arjun Patel', 'Kiran Solanki', 'Gopal Das'];
+    const dummyCustomers = ['Ramesh Sharma', 'Sunita Patel', 'Vijay Kumar', 'Meena Devi', 'Prakash Joshi', 'Anita Singh', 'Govind Rao', 'Kavita Bhen'];
+    const dummyPolicies = ['NIC-2024-001', 'UII-2024-045', 'NIC-2024-002', 'OIC-2024-078', 'NIC-2024-003', 'UII-2023-088', 'OIC-2024-099'];
+
+    const results = {};
+
+    // Find dummy cattle IDs first (needed for related records)
+    const dummyCattle = await Cattle.find({ farmId, tagNumber: { $in: dummyTags } });
+    const dummyCattleIds = dummyCattle.map(c => c._id);
+
+    // Delete milk records for dummy cattle
+    const milkDel = await MilkRecord.deleteMany({ farmId, cattleId: { $in: dummyCattleIds } });
+    results.milkRecords = milkDel.deletedCount;
+
+    // Delete health records for dummy cattle
+    const healthDel = await HealthRecord.deleteMany({ farmId, cattleId: { $in: dummyCattleIds } });
+    results.healthRecords = healthDel.deletedCount;
+
+    // Delete breeding records for dummy cattle
+    const breedDel = await BreedingRecord.deleteMany({ farmId, cattleId: { $in: dummyCattleIds } });
+    results.breedingRecords = breedDel.deletedCount;
+
+    // Delete insurance for dummy cattle
+    const insDel = await Insurance.deleteMany({ farmId, policyNumber: { $in: dummyPolicies } });
+    results.insurance = insDel.deletedCount;
+
+    // Delete dummy cattle
+    const cattleDel = await Cattle.deleteMany({ farmId, tagNumber: { $in: dummyTags } });
+    results.cattle = cattleDel.deletedCount;
+
+    // Delete dummy employees
+    const empDel = await Employee.deleteMany({ farmId, name: { $in: dummyEmployees } });
+    results.employees = empDel.deletedCount;
+
+    // Delete dummy customers and their deliveries
+    const dummyCusts = await Customer.find({ farmId, name: { $in: dummyCustomers } });
+    const dummyCustIds = dummyCusts.map(c => c._id);
+    const delDel = await MilkDelivery.deleteMany({ farmId, customerId: { $in: dummyCustIds } });
+    results.milkDeliveries = delDel.deletedCount;
+    const custDel = await Customer.deleteMany({ farmId, name: { $in: dummyCustomers } });
+    results.customers = custDel.deletedCount;
+
+    // Delete dummy feed records (by known descriptions)
+    const feedDel = await FeedRecord.deleteMany({ farmId, notes: { $in: ['Napier grass from own field', 'Wheat straw', 'Amul Dan 20% protein', 'Agrimin Forte', 'Maize silage', ''] }, feedType: { $in: ['Green Fodder', 'Dry Hay', 'Concentrate', 'Cotton Seed', 'Mineral Mix', 'Silage', 'Mustard Cake', 'Wheat Bran', 'Rice Bran'] } });
+    results.feedRecords = feedDel.deletedCount;
+
+    // Delete dummy expenses (by known descriptions)
+    const dummyExpDescs = ['Monthly cattle feed supply', 'FMD and HS vaccines batch', 'Milking machine servicing', 'Employee salary advance - Raju', 'Milk tanker transportation', 'Cattle shed roof repair', 'Mineral mix and concentrate', 'Mastitis treatment medicines', 'New water trough installation', 'Electricity bill - farm'];
+    const expDel = await Expense.deleteMany({ farmId, description: { $in: dummyExpDescs } });
+    results.expenses = expDel.deletedCount;
+
+    // Delete dummy revenue (by known descriptions)
+    const dummyRevDescs = ['Daily milk sale - retail', 'Dairy cooperative collection', 'Cow dung manure - sold to farmer', 'Government subsidy received', 'Vermicompost sale'];
+    const revDel = await Revenue.deleteMany({ farmId, description: { $in: dummyRevDescs } });
+    results.revenue = revDel.deletedCount;
+
+    await logActivity(farmId, 'system', 'Dummy data deleted via admin panel');
+
+    res.json({ success: true, message: 'Dummy data deleted successfully!', data: results });
+  } catch (err) { next(err); }
+});
+
 export default router;

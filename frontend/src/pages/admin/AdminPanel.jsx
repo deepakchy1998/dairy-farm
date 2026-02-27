@@ -2170,6 +2170,17 @@ export default function AdminPanel() {
           }} className="bg-amber-500 hover:bg-amber-600 text-white py-2.5 px-6 rounded-xl font-semibold text-sm flex items-center gap-2 transition">
             🌱 Seed Dummy Data
           </button>
+          <button onClick={async () => {
+            if (!window.confirm('This will DELETE all dummy data from your farm. Your real data will NOT be affected. Continue?')) return;
+            try {
+              toast.loading('Deleting dummy data...', { id: 'seed-del' });
+              const r = await api.delete('/admin/seed-dummy-data');
+              const dd = r.data.data;
+              toast.success(`Deleted! 🐄${dd.cattle} 🥛${dd.milkRecords} 💉${dd.healthRecords} 🐣${dd.breedingRecords} 🌾${dd.feedRecords} 💸${dd.expenses} 💰${dd.revenue} 👷${dd.employees} 🏘️${dd.customers} 🚚${dd.milkDeliveries} 🛡️${dd.insurance}`, { id: 'seed-del', duration: 8000 });
+            } catch (err) { toast.error(err.response?.data?.message || 'Delete failed', { id: 'seed-del' }); }
+          }} className="bg-red-500 hover:bg-red-600 text-white py-2.5 px-6 rounded-xl font-semibold text-sm flex items-center gap-2 transition ml-3">
+            🗑️ Delete Dummy Data
+          </button>
         </div>
       )}
 
