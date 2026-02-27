@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
@@ -51,6 +51,16 @@ function ProtectedLayout({ children, adminOnly }) {
 }
 
 export default function App() {
+  useEffect(() => {
+    import('./utils/api').then(({ default: api }) => {
+      api.get('/app-config').then(r => {
+        const name = r.data.data?.appName || 'DairyPro';
+        const tagline = r.data.data?.appTagline || 'Smart Dairy Farm Management';
+        document.title = `${name} - ${tagline}`;
+      }).catch(() => {});
+    });
+  }, []);
+
   return (
     <ThemeProvider>
     <AuthProvider>

@@ -6,12 +6,16 @@ import useDraggable from '../hooks/useDraggable';
 import { useAuth } from '../context/AuthContext';
 import { useAppConfig } from '../context/AppConfigContext';
 
-const SUGGESTIONS = ["How is my farm doing?", 'Analyze milk production', 'Which cattle need attention?', 'How to increase profit?'];
+const DEFAULT_SUGGESTIONS = ["How is my farm doing?", 'Analyze milk production', 'Which cattle need attention?', 'How to increase profit?'];
 
 export default function ChatBubble() {
   const [open, setOpen] = useState(false);
+  const appConfig = useAppConfig();
+  const suggestions = appConfig.chatbotSuggestions?.length ? appConfig.chatbotSuggestions : DEFAULT_SUGGESTIONS;
+  const chatbotName = appConfig.chatbotName || 'DairyPro AI';
+  const chatbotWelcome = appConfig.chatbotWelcome || "Namaste! 🐄 I have full access to your farm — cattle, milk, health, finance, staff & customers. Ask anything!";
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Namaste! 🐄 I have full access to your farm — cattle, milk, health, finance, staff & customers. Ask anything!" },
+    { role: 'assistant', content: chatbotWelcome },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -103,7 +107,7 @@ export default function ChatBubble() {
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center"><span className="text-lg">🤖</span></div>
               <div>
-                <p className="text-white font-semibold text-sm">DairyPro AI</p>
+                <p className="text-white font-semibold text-sm">{chatbotName}</p>
                 <p className="text-emerald-100 text-xs">AI Farm Advisor</p>
               </div>
             </div>
@@ -143,7 +147,7 @@ export default function ChatBubble() {
 
           {messages.length <= 2 && (
             <div className="px-3 py-2 flex gap-1.5 flex-wrap border-t dark:border-gray-700 bg-white dark:bg-gray-900 flex-shrink-0">
-              {SUGGESTIONS.map(s => (
+              {suggestions.map(s => (
                 <button key={s} onClick={() => send(s)} className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[11px] rounded-full hover:bg-emerald-100 dark:hover:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800">{s}</button>
               ))}
             </div>

@@ -1,4 +1,5 @@
 import { useAuth } from '../context/AuthContext';
+import { useAppConfig } from '../context/AppConfigContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { FiLock, FiCreditCard, FiSettings, FiLogOut, FiClock } from 'react-icons/fi';
@@ -11,6 +12,9 @@ const ALLOWED_PATHS = ['/subscription', '/settings', '/admin'];
 
 export default function Paywall({ children }) {
   const { user, subscription, subLoading, isSubscriptionActive, logout } = useAuth();
+  const appConfig = useAppConfig();
+  const appName = appConfig.appName || 'DairyPro';
+  const trialDays = appConfig.trialDays || 5;
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -71,7 +75,7 @@ export default function Paywall({ children }) {
           <p className="text-gray-500 dark:text-gray-400 mb-6">
             {subscription?.subscription
               ? 'Your subscription plan has expired. Please renew to continue accessing your farm data.'
-              : 'Your 5-day free trial has ended. Subscribe to a plan to continue using DairyPro.'
+              : `Your ${trialDays}-day free trial has ended. Subscribe to a plan to continue using ${appName}.`
             }
           </p>
 

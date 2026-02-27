@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../utils/api';
 import toast from 'react-hot-toast';
 import { FiEye, FiEyeOff, FiUser, FiMail, FiLock, FiPhone, FiMapPin, FiHome, FiCheck } from 'react-icons/fi';
 
@@ -27,6 +28,17 @@ export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  const [appName, setAppName] = useState('DairyPro');
+  const [appLogo, setAppLogo] = useState('🐄');
+  const [trialDays, setTrialDays] = useState(5);
+  useEffect(() => {
+    api.get('/app-config').then(r => {
+      setAppName(r.data.data?.appName || 'DairyPro');
+      setAppLogo(r.data.data?.appLogo || '🐄');
+      setTrialDays(r.data.data?.trialDays || 5);
+    }).catch(() => {});
+  }, []);
+
   // Auto-generate farm name from user name
   useEffect(() => {
     if (form.name && !form.farmName) {
@@ -39,7 +51,7 @@ export default function Register() {
     setLoading(true);
     try {
       const res = await register(form);
-      toast.success(res.message || 'Account created! Welcome to DairyPro 🐄');
+      toast.success(res.message || `Account created! Welcome to ${appName} 🐄`);
       navigate('/dashboard');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed');
@@ -55,9 +67,9 @@ export default function Register() {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
-          <span className="text-5xl">🐄</span>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-2">DairyPro</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Start your <span className="text-emerald-600 font-semibold">5-day free trial</span></p>
+          <span className="text-5xl">{appLogo}</span>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{appName}</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">Start your <span className="text-emerald-600 font-semibold">{trialDays}-day free trial</span></p>
         </div>
 
         <div className="card">

@@ -32,12 +32,14 @@ router.put('/', auth, admin, async (req, res, next) => {
     const arrayFields = [
       'employeeRoles', 'cattleCategories', 'cattleBreeds', 'healthRecordTypes',
       'expenseCategories', 'revenueCategories', 'feedTypes', 'paymentMethods', 'milkDeliverySessions',
+      'chatbotSuggestions',
     ];
     const numberFields = [
       'notificationRetentionDays', 'maxBackupRecords', 'trialDays', 'maxFileUploadMB', 'sessionTimeoutHours',
     ];
     const stringFields = [
       'maintenanceMessage', 'welcomeMessage', 'currencySymbol', 'dateFormat', 'milkUnit', 'weightUnit',
+      'appName', 'appLogo', 'appTagline', 'chatbotName', 'chatbotWelcome', 'chatbotFullWelcome',
     ];
     const boolFields = ['maintenanceMode', 'chatBubbleEnabled', 'customPlanEnabled'];
 
@@ -72,6 +74,15 @@ router.put('/', auth, admin, async (req, res, next) => {
         if (req.body.customPlanModulePrices[key] !== undefined) prices[key] = Number(req.body.customPlanModulePrices[key]) || 0;
       }
       config.customPlanModulePrices = prices;
+    }
+
+    // Chatbot quick actions (array of objects)
+    if (req.body.chatbotQuickActions !== undefined) {
+      if (Array.isArray(req.body.chatbotQuickActions)) {
+        config.chatbotQuickActions = req.body.chatbotQuickActions
+          .filter(a => a && a.label && a.message)
+          .map((a, i) => ({ label: String(a.label).trim(), message: String(a.message).trim(), sortOrder: Number(a.sortOrder) || i }));
+      }
     }
 
     // Module toggles (object of booleans)

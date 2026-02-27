@@ -1159,6 +1159,128 @@ export default function AdminPanel() {
               })}
             </div>
 
+            {/* Branding & Chatbot */}
+            <div className="card !p-0 overflow-hidden col-span-1 lg:col-span-2">
+              <div className="bg-gradient-to-r from-emerald-100 to-emerald-50 dark:from-emerald-900/40 dark:to-emerald-900/20 px-5 py-3 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-2">🎨 Branding & Chatbot</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Customize app name, logo, and chatbot behavior</p>
+              </div>
+              <div className="p-5 space-y-6">
+                {/* Branding */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Branding</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="label text-xs">App Name</label>
+                      <input type="text" className="input text-sm" value={appConfigForm.appName || 'DairyPro'}
+                        onChange={e => setAppConfigForm({ ...appConfigForm, appName: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="label text-xs">App Logo (emoji or URL)</label>
+                      <input type="text" className="input text-sm" value={appConfigForm.appLogo || '🐄'}
+                        onChange={e => setAppConfigForm({ ...appConfigForm, appLogo: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="label text-xs">App Tagline</label>
+                      <input type="text" className="input text-sm" value={appConfigForm.appTagline || 'Smart Dairy Farm Management'}
+                        onChange={e => setAppConfigForm({ ...appConfigForm, appTagline: e.target.value })} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chatbot */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Chatbot</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="label text-xs">Chatbot Name</label>
+                      <input type="text" className="input text-sm" value={appConfigForm.chatbotName || 'DairyPro AI'}
+                        onChange={e => setAppConfigForm({ ...appConfigForm, chatbotName: e.target.value })} />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="label text-xs">Chatbot Welcome Message (bubble)</label>
+                      <textarea className="input text-sm" rows={2} value={appConfigForm.chatbotWelcome || ''}
+                        onChange={e => setAppConfigForm({ ...appConfigForm, chatbotWelcome: e.target.value })}
+                        placeholder="Namaste! 🐄 I have full access to your farm..." />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="label text-xs">Chatbot Full Page Welcome (leave empty for default)</label>
+                      <textarea className="input text-sm" rows={3} value={appConfigForm.chatbotFullWelcome || ''}
+                        onChange={e => setAppConfigForm({ ...appConfigForm, chatbotFullWelcome: e.target.value })}
+                        placeholder="Leave empty to use default welcome message" />
+                    </div>
+                  </div>
+
+                  {/* Chatbot Suggestions */}
+                  <div className="mt-4">
+                    <label className="label text-xs">Chatbot Suggestions (bubble quick prompts)</label>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {(appConfigForm.chatbotSuggestions || []).map((s, i) => (
+                        <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-xs rounded-full border border-emerald-200 dark:border-emerald-800">
+                          {s}
+                          <button onClick={() => {
+                            const items = [...(appConfigForm.chatbotSuggestions || [])];
+                            items.splice(i, 1);
+                            setAppConfigForm({ ...appConfigForm, chatbotSuggestions: items });
+                          }} className="ml-1 text-emerald-400 hover:text-red-500">×</button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      <input type="text" className="input text-sm flex-1" placeholder="Add suggestion..."
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && e.target.value.trim()) {
+                            const items = [...(appConfigForm.chatbotSuggestions || []), e.target.value.trim()];
+                            setAppConfigForm({ ...appConfigForm, chatbotSuggestions: items });
+                            e.target.value = '';
+                          }
+                        }} />
+                      <button onClick={e => {
+                        const input = e.target.closest('div').querySelector('input');
+                        if (input.value.trim()) {
+                          const items = [...(appConfigForm.chatbotSuggestions || []), input.value.trim()];
+                          setAppConfigForm({ ...appConfigForm, chatbotSuggestions: items });
+                          input.value = '';
+                        }
+                      }} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500 hover:bg-emerald-600 text-white transition">Add</button>
+                    </div>
+                  </div>
+
+                  {/* Chatbot Quick Actions */}
+                  <div className="mt-4">
+                    <label className="label text-xs">Chatbot Quick Actions (full page — leave empty for defaults)</label>
+                    <div className="space-y-2 mt-1">
+                      {(appConfigForm.chatbotQuickActions || []).map((a, i) => (
+                        <div key={i} className="flex gap-2 items-center">
+                          <input type="text" className="input text-sm flex-1" placeholder="Label (e.g. 🥛 Today's Milk)" value={a.label || ''}
+                            onChange={e => {
+                              const items = [...(appConfigForm.chatbotQuickActions || [])];
+                              items[i] = { ...items[i], label: e.target.value };
+                              setAppConfigForm({ ...appConfigForm, chatbotQuickActions: items });
+                            }} />
+                          <input type="text" className="input text-sm flex-1" placeholder="Message to send" value={a.message || ''}
+                            onChange={e => {
+                              const items = [...(appConfigForm.chatbotQuickActions || [])];
+                              items[i] = { ...items[i], message: e.target.value };
+                              setAppConfigForm({ ...appConfigForm, chatbotQuickActions: items });
+                            }} />
+                          <button onClick={() => {
+                            const items = [...(appConfigForm.chatbotQuickActions || [])];
+                            items.splice(i, 1);
+                            setAppConfigForm({ ...appConfigForm, chatbotQuickActions: items });
+                          }} className="text-red-400 hover:text-red-600 p-1">×</button>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={() => {
+                      const items = [...(appConfigForm.chatbotQuickActions || []), { label: '', message: '', sortOrder: (appConfigForm.chatbotQuickActions || []).length }];
+                      setAppConfigForm({ ...appConfigForm, chatbotQuickActions: items });
+                    }} className="mt-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500 hover:bg-emerald-600 text-white transition">+ Add Quick Action</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* App Behavior Settings */}
             <div className="card !p-0 overflow-hidden col-span-1 lg:col-span-2">
               <div className="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 px-5 py-3 border-b border-gray-200 dark:border-gray-700">

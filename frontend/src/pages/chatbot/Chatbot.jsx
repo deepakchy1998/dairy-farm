@@ -4,8 +4,9 @@ import api from '../../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { FiSend, FiMessageSquare, FiUser, FiTrash2, FiCopy, FiCheck, FiZap, FiClock, FiX } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
+import { useAppConfig } from '../../context/AppConfigContext';
 
-const QUICK_ACTIONS = [
+const DEFAULT_QUICK_ACTIONS = [
   { label: '🥛 Today\'s Milk', msg: 'Aaj ka dudh kitna hai? Give detailed breakdown with morning/evening split' },
   { label: '🐄 Cattle Status', msg: 'Give me complete cattle summary with all categories, breeds, and health status' },
   { label: '💰 Profit & Loss', msg: 'Show this month profit loss with comparison to last month and cost per liter' },
@@ -53,11 +54,19 @@ function detectContext(lastReply) {
   return 'default';
 }
 
+const DEFAULT_FULL_WELCOME = "Namaste! 🐄 I'm your **DairyPro AI Assistant** — powered by Google Gemini 2.5.\n\nI have **real-time access** to all 12 modules of your farm:\n🥛 Milk Records • 🐄 Cattle • 💉 Health • 🐣 Breeding • 💰 Finance • 🌾 Feed • 🏘️ Dudh Khata • 👷 Employees • 🛡️ Insurance • 📊 Reports\n\nAsk me anything in **Hindi** or **English**! Examples:\n- \"aaj ka dudh kitna hai?\"\n- \"show breeding status\"\n- \"kiska payment baki hai?\"\n- \"which cattle need vaccination?\"\n\n**Quick commands:** `/alerts` `/milk` `/staff` `/dues`\n\nOr tap a quick action below 👇";
+
 export default function Chatbot() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const appConfig = useAppConfig();
+  const chatbotName = appConfig.chatbotName || 'DairyPro AI';
+  const fullWelcome = appConfig.chatbotFullWelcome || DEFAULT_FULL_WELCOME;
+  const quickActions = appConfig.chatbotQuickActions?.length
+    ? appConfig.chatbotQuickActions.map(a => ({ label: a.label, msg: a.message }))
+    : DEFAULT_QUICK_ACTIONS;
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Namaste! 🐄 I'm your **DairyPro AI Assistant** — powered by Google Gemini 2.5.\n\nI have **real-time access** to all 12 modules of your farm:\n🥛 Milk Records • 🐄 Cattle • 💉 Health • 🐣 Breeding • 💰 Finance • 🌾 Feed • 🏘️ Dudh Khata • 👷 Employees • 🛡️ Insurance • 📊 Reports\n\nAsk me anything in **Hindi** or **English**! Examples:\n- \"aaj ka dudh kitna hai?\"\n- \"show breeding status\"\n- \"kiska payment baki hai?\"\n- \"which cattle need vaccination?\"\n\n**Quick commands:** `/alerts` `/milk` `/staff` `/dues`\n\nOr tap a quick action below 👇", ts: Date.now() },
+    { role: 'assistant', content: fullWelcome, ts: Date.now() },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -123,7 +132,7 @@ export default function Chatbot() {
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-800 dark:text-white">🐄 DairyPro AI</h1>
+            <h1 className="text-xl font-bold text-gray-800 dark:text-white">{appConfig.appLogo || '🐄'} {chatbotName}</h1>
             <p className="text-xs text-gray-400 dark:text-gray-500">
               Gemini 2.5 Flash • Real-time farm data • Hindi & English
               {responseTime && <span className="ml-2 text-emerald-500">⚡ {responseTime}s</span>}
@@ -213,7 +222,7 @@ export default function Chatbot() {
         <div className="mt-3">
           <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 font-medium uppercase tracking-wider">⚡ Quick Actions</p>
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin" style={{ WebkitOverflowScrolling: 'touch' }}>
-            {QUICK_ACTIONS.map((a, i) => (
+            {quickActions.map((a, i) => (
               <button key={i} onClick={() => send(a.msg)} disabled={loading}
                 className="flex-shrink-0 text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-full hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-400 transition border border-gray-200 dark:border-gray-700 disabled:opacity-40 hover:border-emerald-300 dark:hover:border-emerald-700 whitespace-nowrap">
                 {a.label}

@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { FiDownload, FiX } from 'react-icons/fi';
 import useDraggable from '../hooks/useDraggable';
+import { useAppConfig } from '../context/AppConfigContext';
 
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const appConfig = useAppConfig();
+  const appName = appConfig.appName || 'DairyPro';
   const { ref, style, handlers, hasMoved } = useDraggable({ x: null, y: null });
 
   useEffect(() => {
@@ -34,8 +37,8 @@ export default function InstallPrompt() {
     } else {
       const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
       alert(isIOS
-        ? 'To install DairyPro:\n\n1. Tap the Share button (📤) at bottom\n2. Tap "Add to Home Screen"\n3. Tap "Add"'
-        : 'To install DairyPro:\n\n1. Tap the ⋮ menu (top right)\n2. Tap "Install App" or "Add to Home Screen"');
+        ? `To install ${appName}:\n\n1. Tap the Share button (📤) at bottom\n2. Tap "Add to Home Screen"\n3. Tap "Add"`
+        : `To install ${appName}:\n\n1. Tap the ⋮ menu (top right)\n2. Tap "Install App" or "Add to Home Screen"`);
     }
   };
 

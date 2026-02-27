@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../utils/api';
 import toast from 'react-hot-toast';
 import { FiEye, FiEyeOff, FiMail, FiLock } from 'react-icons/fi';
 
@@ -14,6 +15,17 @@ export default function Login() {
     if (reason === 'inactive') toast('You were logged out due to inactivity', { icon: '⏰', duration: 5000 });
     if (reason === 'blocked') toast.error('Your account has been suspended. Contact support.', { duration: 8000 });
     if (reason === 'expired') toast('Your session expired. Please log in again.', { icon: '🔒', duration: 4000 });
+  }, []);
+
+  const [appName, setAppName] = useState('DairyPro');
+  const [appLogo, setAppLogo] = useState('🐄');
+  const [appTagline, setAppTagline] = useState('Smart Dairy Farm Management');
+  useEffect(() => {
+    api.get('/app-config').then(r => {
+      setAppName(r.data.data?.appName || 'DairyPro');
+      setAppLogo(r.data.data?.appLogo || '🐄');
+      setAppTagline(r.data.data?.appTagline || 'Smart Dairy Farm Management');
+    }).catch(() => {});
   }, []);
 
   const [form, setForm] = useState({ email: '', password: '' });
@@ -47,9 +59,9 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <span className="text-5xl">🐄</span>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-2">DairyPro</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Smart Dairy Farm Management</p>
+          <span className="text-5xl">{appLogo}</span>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{appName}</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{appTagline}</p>
         </div>
 
         <div className="card">

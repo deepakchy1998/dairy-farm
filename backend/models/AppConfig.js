@@ -24,6 +24,19 @@ const appConfigSchema = new mongoose.Schema({
   dateFormat: { type: String, default: 'DD/MM/YYYY' },
   milkUnit: { type: String, default: 'liters' },
   weightUnit: { type: String, default: 'kg' },
+  // Branding
+  appName: { type: String, default: 'DairyPro' },
+  appLogo: { type: String, default: '🐄' },
+  appTagline: { type: String, default: 'Smart Dairy Farm Management' },
+  chatbotName: { type: String, default: 'DairyPro AI' },
+  chatbotWelcome: { type: String, default: "Namaste! 🐄 I have full access to your farm — cattle, milk, health, finance, staff & customers. Ask anything!" },
+  chatbotFullWelcome: { type: String, default: '' },
+  chatbotSuggestions: { type: [String], default: ['How is my farm doing?', 'Analyze milk production', 'Which cattle need attention?', 'How to increase profit?'] },
+  chatbotQuickActions: [{
+    label: { type: String },
+    message: { type: String },
+    sortOrder: { type: Number, default: 0 },
+  }],
   // Feature toggles
   chatBubbleEnabled: { type: Boolean, default: true },
   customPlanEnabled: { type: Boolean, default: true },

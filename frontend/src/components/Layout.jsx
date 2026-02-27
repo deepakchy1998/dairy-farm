@@ -169,8 +169,8 @@ export default function Layout({ children }) {
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-800">
           <Link to="/dashboard" className="flex items-center gap-2">
-            <span className="text-2xl">🐄</span>
-            <span className="text-xl font-bold text-emerald-700">DairyPro</span>
+            <span className="text-2xl">{appConfig.appLogo || '🐄'}</span>
+            <span className="text-xl font-bold text-emerald-700">{appConfig.appName || 'DairyPro'}</span>
           </Link>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-500">
             <FiX size={20} />

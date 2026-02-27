@@ -1,10 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../utils/api';
 import { FiMail, FiArrowLeft } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export default function ForgotPassword() {
+  const [appName, setAppName] = useState('DairyPro');
+  const [appLogo, setAppLogo] = useState('🐄');
+  useEffect(() => {
+    api.get('/app-config').then(r => {
+      setAppName(r.data.data?.appName || 'DairyPro');
+      setAppLogo(r.data.data?.appLogo || '🐄');
+    }).catch(() => {});
+  }, []);
+
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -32,8 +41,8 @@ export default function ForgotPassword() {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <span className="text-5xl">🐄</span>
-          <h1 className="text-3xl font-bold text-gray-900 mt-2">DairyPro</h1>
+          <span className="text-5xl">{appLogo}</span>
+          <h1 className="text-3xl font-bold text-gray-900 mt-2">{appName}</h1>
         </div>
 
         <div className="card">
