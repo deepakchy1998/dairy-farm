@@ -10,6 +10,7 @@ import {
   FiUsers, FiHome, FiCreditCard, FiCheck, FiX, FiShield,
   FiPlus, FiTrash2, FiSearch, FiEye, FiArrowLeft, FiAlertTriangle,
   FiRefreshCw, FiDownload, FiServer, FiLock, FiUnlock, FiKey, FiActivity,
+  FiMail, FiSend, FiLogIn, FiMessageSquare,
 } from 'react-icons/fi';
 import { FaIndianRupeeSign } from 'react-icons/fa6';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area, LineChart, Line, Legend } from 'recharts';
@@ -58,6 +59,22 @@ export default function AdminPanel() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [systemHealth, setSystemHealth] = useState(null);
 
+  // Support messages
+  const [supportMessages, setSupportMessages] = useState([]);
+  const [supportPagination, setSupportPagination] = useState({});
+  const [supportPage, setSupportPage] = useState(1);
+  const [supportStatusFilter, setSupportStatusFilter] = useState('');
+  const [supportReplyModal, setSupportReplyModal] = useState(null);
+  const [supportReplyText, setSupportReplyText] = useState('');
+
+  // Broadcast
+  const [broadcastForm, setBroadcastForm] = useState({ title: '', message: '', severity: 'info' });
+  const [broadcastSending, setBroadcastSending] = useState(false);
+
+  // Farm data preview
+  const [farmDataPreview, setFarmDataPreview] = useState(null);
+  const [farmDataLoading, setFarmDataLoading] = useState(false);
+
   // ─── LOAD DATA ───
   const loadTab = async () => {
     setLoading(true);
@@ -96,6 +113,10 @@ export default function AdminPanel() {
         const r = await api.get('/admin/audit-logs');
         setAuditLogs(r.data.data);
       }
+      if (tab === 'support') {
+        const r = await api.get('/admin/contact-messages', { params: { page: supportPage, limit: 20, status: supportStatusFilter || undefined } });
+        setSupportMessages(r.data.data); setSupportPagination(r.data.pagination || {});
+      }
       if (tab === 'system') {
         const r = await api.get('/admin/system-health');
         setSystemHealth(r.data.data);
@@ -107,7 +128,7 @@ export default function AdminPanel() {
     }
   };
 
-  useEffect(() => { loadTab(); }, [tab, usersPage, paymentsPage, paymentStatusFilter]);
+  useEffect(() => { loadTab(); }, [tab, usersPage, paymentsPage, paymentStatusFilter, supportPage, supportStatusFilter]);
 
   // Search users with debounce
   useEffect(() => {
@@ -490,8 +511,77 @@ export default function AdminPanel() {
             <button onClick={() => setConfirmDialog({ open: true, title: '🗑️ DELETE USER PERMANENTLY?', message: `This will permanently delete "${u.name}" and ALL their farm data (cattle, milk records, employees, payments, everything). THIS CANNOT BE UNDONE.`, variant: 'danger', confirmText: 'DELETE FOREVER', onConfirm: () => deleteUser(u._id, u.name) })} className="text-xs px-3 py-2 rounded-lg font-medium bg-red-600 text-white hover:bg-red-700 flex items-center gap-1.5">
               <FiTrash2 size={14} /> Delete User & All Data
             </button>
+            <button onClick={async () => {
+              try {
+                const r = await api.post(`/admin/users/${u._id}/impersonate`);
+                const token = r.data.token;
+                window.open(`${window.location.origin}/dashboard?impersonate=${token}`, '_blank');
+                toast.success(`Impersonating ${u.name} — token copied to new tab`);
+              } catch { toast.error('Failed to impersonate'); }
+            }} className="text-xs px-3 py-2 rounded-lg font-medium bg-indigo-100 text-indigo-700 hover:bg-indigo-200 flex items-center gap-1.5">
+              <FiLogIn size={14} /> Impersonate
+            </button>
+            <button onClick={async () => {
+              setFarmDataLoading(true);
+              try {
+                const r = await api.get(`/admin/users/${u._id}/farm-data`);
+                setFarmDataPreview(r.data.data);
+              } catch { toast.error('Failed to load farm data'); }
+              finally { setFarmDataLoading(false); }
+            }} className="text-xs px-3 py-2 rounded-lg font-medium bg-teal-100 text-teal-700 hover:bg-teal-200 flex items-center gap-1.5">
+              {farmDataLoading ? <div className="w-3 h-3 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" /> : <FiEye size={14} />} Farm Data
+            </button>
           </div>
         </div>
+
+        {/* Farm Data Preview */}
+        {farmDataPreview && (
+          <div className="card">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-sm text-teal-700 dark:text-teal-400">🐄 Farm Data Preview</h3>
+              <button onClick={() => setFarmDataPreview(null)} className="text-xs text-gray-400 hover:text-gray-600">✕ Close</button>
+            </div>
+            {!farmDataPreview.farmData ? (
+              <p className="text-sm text-gray-500">No farm data — user hasn't created a farm yet.</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
+                  {[
+                    { label: 'Cattle', value: farmDataPreview.farmData.cattle?.count || 0, color: 'blue' },
+                    { label: 'Milk Records', value: farmDataPreview.farmData.milkRecords, color: 'emerald' },
+                    { label: 'Health Records', value: farmDataPreview.farmData.healthRecords, color: 'red' },
+                    { label: 'Breeding', value: farmDataPreview.farmData.breedingRecords, color: 'pink' },
+                    { label: 'Expenses', value: farmDataPreview.farmData.expenses, color: 'amber' },
+                    { label: 'Revenues', value: farmDataPreview.farmData.revenues, color: 'green' },
+                    { label: 'Feed Records', value: farmDataPreview.farmData.feedRecords, color: 'yellow' },
+                    { label: 'Insurance', value: farmDataPreview.farmData.insuranceRecords, color: 'purple' },
+                    { label: 'Employees', value: farmDataPreview.farmData.employees, color: 'indigo' },
+                    { label: 'Customers', value: farmDataPreview.farmData.customers, color: 'orange' },
+                    { label: 'Deliveries', value: farmDataPreview.farmData.deliveries, color: 'teal' },
+                  ].map(item => (
+                    <div key={item.label} className={`bg-${item.color}-50 dark:bg-${item.color}-900/20 rounded-lg p-2 text-center`}>
+                      <p className="text-[10px] text-gray-500">{item.label}</p>
+                      <p className="text-lg font-bold">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+                {farmDataPreview.farmData.cattle?.list?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-1">Cattle List:</p>
+                    <div className="max-h-40 overflow-y-auto space-y-1">
+                      {farmDataPreview.farmData.cattle.list.map(c => (
+                        <div key={c._id} className="flex items-center justify-between text-xs bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-1.5">
+                          <span className="font-medium">{c.name || c.tagNumber}</span>
+                          <span className="text-gray-400">{c.breed} · {c.gender} · {c.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
 
         {/* Grant Modal */}
         <Modal isOpen={grantModal} onClose={() => setGrantModal(false)} title="🎁 Grant Subscription" size="md">
@@ -524,7 +614,9 @@ export default function AdminPanel() {
     { id: 'system', label: '🖥️ System' },
     { id: 'website', label: '🌐 Website' },
     { id: 'app-config', label: '🎛️ App Config' },
-
+    { id: 'support', label: '📩 Support' },
+    { id: 'broadcast', label: '📢 Broadcast' },
+    { id: 'export', label: '📦 Export' },
   ];
 
   return (
@@ -1613,6 +1705,138 @@ export default function AdminPanel() {
           </div>
 
           <button onClick={async () => { setSaving(true); try { await api.put('/admin/settings', websiteForm); toast.success('Saved!'); } catch { toast.error('Failed'); } finally { setSaving(false); } }} disabled={saving} className="btn-primary w-full py-3 text-lg">{saving ? 'Saving...' : '💾 Save Website Content'}</button>
+        </div>
+      )}
+
+      {/* ═══ SUPPORT ═══ */}
+      {tab === 'support' && (
+        <div className="space-y-4">
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {[{ v: '', l: 'All' }, { v: 'open', l: '🟢 Open' }, { v: 'replied', l: '💬 Replied' }, { v: 'closed', l: '✅ Closed' }].map(f => (
+              <button key={f.v} onClick={() => { setSupportStatusFilter(f.v); setSupportPage(1); }}
+                className={`px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap ${supportStatusFilter === f.v ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{f.l}</button>
+            ))}
+          </div>
+          <div className="card p-0 overflow-hidden">
+            {supportMessages.length === 0 ? <div className="py-8 text-center text-gray-400">No support messages</div> : (
+              <div className="divide-y dark:divide-gray-800 max-h-[60vh] overflow-y-auto">
+                {supportMessages.map(msg => (
+                  <div key={msg._id} className="p-4 space-y-2 hover:bg-gray-50 dark:hover:bg-gray-800/30 cursor-pointer" onClick={() => { setSupportReplyModal(msg); setSupportReplyText(msg.adminReply || ''); }}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-sm">{msg.subject}</p>
+                        <p className="text-xs text-gray-400">{msg.name} ({msg.email})</p>
+                      </div>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${msg.status === 'open' ? 'bg-green-100 text-green-700' : msg.status === 'replied' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>{msg.status}</span>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{msg.message}</p>
+                    <p className="text-[10px] text-gray-400">{formatDate(msg.createdAt)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            <Pagination page={supportPagination.page} pages={supportPagination.pages} total={supportPagination.total} onPageChange={p => setSupportPage(p)} />
+          </div>
+
+          {/* Reply Modal */}
+          <Modal isOpen={!!supportReplyModal} onClose={() => setSupportReplyModal(null)} title="📩 Support Message" size="lg">
+            {supportReplyModal && (
+              <div className="space-y-4">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="font-semibold">{supportReplyModal.subject}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${supportReplyModal.status === 'open' ? 'bg-green-100 text-green-700' : supportReplyModal.status === 'replied' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>{supportReplyModal.status}</span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{supportReplyModal.message}</p>
+                  <p className="text-xs text-gray-400 mt-2">From: {supportReplyModal.name} ({supportReplyModal.email}) · {formatDate(supportReplyModal.createdAt)}</p>
+                </div>
+                <div>
+                  <label className="label">Admin Reply</label>
+                  <textarea className="input" rows={4} value={supportReplyText} onChange={e => setSupportReplyText(e.target.value)} placeholder="Type your reply..." />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={async () => {
+                    try {
+                      await api.put(`/admin/contact-messages/${supportReplyModal._id}`, { adminReply: supportReplyText, status: 'replied' });
+                      toast.success('Reply sent'); setSupportReplyModal(null); loadTab();
+                    } catch { toast.error('Failed'); }
+                  }} className="btn-primary flex-1 flex items-center justify-center gap-2"><FiSend size={14} /> Reply</button>
+                  <button onClick={async () => {
+                    try {
+                      await api.put(`/admin/contact-messages/${supportReplyModal._id}`, { status: 'closed' });
+                      toast.success('Closed'); setSupportReplyModal(null); loadTab();
+                    } catch { toast.error('Failed'); }
+                  }} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 text-sm font-medium">Close</button>
+                </div>
+              </div>
+            )}
+          </Modal>
+        </div>
+      )}
+
+      {/* ═══ BROADCAST ═══ */}
+      {tab === 'broadcast' && (
+        <div className="space-y-4">
+          <div className="card">
+            <h3 className="font-semibold text-sm mb-4">📢 Send Broadcast Notification</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="label">Title</label>
+                <input className="input" value={broadcastForm.title} onChange={e => setBroadcastForm({ ...broadcastForm, title: e.target.value })} placeholder="Notification title..." />
+              </div>
+              <div>
+                <label className="label">Message</label>
+                <textarea className="input" rows={4} value={broadcastForm.message} onChange={e => setBroadcastForm({ ...broadcastForm, message: e.target.value })} placeholder="Notification message..." />
+              </div>
+              <div>
+                <label className="label">Severity</label>
+                <select className="input" value={broadcastForm.severity} onChange={e => setBroadcastForm({ ...broadcastForm, severity: e.target.value })}>
+                  <option value="info">ℹ️ Info</option>
+                  <option value="warning">⚠️ Warning</option>
+                  <option value="critical">🚨 Critical</option>
+                </select>
+              </div>
+              <button onClick={async () => {
+                if (!broadcastForm.title || !broadcastForm.message) return toast.error('Title and message required');
+                setBroadcastSending(true);
+                try {
+                  const r = await api.post('/admin/notifications/broadcast', broadcastForm);
+                  toast.success(r.data.message || 'Broadcast sent!');
+                  setBroadcastForm({ title: '', message: '', severity: 'info' });
+                } catch { toast.error('Failed to send broadcast'); }
+                finally { setBroadcastSending(false); }
+              }} disabled={broadcastSending} className="btn-primary w-full py-3 flex items-center justify-center gap-2">
+                {broadcastSending ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <FiSend size={16} />}
+                {broadcastSending ? 'Sending...' : 'Send to All Users'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ EXPORT ═══ */}
+      {tab === 'export' && (
+        <div className="space-y-4">
+          <div className="card">
+            <h3 className="font-semibold text-sm mb-4">📦 Export Platform Data</h3>
+            <p className="text-sm text-gray-500 mb-4">Download all platform data including users, payments, subscriptions, and revenue summary as JSON.</p>
+            <button onClick={async () => {
+              try {
+                toast.loading('Exporting...', { id: 'export' });
+                const r = await api.get('/admin/export');
+                const blob = new Blob([JSON.stringify(r.data.data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `dairypro-export-${new Date().toISOString().slice(0, 10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success('Export downloaded!', { id: 'export' });
+              } catch { toast.error('Export failed', { id: 'export' }); }
+            }} className="btn-primary w-full py-3 flex items-center justify-center gap-2">
+              <FiDownload size={16} /> Download Platform Export (JSON)
+            </button>
+          </div>
         </div>
       )}
 

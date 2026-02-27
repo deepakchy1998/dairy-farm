@@ -29,6 +29,7 @@ import notificationRoutes from './routes/notifications.js';
 import insuranceRoutes from './routes/insurance.js';
 import milkDeliveryRoutes from './routes/milkDelivery.js';
 import employeeRoutes from './routes/employee.js';
+import contactRoutes from './routes/contact.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { sanitize } from './middleware/sanitize.js';
 import { ensureIndexes } from './utils/ensureIndexes.js';
@@ -199,6 +200,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/insurance', insuranceRoutes);
 app.use('/api/milk-delivery', milkDeliveryRoutes);
 app.use('/api/employees', employeeRoutes);
+app.use('/api/contact', contactRoutes);
 
 app.get('/api/health-check', (req, res) => {
   const dbState = mongoose.connection.readyState;

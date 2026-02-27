@@ -16,6 +16,14 @@ import Employee from '../models/Employee.js';
 import Customer from '../models/Customer.js';
 import Plan from '../models/Plan.js';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import BreedingRecord from '../models/BreedingRecord.js';
+import FeedRecord from '../models/FeedRecord.js';
+import Expense from '../models/Expense.js';
+import Insurance from '../models/Insurance.js';
+import MilkDelivery from '../models/MilkDelivery.js';
+import ContactMessage from '../models/ContactMessage.js';
+import Notification from '../models/Notification.js';
 
 const router = Router();
 router.use(auth, admin);
@@ -755,6 +763,199 @@ router.get('/system-health', async (req, res, next) => {
         environment: process.env.NODE_ENV || 'development',
       },
     });
+  } catch (err) { next(err); }
+});
+
+// ════════════════════════════════════════
+//  BROADCAST NOTIFICATIONS
+// ════════════════════════════════════════
+
+router.post('/notifications/broadcast', async (req, res, next) => {
+  try {
+    const { title, message, severity = 'info', targetUserIds } = req.body;
+    if (!title || !message) return res.status(400).json({ success: false, message: 'Title and message are required' });
+
+    let users;
+    if (targetUserIds && targetUserIds.length > 0) {
+      users = await User.find({ _id: { $in: targetUserIds } }).select('_id farmId').lean();
+    } else {
+      users = await User.find({ role: 'user' }).select('_id farmId').lean();
+    }
+
+    const notifications = users.map(u => ({
+      farmId: u.farmId,
+      userId: u._id,
+      title,
+      message,
+      severity,
+      type: 'admin_broadcast',
+      refId: `broadcast_${Date.now()}_${u._id}`,
+    }));
+
+    await Notification.insertMany(notifications, { ordered: false }).catch(() => {});
+    console.log(`[ADMIN] Broadcast sent: "${title}" to ${users.length} users by admin=${req.user._id}`);
+    res.json({ success: true, message: `Broadcast sent to ${users.length} users`, count: users.length });
+  } catch (err) { next(err); }
+});
+
+// ════════════════════════════════════════
+//  USER FARM DATA
+// ════════════════════════════════════════
+
+router.get('/users/:id/farm-data', async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id).select('name email farmId').populate('farmId', 'name').lean();
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (!user.farmId) return res.json({ success: true, data: { user, farmData: null, message: 'User has no farm' } });
+
+    const fid = user.farmId._id;
+    const [cattle, milkRecords, healthRecords, breedingRecords, expenses, revenues, feedRecords, insuranceRecords, employees, customers, deliveries] = await Promise.all([
+      Cattle.find({ farmId: fid }).select('name tagNumber breed status gender').lean(),
+      MilkRecord.countDocuments({ farmId: fid }),
+      HealthRecord.countDocuments({ farmId: fid }),
+      BreedingRecord.countDocuments({ farmId: fid }),
+      Expense.countDocuments({ farmId: fid }),
+      Revenue.countDocuments({ farmId: fid }),
+      FeedRecord.countDocuments({ farmId: fid }),
+      Insurance.countDocuments({ farmId: fid }),
+      Employee.countDocuments({ farmId: fid }),
+      Customer.countDocuments({ farmId: fid }),
+      MilkDelivery.countDocuments({ farmId: fid }),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        user,
+        farmData: {
+          cattle: { list: cattle, count: cattle.length },
+          milkRecords, healthRecords, breedingRecords,
+          expenses, revenues, feedRecords, insuranceRecords,
+          employees, customers, deliveries,
+        },
+      },
+    });
+  } catch (err) { next(err); }
+});
+
+// ════════════════════════════════════════
+//  PLATFORM EXPORT
+// ════════════════════════════════════════
+
+router.get('/export', async (req, res, next) => {
+  try {
+    const [users, payments, subscriptions, revenueAgg] = await Promise.all([
+      User.find().select('-password -profilePhoto').lean(),
+      Payment.find().populate('userId', 'name email').sort('-createdAt').lean(),
+      Subscription.find().populate('userId', 'name email').sort('-endDate').lean(),
+      Payment.aggregate([
+        { $match: { status: 'verified' } },
+        { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } },
+      ]),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        exportedAt: new Date().toISOString(),
+        users,
+        payments,
+        subscriptions,
+        revenueSummary: {
+          totalRevenue: revenueAgg[0]?.total || 0,
+          totalVerifiedPayments: revenueAgg[0]?.count || 0,
+        },
+      },
+    });
+  } catch (err) { next(err); }
+});
+
+// ════════════════════════════════════════
+//  CONTACT / SUPPORT MESSAGES
+// ════════════════════════════════════════
+
+router.get('/contact-messages', async (req, res, next) => {
+  try {
+    const { status } = req.query;
+    const filter = {};
+    if (status) filter.status = status;
+    const { skip, limit, page } = paginate(req.query.page, req.query.limit);
+    const total = await ContactMessage.countDocuments(filter);
+    const pages = Math.ceil(total / limit);
+    const messages = await ContactMessage.find(filter).populate('userId', 'name email').sort('-createdAt').skip(skip).limit(limit).lean();
+    res.json({ success: true, data: messages, pagination: { page, pages, total, limit } });
+  } catch (err) { next(err); }
+});
+
+router.put('/contact-messages/:id', async (req, res, next) => {
+  try {
+    const msg = await ContactMessage.findById(req.params.id);
+    if (!msg) return res.status(404).json({ success: false, message: 'Message not found' });
+    const { status, adminReply } = req.body;
+    if (status) msg.status = status;
+    if (adminReply !== undefined) msg.adminReply = adminReply;
+    await msg.save();
+    console.log(`[ADMIN] Contact message updated: id=${msg._id} status=${msg.status} by admin=${req.user._id}`);
+    res.json({ success: true, data: msg });
+  } catch (err) { next(err); }
+});
+
+// ════════════════════════════════════════
+//  IMPERSONATION
+// ════════════════════════════════════════
+
+router.post('/users/:id/impersonate', async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id).select('_id name email role').lean();
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const token = jwt.sign(
+      { userId: user._id, impersonatedBy: req.user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    console.log(`[ADMIN] Impersonation: admin=${req.user._id} impersonating user=${user._id} (${user.email})`);
+    res.json({ success: true, token, user: { _id: user._id, name: user.name, email: user.email, role: user.role }, expiresIn: '1 hour' });
+  } catch (err) { next(err); }
+});
+
+// ════════════════════════════════════════
+//  BULK ACTIONS
+// ════════════════════════════════════════
+
+router.post('/users/bulk-block', async (req, res, next) => {
+  try {
+    const { userIds } = req.body;
+    if (!userIds || !userIds.length) return res.status(400).json({ success: false, message: 'User IDs required' });
+    const result = await User.updateMany(
+      { _id: { $in: userIds }, role: { $ne: 'admin' } },
+      { isBlocked: true }
+    );
+    console.log(`[ADMIN] Bulk block: ${result.modifiedCount} users blocked by admin=${req.user._id}`);
+    res.json({ success: true, message: `${result.modifiedCount} users blocked`, modifiedCount: result.modifiedCount });
+  } catch (err) { next(err); }
+});
+
+router.post('/users/bulk-notify', async (req, res, next) => {
+  try {
+    const { userIds, title, message, severity = 'info' } = req.body;
+    if (!userIds || !userIds.length || !title || !message) {
+      return res.status(400).json({ success: false, message: 'User IDs, title and message required' });
+    }
+    const users = await User.find({ _id: { $in: userIds } }).select('_id farmId').lean();
+    const notifications = users.map(u => ({
+      farmId: u.farmId,
+      userId: u._id,
+      title,
+      message,
+      severity,
+      type: 'admin_notification',
+      refId: `bulk_notify_${Date.now()}_${u._id}`,
+    }));
+    await Notification.insertMany(notifications, { ordered: false }).catch(() => {});
+    console.log(`[ADMIN] Bulk notify: ${users.length} users notified by admin=${req.user._id}`);
+    res.json({ success: true, message: `Notification sent to ${users.length} users`, count: users.length });
   } catch (err) { next(err); }
 });
 
