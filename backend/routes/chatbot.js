@@ -525,7 +525,7 @@ ${farmContext}`;
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -548,6 +548,36 @@ ${farmContext}`;
         }),
       }
     );
+
+    // Retry once on 429 (rate limit) with 2s delay
+    if (response.status === 429) {
+      console.warn('[DairyPro AI] Rate limited, retrying in 2s...');
+      await new Promise(r => setTimeout(r, 2000));
+      const retry = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents,
+            generationConfig: { temperature: 0.4, maxOutputTokens: 3000, topP: 0.9, topK: 40 },
+            safetySettings: [
+              { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+              { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+              { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+              { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+            ],
+          }),
+        }
+      );
+      if (retry.ok) {
+        const retryData = await retry.json();
+        const retryReply = retryData.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (retryReply) return retryReply;
+      }
+      throw new Error('AI is busy — too many requests. Please wait 30 seconds and try again.');
+    }
 
     if (!response.ok) {
       const err = await response.text();
