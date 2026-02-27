@@ -484,48 +484,116 @@ export default function Employees() {
               <button onClick={openAddEmp} className="btn-primary text-sm"><FiPlus size={14} className="inline mr-1" /> Add Employee</button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {employees.map(e => (
-                <div key={e._id} className="card !p-4 hover:shadow-md transition cursor-pointer group" onClick={() => openEmpDetail(e)}>
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                        <FiUser size={18} className="text-blue-600 dark:text-blue-400" />
+            <div className="card p-0 overflow-hidden">
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto max-h-[70vh] overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 z-10"><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
+                    <th className="px-4 py-2 text-left">Employee</th>
+                    <th className="px-3 py-2 text-left">Role</th>
+                    <th className="px-3 py-2 text-left">Phone</th>
+                    <th className="px-3 py-2 text-left">Village</th>
+                    <th className="px-3 py-2 text-center">Salary</th>
+                    <th className="px-3 py-2 text-center">Advance</th>
+                    <th className="px-3 py-2 text-center">Joined</th>
+                    <th className="px-3 py-2 text-center">Status</th>
+                    <th className="px-3 py-2 text-center">Actions</th>
+                  </tr></thead>
+                  <tbody>
+                    {employees.map((e, i) => (
+                      <tr key={e._id} className={`border-b hover:bg-gray-50 dark:hover:bg-gray-800/30 cursor-pointer ${i % 2 ? 'bg-gray-50/50 dark:bg-gray-800/20' : ''}`}
+                        onClick={() => openEmpDetail(e)}>
+                        <td className="px-4 py-2.5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                              <FiUser size={14} className="text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <span className="font-medium text-gray-900 dark:text-white">{e.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2.5"><span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-medium">{e.role}</span></td>
+                        <td className="px-3 py-2.5 text-gray-500 text-xs">{e.phone || '-'}</td>
+                        <td className="px-3 py-2.5 text-gray-500 text-xs">{e.village || '-'}</td>
+                        <td className="px-3 py-2.5 text-center font-semibold text-emerald-600">₹{e.monthlySalary?.toLocaleString('en-IN')}</td>
+                        <td className={`px-3 py-2.5 text-center font-semibold ${e.totalAdvance > 0 ? 'text-amber-600' : 'text-gray-400'}`}>₹{(e.totalAdvance || 0).toLocaleString('en-IN')}</td>
+                        <td className="px-3 py-2.5 text-center text-gray-500 text-xs">{e.joinDate ? new Date(e.joinDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }) : '-'}</td>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${e.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : e.status === 'on-leave' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}`}>
+                            {e.status}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5" onClick={ev => ev.stopPropagation()}>
+                          <div className="flex gap-2 justify-center">
+                            <button onClick={() => openEditEmp(e)} className="text-xs text-blue-600 hover:underline font-medium">✏️ Edit</button>
+                            <button onClick={() => openAdvance(e)} className="text-xs text-emerald-600 hover:underline font-medium">💸 Advance</button>
+                            <button onClick={() => deleteEmployee(e)} className="text-xs text-red-500 hover:underline font-medium">🗑️</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {/* Totals row */}
+                    <tr className="bg-emerald-50 dark:bg-emerald-900/20 font-bold text-sm">
+                      <td className="px-4 py-3" colSpan={4}>TOTAL ({employees.length} employees)</td>
+                      <td className="px-3 py-3 text-center text-emerald-700 dark:text-emerald-400">₹{employees.reduce((s, e) => s + (e.monthlySalary || 0), 0).toLocaleString('en-IN')}</td>
+                      <td className="px-3 py-3 text-center text-amber-600">₹{employees.reduce((s, e) => s + (e.totalAdvance || 0), 0).toLocaleString('en-IN')}</td>
+                      <td colSpan={3}></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden divide-y dark:divide-gray-800">
+                {employees.map(e => (
+                  <div key={e._id} className="p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/30" onClick={() => openEmpDetail(e)}>
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                          <FiUser size={18} className="text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900 dark:text-white">{e.name}</h3>
+                          <p className="text-xs text-gray-400">{e.role}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{e.name}</h3>
-                        <p className="text-xs text-gray-400">{e.role}</p>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${e.status === 'active' ? 'bg-emerald-100 text-emerald-700' : e.status === 'on-leave' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {e.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-400 mb-2">
+                      {e.phone && <span className="flex items-center gap-1"><FiPhone size={10} /> {e.phone}</span>}
+                      {e.village && <span className="flex items-center gap-1"><FiMapPin size={10} /> {e.village}</span>}
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center mb-2">
+                      <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-2">
+                        <p className="text-[10px] text-emerald-500">Salary</p>
+                        <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">₹{e.monthlySalary?.toLocaleString('en-IN')}</p>
+                      </div>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2">
+                        <p className="text-[10px] text-blue-500">Since</p>
+                        <p className="text-xs font-bold text-blue-700 dark:text-blue-300">{e.joinDate ? new Date(e.joinDate).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }) : '-'}</p>
+                      </div>
+                      <div className={`rounded-lg p-2 ${e.totalAdvance > 0 ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-gray-50 dark:bg-gray-800'}`}>
+                        <p className="text-[10px] text-amber-500">Advance</p>
+                        <p className={`text-sm font-bold ${e.totalAdvance > 0 ? 'text-amber-600' : 'text-gray-400'}`}>₹{(e.totalAdvance || 0).toLocaleString('en-IN')}</p>
                       </div>
                     </div>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${e.status === 'active' ? 'bg-emerald-100 text-emerald-700' : e.status === 'on-leave' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
-                      {e.status}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
-                    {e.phone && <span className="flex items-center gap-1"><FiPhone size={10} /> {e.phone}</span>}
-                    {e.village && <span className="flex items-center gap-1"><FiMapPin size={10} /> {e.village}</span>}
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-center mb-3">
-                    <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-2">
-                      <p className="text-[10px] text-emerald-500">Salary</p>
-                      <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">₹{e.monthlySalary?.toLocaleString('en-IN')}</p>
-                    </div>
-                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2">
-                      <p className="text-[10px] text-blue-500">Since</p>
-                      <p className="text-xs font-bold text-blue-700 dark:text-blue-300">{e.joinDate ? new Date(e.joinDate).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }) : '-'}</p>
-                    </div>
-                    <div className={`rounded-lg p-2 ${e.totalAdvance > 0 ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-gray-50 dark:bg-gray-800'}`}>
-                      <p className="text-[10px] text-amber-500">Advance</p>
-                      <p className={`text-sm font-bold ${e.totalAdvance > 0 ? 'text-amber-600' : 'text-gray-400'}`}>₹{(e.totalAdvance || 0).toLocaleString('en-IN')}</p>
+                    <div className="flex gap-2">
+                      <button onClick={ev => { ev.stopPropagation(); openEditEmp(e); }} className="flex-1 btn-secondary text-xs py-1.5 flex items-center justify-center gap-1"><FiEdit2 size={12} /> Edit</button>
+                      <button onClick={ev => { ev.stopPropagation(); openAdvance(e); }} className="flex-1 btn-primary text-xs py-1.5 flex items-center justify-center gap-1"><FaIndianRupeeSign size={12} /> Advance</button>
+                      <button onClick={ev => { ev.stopPropagation(); deleteEmployee(e); }} className="btn-danger text-xs py-1.5 px-2"><FiTrash2 size={14} /></button>
                     </div>
                   </div>
-                  <div className="flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition">
-                    <button onClick={ev => { ev.stopPropagation(); openEditEmp(e); }} className="flex-1 btn-secondary text-xs py-1.5 flex items-center justify-center gap-1"><FiEdit2 size={12} /> Edit</button>
-                    <button onClick={ev => { ev.stopPropagation(); openAdvance(e); }} className="flex-1 btn-primary text-xs py-1.5 flex items-center justify-center gap-1"><FaIndianRupeeSign size={12} /> Advance</button>
-                    <button onClick={ev => { ev.stopPropagation(); deleteEmployee(e); }} className="btn-danger text-xs py-1.5 px-2"><FiTrash2 size={14} /></button>
+                ))}
+                {/* Mobile totals */}
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20">
+                  <p className="font-bold text-sm mb-2">TOTAL ({employees.length} employees)</p>
+                  <div className="grid grid-cols-2 gap-2 text-center text-xs">
+                    <div><p className="text-gray-500">Monthly Salary</p><p className="font-bold text-emerald-600">₹{employees.reduce((s, e) => s + (e.monthlySalary || 0), 0).toLocaleString('en-IN')}</p></div>
+                    <div><p className="text-gray-500">Total Advance</p><p className="font-bold text-amber-600">₹{employees.reduce((s, e) => s + (e.totalAdvance || 0), 0).toLocaleString('en-IN')}</p></div>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
           )}
         </div>
