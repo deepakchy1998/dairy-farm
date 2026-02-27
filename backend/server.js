@@ -216,7 +216,7 @@ app.get('/api/health-check', (req, res) => {
 
 // 404 handler for unknown API routes
 app.use('/api/*', (req, res) => {
-  res.status(404).json({ success: false, message: `Route not found: ${req.method} ${req.originalUrl}` });
+  res.status(404).json({ success: false, message: `🔍 This page or feature doesn't exist. Please check the URL or go back to the app.`, code: 'NOT_FOUND' });
 });
 
 app.use(errorHandler);

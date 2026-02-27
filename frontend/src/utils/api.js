@@ -98,7 +98,27 @@ api.interceptors.response.use(
 
     // Network error
     if (!error.response && error.message !== 'canceled') {
-      error.userMessage = 'Network error. Please check your internet connection.';
+      error.userMessage = '🌐 No internet connection. Please check your network and try again.';
+    }
+
+    // Timeout error
+    if (error.code === 'ECONNABORTED') {
+      error.userMessage = '⏰ Request took too long. Please check your connection and try again.';
+    }
+
+    // Server errors (5xx)
+    if (error.response?.status >= 500) {
+      error.userMessage = error.response?.data?.message || '😔 Server is having trouble. Please try again in a moment.';
+    }
+
+    // Rate limit
+    if (error.response?.status === 429) {
+      error.userMessage = '⏳ Too many requests. Please wait a moment and try again.';
+    }
+
+    // Use backend's friendly message if available
+    if (error.response?.data?.message && !error.userMessage) {
+      error.userMessage = error.response.data.message;
     }
 
     return Promise.reject(error);

@@ -25,7 +25,7 @@ export const checkSubscription = async (req, res, next) => {
     if (!sub) {
       return res.status(403).json({
         success: false,
-        message: 'Your subscription has expired. Please renew to continue using DairyPro.',
+        message: '📋 Your subscription has expired. Please renew your plan to continue using all features.',
         code: 'SUBSCRIPTION_EXPIRED',
         expired: true,
       });
@@ -40,7 +40,7 @@ export const checkSubscription = async (req, res, next) => {
       console.error(`⚠️ Tampered subscription detected: user=${req.user._id} plan=${sub.plan} duration=${durationDays}d max=${maxDays}d`);
       return res.status(403).json({
         success: false,
-        message: 'Subscription validation failed. Please contact support.',
+        message: '⚠️ There was an issue with your subscription. Please contact support for help.',
         code: 'SUBSCRIPTION_INVALID',
       });
     }

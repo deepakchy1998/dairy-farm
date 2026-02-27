@@ -576,7 +576,7 @@ ${farmContext}`;
         const retryReply = retryData.candidates?.[0]?.content?.parts?.[0]?.text;
         if (retryReply) return retryReply;
       }
-      throw new Error('AI is busy — too many requests. Please wait 30 seconds and try again.');
+      throw new Error('🤖 AI assistant is busy right now. Please wait 30 seconds and try again. Meanwhile, use quick commands like /help, /milk, /alerts!');
     }
 
     if (!response.ok) {
@@ -747,7 +747,7 @@ router.post('/ask', async (req, res, next) => {
     return res.json({
       success: true,
       data: {
-        reply: `⚠️ AI assistant temporarily unavailable. ${err.message}\n\nQuick commands you can try:\n- **/alerts** — See active farm alerts\n- **/milk** — Today's milk production\n\nPlease try again shortly.`,
+        reply: `${err.message.startsWith('🤖') ? err.message : '😔 AI assistant is temporarily unavailable. Please try again in a moment.'}\n\n💡 **Quick commands work instantly (no AI needed):**\n- **/help** — All available commands\n- **/alerts** — Farm alerts\n- **/milk** — Today's milk production\n- **/finance** — Revenue & expenses\n- **/cattle** — Cattle overview\n- **/staff** — Employee status`,
       },
     });
   }
