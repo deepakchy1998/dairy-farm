@@ -21,7 +21,7 @@ function FadeIn({ children, delay = 0, direction = 'up', className = '' }) {
   );
 }
 
-const features = [
+const defaultFeatures = [
   { icon: '🐄', title: 'Cattle Management', desc: 'Track every animal — breed, age, health, genetics, weight, purchase history. Tag-based search with full profiles and lineage.' },
   { icon: '🥛', title: 'Milk Recording', desc: 'Morning, afternoon & evening yield, fat %, SNF % — per animal, per session. Daily, weekly, monthly reports with CSV/PDF export.' },
   { icon: '🤖', title: 'AI Farm Assistant', desc: 'Powered by Google Gemini — ask anything in Hindi or English. Get instant insights, alerts, predictions from your real-time farm data.' },
@@ -35,6 +35,45 @@ const features = [
   { icon: '📊', title: '10+ Report Dashboards', desc: 'Milk trends, health analytics, employee performance, feed costs, customer analytics, revenue breakdown — all with interactive charts.' },
   { icon: '💳', title: 'Secure Payments', desc: 'Pay via UPI, QR code, cards, Paytm, PhonePe, net banking, EMI. Powered by Razorpay with instant activation.' },
 ];
+
+const defaultModuleDetails = [
+  { icon: '🏘️', title: 'Dudh Khata (दूध खाता)', points: ['Customer-wise milk delivery ledger', 'Daily quantity & rate tracking', 'Payment collection with balance', 'Outstanding dues dashboard', 'Customer-wise monthly statements'] },
+  { icon: '👷', title: 'Employee Management', points: ['Staff profiles with roles & salary', 'Daily attendance marking', 'Present / Absent / Half-day / Leave', 'Advance payment tracking', 'Performance analytics in Reports'] },
+  { icon: '🤖', title: 'AI Farm Assistant', points: ['Google Gemini 2.5 Flash powered', 'Hindi + English + Hinglish support', 'Real-time farm data analysis', '20+ quick action buttons', 'Predictions, alerts & recommendations'] },
+  { icon: '📊', title: '10+ Report Dashboards', points: ['Milk production trends & quality', 'Health & vaccination analytics', 'Feed cost optimization', 'Employee performance charts', 'Customer analytics & revenue breakdown'] },
+];
+
+const defaultWhyUsCards = [
+  { icon: 'FiSmartphone', title: 'Mobile First', desc: 'PWA app — install on phone like an app. Works on any device, even with slow internet.' },
+  { icon: 'FiShield', title: 'Bank-Level Security', desc: 'Encrypted data, Razorpay payments (PCI DSS), farm-isolated storage. Your data stays yours.' },
+  { icon: 'FiTrendingUp', title: '20+ Analytics Charts', desc: 'Milk trends, health patterns, feed costs, revenue breakdown, employee analytics — all visual.' },
+  { icon: '🇮🇳', title: 'Hindi + English AI', desc: 'Ask "aaj ka dudh kitna hai?" or "show breeding status" — our Gemini AI understands both languages.' },
+];
+
+const defaultHowItWorks = [
+  { emoji: '📝', title: 'Create Account', desc: 'Sign up in 30 seconds. Start your free trial instantly.' },
+  { emoji: '🏠', title: 'Add Your Farm', desc: 'Add your cattle, set up milk recording, and configure your farm.' },
+  { emoji: '📈', title: 'Manage & Grow', desc: 'Use smart insights, track finances, and make data-driven decisions.' },
+];
+
+const defaultPlanFeatures = ['All 12 modules included', 'Unlimited cattle & records', 'AI Farm Assistant (Gemini)', 'Dudh Khata + Employee Mgmt', '10+ Report dashboards', 'CSV & PDF exports'];
+
+const defaultFaqs = [
+  { q: 'Is DairyPro free to try?', a: 'Yes! You get a free trial with full access to all 12 modules. No credit card required.' },
+  { q: 'Can I use it on my phone?', a: 'Absolutely! DairyPro is a Progressive Web App (PWA) — install it on your phone like a regular app. Works on Android, iOS, tablet, and desktop.' },
+  { q: 'Does it support Hindi?', a: 'Yes! Our AI Farm Assistant understands Hindi, English, and Hinglish. Ask "aaj ka dudh kitna hai?" or "show breeding status" — both work perfectly!' },
+  { q: 'How does the AI chatbot work?', a: 'Powered by Google Gemini 2.5 Flash with real-time access to your farm data. It analyzes milk trends, flags health alerts, predicts deliveries, tracks customer dues, monitors employee attendance — and gives actionable recommendations.' },
+  { q: 'What is Dudh Khata?', a: 'Dudh Khata (दूध खाता) is our milk delivery management module. Track daily deliveries to households, maintain customer ledgers, record payments, and see outstanding dues at a glance.' },
+  { q: 'Can I manage employees?', a: 'Yes! Add staff with roles and salaries, track daily attendance (present/absent/half-day/leave), manage advance payments, and analyze workforce performance through reports.' },
+  { q: 'Is my data safe?', a: 'Your data is stored on encrypted MongoDB Atlas. Payments are processed via Razorpay (PCI DSS compliant, RBI regulated). Each farm\'s data is completely isolated.' },
+  { q: 'How do I pay for subscription?', a: 'We accept UPI, QR Code scan, debit/credit cards, Paytm, PhonePe, net banking, EMI, and Pay Later — all via Razorpay. Subscription activates instantly after payment.' },
+  { q: 'What reports are available?', a: '10+ report dashboards: Milk production trends, health analytics, breeding status, feed cost analysis, employee performance, customer analytics, revenue breakdown, and more. All with interactive charts and CSV/PDF export.' },
+  { q: 'Can I track cattle insurance?', a: 'Yes! Record insurance policies with coverage dates, premiums, and provider details. Get alerts before policies expire. The AI chatbot also knows about govt schemes like Pashu Dhan Bima Yojana.' },
+  { q: 'How many cattle can I track?', a: 'No limits! Track unlimited cattle — milking, dry, heifers, calves, bulls. Unlimited records across all modules. Every plan includes everything.' },
+  { q: 'Can I export my records?', a: 'Yes! Export from any module as CSV or PDF — milk records, health history, employee attendance, financial reports, customer ledgers, and more.' },
+];
+
+const whyUsIconMap = { FiSmartphone: <FiSmartphone size={28} />, FiShield: <FiShield size={28} />, FiTrendingUp: <FiTrendingUp size={28} /> };
 
 // Custom Plan Builder Component
 function CustomPlanBuilder({ content, appConfig }) {
@@ -260,6 +299,28 @@ export default function Landing() {
   const address = content?.contactAddress || 'Punjab, India';
   const trialDays = content?.pricing?.trialDays || 5;
 
+  const featuresData = content?.features?.length > 0
+    ? [...content.features].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)).map(f => ({ icon: f.icon, title: f.title, desc: f.description }))
+    : defaultFeatures;
+
+  const moduleDetailsData = content?.moduleDetails?.length > 0
+    ? [...content.moduleDetails].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+    : defaultModuleDetails;
+
+  const whyUsData = content?.whyUsCards?.length > 0
+    ? [...content.whyUsCards].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)).map(c => ({ icon: c.icon, title: c.title, desc: c.description }))
+    : defaultWhyUsCards;
+
+  const howItWorksData = content?.howItWorks?.length > 0
+    ? [...content.howItWorks].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+    : defaultHowItWorks;
+
+  const planFeaturesData = content?.planFeatures?.length > 0 ? content.planFeatures : defaultPlanFeatures;
+
+  const faqsData = content?.faqs?.length > 0 ? content.faqs : defaultFaqs;
+
+  const sv = content?.sectionVisibility || {};
+
   const defaultTestimonials = [
     { name: 'Rajesh Kumar', location: 'Punjab', text: 'DairyPro completely changed how I manage my 50-cow dairy. The farm assistant saves me hours every week!', stars: 5 },
     { name: 'Priya Sharma', location: 'Haryana', text: 'Finally, a farm management app that understands Hindi! The milk recording and finance tracking is excellent.', stars: 5 },
@@ -370,7 +431,7 @@ export default function Landing() {
       </section>
 
       {/* ─── Features ─── */}
-      <section id="features" className="py-20 px-4 bg-white dark:bg-gray-950">
+      {sv.features !== false && <section id="features" className="py-20 px-4 bg-white dark:bg-gray-950">
         <div className="max-w-7xl mx-auto">
           <FadeIn>
             <div className="text-center mb-16">
@@ -379,7 +440,7 @@ export default function Landing() {
             </div>
           </FadeIn>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {features.map((f, i) => (
+            {featuresData.map((f, i) => (
               <FadeIn key={f.title} delay={i * 0.08}>
                 <motion.div whileHover={{ y: -8, scale: 1.02 }} transition={{ type: 'spring', stiffness: 300 }}
                   className="p-6 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-emerald-200 dark:hover:border-emerald-800 hover:shadow-xl dark:hover:shadow-emerald-900/10 transition-all group bg-white dark:bg-gray-900">
@@ -391,10 +452,10 @@ export default function Landing() {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ─── App Modules Detail ─── */}
-      <section className="py-20 px-4 bg-gray-50 dark:bg-gray-900">
+      {sv.moduleDetails !== false && <section className="py-20 px-4 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto">
           <FadeIn>
             <div className="text-center mb-16">
@@ -403,12 +464,7 @@ export default function Landing() {
             </div>
           </FadeIn>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {[
-              { icon: '🏘️', title: 'Dudh Khata (दूध खाता)', points: ['Customer-wise milk delivery ledger', 'Daily quantity & rate tracking', 'Payment collection with balance', 'Outstanding dues dashboard', 'Customer-wise monthly statements'] },
-              { icon: '👷', title: 'Employee Management', points: ['Staff profiles with roles & salary', 'Daily attendance marking', 'Present / Absent / Half-day / Leave', 'Advance payment tracking', 'Performance analytics in Reports'] },
-              { icon: '🤖', title: 'AI Farm Assistant', points: ['Google Gemini 2.5 Flash powered', 'Hindi + English + Hinglish support', 'Real-time farm data analysis', '20+ quick action buttons', 'Predictions, alerts & recommendations'] },
-              { icon: '📊', title: '10+ Report Dashboards', points: ['Milk production trends & quality', 'Health & vaccination analytics', 'Feed cost optimization', 'Employee performance charts', 'Customer analytics & revenue breakdown'] },
-            ].map((mod, i) => (
+            {moduleDetailsData.map((mod, i) => (
               <FadeIn key={mod.title} delay={i * 0.1}>
                 <div className="flex gap-4 p-6 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-shadow">
                   <span className="text-4xl flex-shrink-0">{mod.icon}</span>
@@ -427,10 +483,10 @@ export default function Landing() {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ─── Why DairyPro ─── */}
-      <section className="py-20 px-4 bg-gradient-to-br from-emerald-600 to-emerald-700 dark:from-emerald-800 dark:to-emerald-900 text-white relative overflow-hidden">
+      {sv.whyUs !== false && <section className="py-20 px-4 bg-gradient-to-br from-emerald-600 to-emerald-700 dark:from-emerald-800 dark:to-emerald-900 text-white relative overflow-hidden">
         <div className="absolute inset-0 opacity-10"><div className="absolute top-10 left-10 w-40 h-40 border border-white rounded-full"></div><div className="absolute bottom-10 right-20 w-60 h-60 border border-white rounded-full"></div></div>
         <div className="max-w-7xl mx-auto relative">
           <FadeIn>
@@ -440,17 +496,12 @@ export default function Landing() {
             </div>
           </FadeIn>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { icon: <FiSmartphone size={28} />, title: 'Mobile First', desc: 'PWA app — install on phone like an app. Works on any device, even with slow internet.' },
-              { icon: <FiShield size={28} />, title: 'Bank-Level Security', desc: 'Encrypted data, Razorpay payments (PCI DSS), farm-isolated storage. Your data stays yours.' },
-              { icon: <FiTrendingUp size={28} />, title: '20+ Analytics Charts', desc: 'Milk trends, health patterns, feed costs, revenue breakdown, employee analytics — all visual.' },
-              { icon: '🇮🇳', title: 'Hindi + English AI', desc: 'Ask "aaj ka dudh kitna hai?" or "show breeding status" — our Gemini AI understands both languages.' },
-            ].map((item, i) => (
+            {whyUsData.map((item, i) => (
               <FadeIn key={item.title} delay={i * 0.1}>
                 <div className="text-center">
                   <motion.div whileHover={{ rotate: [0, -10, 10, 0] }} transition={{ duration: 0.5 }}
                     className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mx-auto text-2xl">
-                    {item.icon}
+                    {whyUsIconMap[item.icon] || item.icon}
                   </motion.div>
                   <h3 className="text-lg font-semibold mt-4">{item.title}</h3>
                   <p className="text-emerald-100 text-sm mt-2">{item.desc}</p>
@@ -459,10 +510,10 @@ export default function Landing() {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ─── Custom Plan Builder ─── */}
-      {(appConfig?.customPlanEnabled !== false) && (
+      {(appConfig?.customPlanEnabled !== false) && (sv.customPlan !== false) && (
         <section id="custom-plan" className="py-20 px-4 bg-gray-50 dark:bg-gray-900">
           <div className="max-w-7xl mx-auto">
             <FadeIn>
@@ -482,7 +533,7 @@ export default function Landing() {
       )}
 
       {/* ─── Pricing ─── */}
-      <section id="pricing" className="py-20 px-4 bg-white dark:bg-gray-950">
+      {sv.pricing !== false && <section id="pricing" className="py-20 px-4 bg-white dark:bg-gray-950">
         <div className="max-w-7xl mx-auto">
           <FadeIn>
             <div className="text-center mb-12">
@@ -500,7 +551,7 @@ export default function Landing() {
                   <h3 className={`text-lg font-semibold ${plan.popular ? '' : 'text-gray-900 dark:text-white'}`}>{plan.name}</h3>
                   <p className="mt-4"><span className="text-4xl font-bold">₹{plan.price.toLocaleString('en-IN')}</span><span className={`text-sm ${plan.popular ? 'text-emerald-100' : 'text-gray-500 dark:text-gray-400'}`}>{plan.period}</span></p>
                   <ul className={`mt-6 space-y-3 text-sm text-left ${plan.popular ? 'text-emerald-50' : 'text-gray-600 dark:text-gray-400'}`}>
-                    {['All 12 modules included', 'Unlimited cattle & records', 'AI Farm Assistant (Gemini)', 'Dudh Khata + Employee Mgmt', '10+ Report dashboards', 'CSV & PDF exports'].map(f => (
+                    {planFeaturesData.map(f => (
                       <li key={f} className="flex items-center gap-2"><FiCheckCircle size={16} className={plan.popular ? 'text-emerald-200' : 'text-emerald-500'} /> {f}</li>
                     ))}
                   </ul>
@@ -512,10 +563,10 @@ export default function Landing() {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ─── Testimonials ─── */}
-      <section id="testimonials" className="py-20 px-4 bg-white dark:bg-gray-950">
+      {sv.testimonials !== false && <section id="testimonials" className="py-20 px-4 bg-white dark:bg-gray-950">
         <div className="max-w-7xl mx-auto">
           <FadeIn>
             <div className="text-center mb-12">
@@ -542,41 +593,37 @@ export default function Landing() {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ─── How It Works ─── */}
-      <section className="py-20 px-4 bg-gray-50 dark:bg-gray-900">
+      {sv.howItWorks !== false && <section className="py-20 px-4 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto">
           <FadeIn>
             <div className="text-center mb-12">
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">Get Started in 3 Steps</h2>
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">Get Started in {howItWorksData.length} Steps</h2>
             </div>
           </FadeIn>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            {[
-              { step: '1', title: 'Create Account', desc: `Sign up in 30 seconds. Start your ${trialDays}-day free trial instantly.`, emoji: '📝' },
-              { step: '2', title: 'Add Your Farm', desc: 'Add your cattle, set up milk recording, and configure your farm.', emoji: '🏠' },
-              { step: '3', title: 'Manage & Grow', desc: 'Use smart insights, track finances, and make data-driven decisions.', emoji: '📈' },
-            ].map((s, i) => (
-              <FadeIn key={s.step} delay={i * 0.2}>
+            {howItWorksData.map((s, i) => (
+              <FadeIn key={i} delay={i * 0.2}>
                 <div className="text-center">
                   <motion.div initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={{ once: true }}
                     transition={{ type: 'spring', stiffness: 200, delay: i * 0.2 }}
                     className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center mx-auto text-3xl">
                     {s.emoji}
                   </motion.div>
-                  <div className="w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto -mt-4 text-sm font-bold shadow">{s.step}</div>
+                  <div className="w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto -mt-4 text-sm font-bold shadow">{i + 1}</div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mt-4">{s.title}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{s.desc}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{s.desc || s.description}</p>
                 </div>
               </FadeIn>
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ─── Download App ─── */}
-      <section className="py-20 px-4 bg-white dark:bg-gray-950">
+      {sv.downloadApp !== false && <section className="py-20 px-4 bg-white dark:bg-gray-950">
         <div className="max-w-4xl mx-auto text-center">
           <FadeIn>
             <div className="p-8 rounded-3xl bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border border-emerald-100 dark:border-emerald-900/30">
@@ -596,10 +643,10 @@ export default function Landing() {
             </div>
           </FadeIn>
         </div>
-      </section>
+      </section>}
 
       {/* ─── Contact ─── */}
-      <section id="contact" className="py-20 px-4 bg-white dark:bg-gray-950">
+      {sv.contact !== false && <section id="contact" className="py-20 px-4 bg-white dark:bg-gray-950">
         <div className="max-w-7xl mx-auto">
           <FadeIn>
             <div className="text-center mb-12">
@@ -628,7 +675,7 @@ export default function Landing() {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ─── CTA ─── */}
       <section className="py-20 px-4 bg-gradient-to-br from-emerald-600 to-emerald-700 dark:from-emerald-800 dark:to-emerald-900 relative overflow-hidden">
@@ -651,7 +698,7 @@ export default function Landing() {
       </section>
 
       {/* ─── FAQ Section ─── */}
-      <section className="py-20 px-4 bg-gray-50 dark:bg-gray-900">
+      {sv.faq !== false && <section className="py-20 px-4 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-4xl mx-auto">
           <FadeIn>
             <div className="text-center mb-12">
@@ -660,33 +707,20 @@ export default function Landing() {
             </div>
           </FadeIn>
           <div className="space-y-4">
-            {(content?.faqs?.length > 0 ? content.faqs : [
-              { q: 'Is DairyPro free to try?', a: `Yes! You get a ${trialDays}-day free trial with full access to all 12 modules. No credit card required.` },
-              { q: 'Can I use it on my phone?', a: 'Absolutely! DairyPro is a Progressive Web App (PWA) — install it on your phone like a regular app. Works on Android, iOS, tablet, and desktop.' },
-              { q: 'Does it support Hindi?', a: 'Yes! Our AI Farm Assistant understands Hindi, English, and Hinglish. Ask "aaj ka dudh kitna hai?" or "show breeding status" — both work perfectly!' },
-              { q: 'How does the AI chatbot work?', a: 'Powered by Google Gemini 2.5 Flash with real-time access to your farm data. It analyzes milk trends, flags health alerts, predicts deliveries, tracks customer dues, monitors employee attendance — and gives actionable recommendations.' },
-              { q: 'What is Dudh Khata?', a: 'Dudh Khata (दूध खाता) is our milk delivery management module. Track daily deliveries to households, maintain customer ledgers, record payments, and see outstanding dues at a glance.' },
-              { q: 'Can I manage employees?', a: 'Yes! Add staff with roles and salaries, track daily attendance (present/absent/half-day/leave), manage advance payments, and analyze workforce performance through reports.' },
-              { q: 'Is my data safe?', a: 'Your data is stored on encrypted MongoDB Atlas. Payments are processed via Razorpay (PCI DSS compliant, RBI regulated). Each farm\'s data is completely isolated.' },
-              { q: 'How do I pay for subscription?', a: 'We accept UPI, QR Code scan, debit/credit cards, Paytm, PhonePe, net banking, EMI, and Pay Later — all via Razorpay. Subscription activates instantly after payment.' },
-              { q: 'What reports are available?', a: '10+ report dashboards: Milk production trends, health analytics, breeding status, feed cost analysis, employee performance, customer analytics, revenue breakdown, and more. All with interactive charts and CSV/PDF export.' },
-              { q: 'Can I track cattle insurance?', a: 'Yes! Record insurance policies with coverage dates, premiums, and provider details. Get alerts before policies expire. The AI chatbot also knows about govt schemes like Pashu Dhan Bima Yojana.' },
-              { q: 'How many cattle can I track?', a: 'No limits! Track unlimited cattle — milking, dry, heifers, calves, bulls. Unlimited records across all modules. Every plan includes everything.' },
-              { q: 'Can I export my records?', a: 'Yes! Export from any module as CSV or PDF — milk records, health history, employee attendance, financial reports, customer ledgers, and more.' },
-            ]).map((faq, i) => (
+            {faqsData.map((faq, i) => (
               <FadeIn key={i} delay={i * 0.05}>
                 <details className="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                   <summary className="flex items-center justify-between p-5 cursor-pointer font-semibold text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-750 transition">
-                    {faq.q}
+                    {faq.q || faq.question}
                     <span className="text-emerald-500 group-open:rotate-45 transition-transform text-xl">+</span>
                   </summary>
-                  <div className="px-5 pb-5 text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{faq.a}</div>
+                  <div className="px-5 pb-5 text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{faq.a || faq.answer}</div>
                 </details>
               </FadeIn>
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* ─── Footer ─── */}
       <footer className="py-12 px-4 bg-gray-900 dark:bg-gray-950 text-gray-400 border-t border-gray-800">

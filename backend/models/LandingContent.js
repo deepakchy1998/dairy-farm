@@ -46,6 +46,60 @@ const landingContentSchema = new mongoose.Schema({
       chatbot: { type: Number, default: 60 },
     },
   },
+  // Features section (the 12 feature cards)
+  features: [{
+    icon: { type: String, default: '' },
+    title: { type: String, default: '' },
+    description: { type: String, default: '' },
+    sortOrder: { type: Number, default: 0 },
+  }],
+
+  // Module detail cards (the "12 Powerful Modules" section with bullet points)
+  moduleDetails: [{
+    icon: { type: String, default: '' },
+    title: { type: String, default: '' },
+    points: [{ type: String }],
+    sortOrder: { type: Number, default: 0 },
+  }],
+
+  // "Why Farmers Love DairyPro" cards
+  whyUsCards: [{
+    icon: { type: String, default: '' },
+    title: { type: String, default: '' },
+    description: { type: String, default: '' },
+    sortOrder: { type: Number, default: 0 },
+  }],
+
+  // "How It Works" steps
+  howItWorks: [{
+    emoji: { type: String, default: '' },
+    title: { type: String, default: '' },
+    description: { type: String, default: '' },
+    sortOrder: { type: Number, default: 0 },
+  }],
+
+  // Plan feature bullets shown on landing pricing cards
+  planFeatures: [{ type: String }],
+
+  // FAQ items
+  faqs: [{
+    q: { type: String, default: '' },
+    a: { type: String, default: '' },
+  }],
+
+  // Section visibility toggles
+  sectionVisibility: {
+    features: { type: Boolean, default: true },
+    moduleDetails: { type: Boolean, default: true },
+    whyUs: { type: Boolean, default: true },
+    customPlan: { type: Boolean, default: true },
+    pricing: { type: Boolean, default: true },
+    testimonials: { type: Boolean, default: true },
+    howItWorks: { type: Boolean, default: true },
+    downloadApp: { type: Boolean, default: true },
+    faq: { type: Boolean, default: true },
+    contact: { type: Boolean, default: true },
+  },
 }, { timestamps: true });
 
 export default mongoose.model('LandingContent', landingContentSchema);

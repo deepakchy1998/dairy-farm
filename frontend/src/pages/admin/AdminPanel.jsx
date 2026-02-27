@@ -10,7 +10,7 @@ import {
   FiUsers, FiHome, FiCreditCard, FiCheck, FiX, FiShield,
   FiPlus, FiTrash2, FiSearch, FiEye, FiArrowLeft, FiAlertTriangle,
   FiRefreshCw, FiDownload, FiServer, FiLock, FiUnlock, FiKey, FiActivity,
-  FiMail, FiSend, FiLogIn, FiMessageSquare,
+  FiMail, FiSend, FiLogIn, FiMessageSquare, FiEdit2,
 } from 'react-icons/fi';
 import { FaIndianRupeeSign } from 'react-icons/fa6';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area, LineChart, Line, Legend } from 'recharts';
@@ -26,6 +26,7 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true);
 
   const [websiteForm, setWebsiteForm] = useState({});
+  const [websiteSubTab, setWebsiteSubTab] = useState('general');
   const [saving, setSaving] = useState(false);
   const [usersPage, setUsersPage] = useState(1);
   const [usersPagination, setUsersPagination] = useState({});
@@ -94,8 +95,12 @@ export default function AdminPanel() {
         setPayments(r.data.data); setPaymentsPagination(r.data.pagination || {});
       }
       if (tab === 'website') {
-        const r = await api.get('/admin/settings');
-        setSettings(r.data.data); setWebsiteForm(r.data.data);
+        const [settingsRes, landingRes] = await Promise.all([
+          api.get('/admin/settings'),
+          api.get('/admin/landing'),
+        ]);
+        const merged = { ...settingsRes.data.data, ...landingRes.data.data };
+        setSettings(merged); setWebsiteForm(merged);
       }
       if (tab === 'app-config') {
         const r = await api.get('/app-config');
@@ -1592,6 +1597,20 @@ export default function AdminPanel() {
       {/* ═══ WEBSITE ═══ */}
       {tab === 'website' && (
         <div className="space-y-6 max-w-3xl">
+          {/* Sub-tab pills */}
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {[
+              { v: 'general', l: 'General' }, { v: 'features', l: 'Features' }, { v: 'modules', l: 'Modules' },
+              { v: 'whyus', l: 'Why Us' }, { v: 'steps', l: 'Steps' }, { v: 'planfeatures', l: 'Plan Features' },
+              { v: 'faqs', l: 'FAQs' }, { v: 'sections', l: 'Sections' },
+            ].map(t => (
+              <button key={t.v} onClick={() => setWebsiteSubTab(t.v)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition ${websiteSubTab === t.v ? 'bg-emerald-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>{t.l}</button>
+            ))}
+          </div>
+
+          {/* ═══ GENERAL sub-tab ═══ */}
+          {websiteSubTab === 'general' && (<>
           {/* Hero Section */}
           <div className="card">
             <h3 className="font-semibold mb-4">🏠 Hero Section</h3>
@@ -1602,7 +1621,6 @@ export default function AdminPanel() {
               <div><label className="label">CTA Button Text</label><input className="input" value={websiteForm.ctaText || ''} onChange={e => setWebsiteForm({ ...websiteForm, ctaText: e.target.value })} placeholder="Start Free Trial" /></div>
             </div>
           </div>
-
           {/* Stats */}
           <div className="card">
             <h3 className="font-semibold mb-4">📊 Stats (shown below hero)</h3>
@@ -1613,7 +1631,6 @@ export default function AdminPanel() {
               <div><label className="label">Uptime</label><input className="input" value={websiteForm.statsUptime || ''} onChange={e => setWebsiteForm({ ...websiteForm, statsUptime: e.target.value })} placeholder="99.9%" /></div>
             </div>
           </div>
-
           {/* SEO & Branding */}
           <div className="card">
             <h3 className="font-semibold mb-4">🔍 SEO & Branding</h3>
@@ -1624,7 +1641,6 @@ export default function AdminPanel() {
               <div><label className="label">Copyright Text</label><input className="input" value={websiteForm.copyrightText || ''} onChange={e => setWebsiteForm({ ...websiteForm, copyrightText: e.target.value })} placeholder="© 2026 DairyPro. All rights reserved." /></div>
             </div>
           </div>
-
           {/* Social Links */}
           <div className="card">
             <h3 className="font-semibold mb-4">🔗 Social Links</h3>
@@ -1637,7 +1653,6 @@ export default function AdminPanel() {
               <div><label className="label">Play Store URL</label><input className="input" value={websiteForm.playStoreUrl || ''} onChange={e => setWebsiteForm({ ...websiteForm, playStoreUrl: e.target.value })} placeholder="https://play.google.com/store/apps/..." /></div>
             </div>
           </div>
-
           {/* Contact */}
           <div className="card">
             <h3 className="font-semibold mb-4">📞 Contact Information</h3>
@@ -1651,7 +1666,6 @@ export default function AdminPanel() {
               <div><label className="label">Google Maps Embed URL</label><input className="input" value={websiteForm.mapEmbedUrl || ''} onChange={e => setWebsiteForm({ ...websiteForm, mapEmbedUrl: e.target.value })} placeholder="https://www.google.com/maps/embed?..." /><p className="text-[10px] text-gray-400 mt-1">Paste the iframe src URL from Google Maps</p></div>
             </div>
           </div>
-
           {/* Announcement Banner */}
           <div className="card">
             <h3 className="font-semibold mb-4">📢 Announcement Banner</h3>
@@ -1664,25 +1678,6 @@ export default function AdminPanel() {
               </div>
             </div>
           </div>
-
-          {/* FAQ Management */}
-          <div className="card">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">❓ FAQs</h3>
-              <button onClick={() => setWebsiteForm({ ...websiteForm, faqs: [...(websiteForm.faqs || []), { question: '', answer: '' }] })} className="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-200 flex items-center gap-1"><FiPlus size={14} /> Add FAQ</button>
-            </div>
-            <p className="text-xs text-gray-500 mb-3">Custom FAQs shown on the landing page (leave empty to use defaults)</p>
-            <div className="space-y-4">
-              {(websiteForm.faqs || []).map((faq, i) => (
-                <div key={i} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-3 relative">
-                  <button onClick={() => { const up = [...websiteForm.faqs]; up.splice(i, 1); setWebsiteForm({ ...websiteForm, faqs: up }); }} className="absolute top-3 right-3 text-red-400 hover:text-red-600"><FiTrash2 size={14} /></button>
-                  <div><label className="label text-xs">Question</label><input className="input" value={faq.question} onChange={e => { const up = [...websiteForm.faqs]; up[i].question = e.target.value; setWebsiteForm({ ...websiteForm, faqs: up }); }} placeholder="Is DairyPro free to try?" /></div>
-                  <div><label className="label text-xs">Answer</label><textarea className="input" rows={2} value={faq.answer} onChange={e => { const up = [...websiteForm.faqs]; up[i].answer = e.target.value; setWebsiteForm({ ...websiteForm, faqs: up }); }} placeholder="Yes! You get a 5-day free trial..." /></div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Testimonials */}
           <div className="card">
             <div className="flex items-center justify-between mb-4">
@@ -1703,8 +1698,187 @@ export default function AdminPanel() {
               ))}
             </div>
           </div>
+          </>)}
 
-          <button onClick={async () => { setSaving(true); try { await api.put('/admin/settings', websiteForm); toast.success('Saved!'); } catch { toast.error('Failed'); } finally { setSaving(false); } }} disabled={saving} className="btn-primary w-full py-3 text-lg">{saving ? 'Saving...' : '💾 Save Website Content'}</button>
+          {/* ═══ FEATURES sub-tab ═══ */}
+          {websiteSubTab === 'features' && (
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">⭐ Feature Cards</h3>
+              <button onClick={() => setWebsiteForm({ ...websiteForm, features: [...(websiteForm.features || []), { icon: '', title: '', description: '', sortOrder: (websiteForm.features?.length || 0) }] })} className="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-200 flex items-center gap-1"><FiPlus size={14} /> Add Feature</button>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">Feature cards shown on the landing page. Leave empty to use defaults.</p>
+            <div className="space-y-4">
+              {(websiteForm.features || []).map((f, i) => (
+                <div key={i} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-3 relative">
+                  <button onClick={() => { const up = [...websiteForm.features]; up.splice(i, 1); setWebsiteForm({ ...websiteForm, features: up }); }} className="absolute top-3 right-3 text-red-400 hover:text-red-600"><FiTrash2 size={14} /></button>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div><label className="label text-xs">Icon (emoji)</label><input className="input" value={f.icon || ''} onChange={e => { const up = [...websiteForm.features]; up[i].icon = e.target.value; setWebsiteForm({ ...websiteForm, features: up }); }} placeholder="🐄" /></div>
+                    <div className="col-span-2"><label className="label text-xs">Title</label><input className="input" value={f.title || ''} onChange={e => { const up = [...websiteForm.features]; up[i].title = e.target.value; setWebsiteForm({ ...websiteForm, features: up }); }} placeholder="Cattle Management" /></div>
+                    <div><label className="label text-xs">Sort Order</label><input type="number" className="input" value={f.sortOrder || 0} onChange={e => { const up = [...websiteForm.features]; up[i].sortOrder = Number(e.target.value); setWebsiteForm({ ...websiteForm, features: up }); }} /></div>
+                  </div>
+                  <div><label className="label text-xs">Description</label><textarea className="input" rows={2} value={f.description || ''} onChange={e => { const up = [...websiteForm.features]; up[i].description = e.target.value; setWebsiteForm({ ...websiteForm, features: up }); }} placeholder="Track every animal..." /></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          )}
+
+          {/* ═══ MODULES sub-tab ═══ */}
+          {websiteSubTab === 'modules' && (
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">📦 Module Detail Cards</h3>
+              <button onClick={() => setWebsiteForm({ ...websiteForm, moduleDetails: [...(websiteForm.moduleDetails || []), { icon: '', title: '', points: [], sortOrder: (websiteForm.moduleDetails?.length || 0) }] })} className="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-200 flex items-center gap-1"><FiPlus size={14} /> Add Module</button>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">Module detail cards with bullet points. Leave empty to use defaults.</p>
+            <div className="space-y-4">
+              {(websiteForm.moduleDetails || []).map((m, i) => (
+                <div key={i} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-3 relative">
+                  <button onClick={() => { const up = [...websiteForm.moduleDetails]; up.splice(i, 1); setWebsiteForm({ ...websiteForm, moduleDetails: up }); }} className="absolute top-3 right-3 text-red-400 hover:text-red-600"><FiTrash2 size={14} /></button>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div><label className="label text-xs">Icon (emoji)</label><input className="input" value={m.icon || ''} onChange={e => { const up = [...websiteForm.moduleDetails]; up[i].icon = e.target.value; setWebsiteForm({ ...websiteForm, moduleDetails: up }); }} placeholder="🏘️" /></div>
+                    <div className="col-span-2"><label className="label text-xs">Title</label><input className="input" value={m.title || ''} onChange={e => { const up = [...websiteForm.moduleDetails]; up[i].title = e.target.value; setWebsiteForm({ ...websiteForm, moduleDetails: up }); }} placeholder="Dudh Khata" /></div>
+                    <div><label className="label text-xs">Sort Order</label><input type="number" className="input" value={m.sortOrder || 0} onChange={e => { const up = [...websiteForm.moduleDetails]; up[i].sortOrder = Number(e.target.value); setWebsiteForm({ ...websiteForm, moduleDetails: up }); }} /></div>
+                  </div>
+                  <div><label className="label text-xs">Points (one per line)</label><textarea className="input" rows={4} value={(m.points || []).join('\n')} onChange={e => { const up = [...websiteForm.moduleDetails]; up[i].points = e.target.value.split('\n'); setWebsiteForm({ ...websiteForm, moduleDetails: up }); }} placeholder="Customer-wise milk delivery ledger&#10;Daily quantity & rate tracking" /></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          )}
+
+          {/* ═══ WHY US sub-tab ═══ */}
+          {websiteSubTab === 'whyus' && (
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">💚 Why Us Cards</h3>
+              <button onClick={() => setWebsiteForm({ ...websiteForm, whyUsCards: [...(websiteForm.whyUsCards || []), { icon: '', title: '', description: '', sortOrder: (websiteForm.whyUsCards?.length || 0) }] })} className="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-200 flex items-center gap-1"><FiPlus size={14} /> Add Card</button>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">"Why Farmers Love DairyPro" cards. Leave empty to use defaults.</p>
+            <div className="space-y-4">
+              {(websiteForm.whyUsCards || []).map((c, i) => (
+                <div key={i} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-3 relative">
+                  <button onClick={() => { const up = [...websiteForm.whyUsCards]; up.splice(i, 1); setWebsiteForm({ ...websiteForm, whyUsCards: up }); }} className="absolute top-3 right-3 text-red-400 hover:text-red-600"><FiTrash2 size={14} /></button>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div><label className="label text-xs">Icon (emoji)</label><input className="input" value={c.icon || ''} onChange={e => { const up = [...websiteForm.whyUsCards]; up[i].icon = e.target.value; setWebsiteForm({ ...websiteForm, whyUsCards: up }); }} placeholder="📱" /></div>
+                    <div className="col-span-2"><label className="label text-xs">Title</label><input className="input" value={c.title || ''} onChange={e => { const up = [...websiteForm.whyUsCards]; up[i].title = e.target.value; setWebsiteForm({ ...websiteForm, whyUsCards: up }); }} placeholder="Mobile First" /></div>
+                    <div><label className="label text-xs">Sort Order</label><input type="number" className="input" value={c.sortOrder || 0} onChange={e => { const up = [...websiteForm.whyUsCards]; up[i].sortOrder = Number(e.target.value); setWebsiteForm({ ...websiteForm, whyUsCards: up }); }} /></div>
+                  </div>
+                  <div><label className="label text-xs">Description</label><textarea className="input" rows={2} value={c.description || ''} onChange={e => { const up = [...websiteForm.whyUsCards]; up[i].description = e.target.value; setWebsiteForm({ ...websiteForm, whyUsCards: up }); }} placeholder="PWA app — install on phone like an app..." /></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          )}
+
+          {/* ═══ STEPS sub-tab ═══ */}
+          {websiteSubTab === 'steps' && (
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">👣 How It Works Steps</h3>
+              <button onClick={() => setWebsiteForm({ ...websiteForm, howItWorks: [...(websiteForm.howItWorks || []), { emoji: '', title: '', description: '', sortOrder: (websiteForm.howItWorks?.length || 0) }] })} className="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-200 flex items-center gap-1"><FiPlus size={14} /> Add Step</button>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">"How It Works" steps. Leave empty to use defaults.</p>
+            <div className="space-y-4">
+              {(websiteForm.howItWorks || []).map((s, i) => (
+                <div key={i} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-3 relative">
+                  <button onClick={() => { const up = [...websiteForm.howItWorks]; up.splice(i, 1); setWebsiteForm({ ...websiteForm, howItWorks: up }); }} className="absolute top-3 right-3 text-red-400 hover:text-red-600"><FiTrash2 size={14} /></button>
+                  <div className="grid grid-cols-4 gap-3">
+                    <div><label className="label text-xs">Emoji</label><input className="input" value={s.emoji || ''} onChange={e => { const up = [...websiteForm.howItWorks]; up[i].emoji = e.target.value; setWebsiteForm({ ...websiteForm, howItWorks: up }); }} placeholder="📝" /></div>
+                    <div className="col-span-2"><label className="label text-xs">Title</label><input className="input" value={s.title || ''} onChange={e => { const up = [...websiteForm.howItWorks]; up[i].title = e.target.value; setWebsiteForm({ ...websiteForm, howItWorks: up }); }} placeholder="Create Account" /></div>
+                    <div><label className="label text-xs">Sort Order</label><input type="number" className="input" value={s.sortOrder || 0} onChange={e => { const up = [...websiteForm.howItWorks]; up[i].sortOrder = Number(e.target.value); setWebsiteForm({ ...websiteForm, howItWorks: up }); }} /></div>
+                  </div>
+                  <div><label className="label text-xs">Description</label><textarea className="input" rows={2} value={s.description || ''} onChange={e => { const up = [...websiteForm.howItWorks]; up[i].description = e.target.value; setWebsiteForm({ ...websiteForm, howItWorks: up }); }} placeholder="Sign up in 30 seconds..." /></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          )}
+
+          {/* ═══ PLAN FEATURES sub-tab ═══ */}
+          {websiteSubTab === 'planfeatures' && (
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">✅ Plan Feature Bullets</h3>
+              <button onClick={() => setWebsiteForm({ ...websiteForm, planFeatures: [...(websiteForm.planFeatures || []), ''] })} className="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-200 flex items-center gap-1"><FiPlus size={14} /> Add</button>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">Feature bullets shown on pricing cards. Leave empty to use defaults.</p>
+            <div className="space-y-3">
+              {(websiteForm.planFeatures || []).map((f, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <input className="input flex-1" value={f} onChange={e => { const up = [...websiteForm.planFeatures]; up[i] = e.target.value; setWebsiteForm({ ...websiteForm, planFeatures: up }); }} placeholder="All 12 modules included" />
+                  <button onClick={() => { const up = [...websiteForm.planFeatures]; up.splice(i, 1); setWebsiteForm({ ...websiteForm, planFeatures: up }); }} className="text-red-400 hover:text-red-600"><FiTrash2 size={14} /></button>
+                </div>
+              ))}
+            </div>
+          </div>
+          )}
+
+          {/* ═══ FAQS sub-tab ═══ */}
+          {websiteSubTab === 'faqs' && (
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">❓ FAQs</h3>
+              <button onClick={() => setWebsiteForm({ ...websiteForm, faqs: [...(websiteForm.faqs || []), { q: '', a: '' }] })} className="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-200 flex items-center gap-1"><FiPlus size={14} /> Add FAQ</button>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">Custom FAQs shown on the landing page. Leave empty to use defaults.</p>
+            <div className="space-y-4">
+              {(websiteForm.faqs || []).map((faq, i) => (
+                <div key={i} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 space-y-3 relative">
+                  <button onClick={() => { const up = [...websiteForm.faqs]; up.splice(i, 1); setWebsiteForm({ ...websiteForm, faqs: up }); }} className="absolute top-3 right-3 text-red-400 hover:text-red-600"><FiTrash2 size={14} /></button>
+                  <div><label className="label text-xs">Question</label><input className="input" value={faq.q || faq.question || ''} onChange={e => { const up = [...websiteForm.faqs]; up[i] = { ...up[i], q: e.target.value }; setWebsiteForm({ ...websiteForm, faqs: up }); }} placeholder="Is DairyPro free to try?" /></div>
+                  <div><label className="label text-xs">Answer</label><textarea className="input" rows={2} value={faq.a || faq.answer || ''} onChange={e => { const up = [...websiteForm.faqs]; up[i] = { ...up[i], a: e.target.value }; setWebsiteForm({ ...websiteForm, faqs: up }); }} placeholder="Yes! You get a 5-day free trial..." /></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          )}
+
+          {/* ═══ SECTIONS sub-tab ═══ */}
+          {websiteSubTab === 'sections' && (
+          <div className="card">
+            <h3 className="font-semibold mb-4">👁️ Section Visibility</h3>
+            <p className="text-xs text-gray-500 mb-4">Toggle sections on/off on the landing page.</p>
+            <div className="space-y-3">
+              {[
+                { key: 'features', label: 'Features (12 cards)' },
+                { key: 'moduleDetails', label: 'Module Details (bullet cards)' },
+                { key: 'whyUs', label: 'Why Farmers Love DairyPro' },
+                { key: 'customPlan', label: 'Custom Plan Builder' },
+                { key: 'pricing', label: 'Pricing Cards' },
+                { key: 'testimonials', label: 'Testimonials' },
+                { key: 'howItWorks', label: 'How It Works Steps' },
+                { key: 'downloadApp', label: 'Download App CTA' },
+                { key: 'faq', label: 'FAQ Section' },
+                { key: 'contact', label: 'Contact Section' },
+              ].map(s => (
+                <label key={s.key} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{s.label}</span>
+                  <div className="relative">
+                    <input type="checkbox" className="sr-only peer"
+                      checked={(websiteForm.sectionVisibility || {})[s.key] !== false}
+                      onChange={e => setWebsiteForm({ ...websiteForm, sectionVisibility: { ...(websiteForm.sectionVisibility || {}), [s.key]: e.target.checked } })} />
+                    <div className="w-11 h-6 bg-gray-300 peer-checked:bg-emerald-500 rounded-full transition-colors"></div>
+                    <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+          )}
+
+          {/* Save button — shown on all sub-tabs */}
+          <button onClick={async () => {
+            setSaving(true);
+            try {
+              // Save via /admin/landing (uses Object.assign, handles all fields)
+              await api.put('/admin/landing', websiteForm);
+              // Also save settings-specific fields via /admin/settings
+              await api.put('/admin/settings', websiteForm);
+              toast.success('Saved!');
+            } catch { toast.error('Failed'); } finally { setSaving(false); }
+          }} disabled={saving} className="btn-primary w-full py-3 text-lg">{saving ? 'Saving...' : '💾 Save Website Content'}</button>
         </div>
       )}
 
