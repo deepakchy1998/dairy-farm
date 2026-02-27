@@ -20,7 +20,7 @@ router.use(auth, checkSubscription);
 
 // ─── In-memory cache per farm (TTL: 60s) ───
 const farmCache = new Map();
-const CACHE_TTL = 60_000; // 1 minute
+const CACHE_TTL = 30_000; // 30 seconds for fresher data
 
 function getCachedData(farmId) {
   const key = farmId.toString();
@@ -46,19 +46,20 @@ function detectTopics(message) {
   const topics = new Set();
 
   const map = {
-    milk: ['milk', 'dudh', 'doodh', 'yield', 'production', 'litre', 'liter', 'fat', 'snf'],
-    cattle: ['cattle', 'cow', 'gaay', 'gai', 'bull', 'calf', 'heifer', 'animal', 'janwar', 'pashu', 'tag', 'breed'],
-    health: ['health', 'vaccine', 'vaccination', 'treatment', 'sick', 'bimar', 'vet', 'medicine', 'dawai', 'checkup', 'deworming', 'disease'],
-    breeding: ['breeding', 'pregnant', 'delivery', 'insemination', 'bachha', 'garbh', 'heat', 'cycle', 'calving'],
-    expense: ['expense', 'kharcha', 'cost', 'spending', 'budget', 'paisa'],
-    revenue: ['revenue', 'income', 'aay', 'kamai', 'sale', 'bikri', 'profit', 'munafa', 'loss'],
-    feed: ['feed', 'chara', 'fodder', 'khana', 'dana', 'silage', 'nutrition'],
-    insurance: ['insurance', 'bima', 'policy', 'claim', 'insured'],
+    milk: ['milk', 'dudh', 'doodh', 'yield', 'production', 'litre', 'liter', 'fat', 'snf', 'utpadan', 'paidawar', 'dudh kitna'],
+    cattle: ['cattle', 'cow', 'gaay', 'gai', 'bull', 'calf', 'heifer', 'animal', 'janwar', 'pashu', 'tag', 'breed', 'bhains', 'bakri', 'bail', 'bhainsa', 'bachhda', 'bachhdi', 'maweshi'],
+    health: ['health', 'vaccine', 'vaccination', 'treatment', 'sick', 'bimar', 'vet', 'medicine', 'dawai', 'checkup', 'deworming', 'disease', 'teeka', 'ilaaj', 'bimari', 'bukhar', 'kharish', 'pet dard', 'than', 'mastitis'],
+    breeding: ['breeding', 'pregnant', 'delivery', 'insemination', 'bachha', 'garbh', 'heat', 'cycle', 'calving', 'gaabhan', 'byaana', 'janm', 'heat par', 'garmi'],
+    expense: ['expense', 'kharcha', 'cost', 'spending', 'budget', 'paisa', 'kharcha kitna', 'bill', 'bijli'],
+    revenue: ['revenue', 'income', 'aay', 'kamai', 'sale', 'bikri', 'profit', 'munafa', 'loss', 'kitna kamaya', 'bikri kitna'],
+    feed: ['feed', 'chara', 'fodder', 'khana', 'dana', 'silage', 'nutrition', 'khuraak', 'bhusa', 'khal', 'choker', 'sarson khal'],
+    insurance: ['insurance', 'bima', 'policy', 'claim', 'insured', 'beema', 'suraksha'],
     lactation: ['lactation', 'dim', 'days in milk', 'dry off', 'calving'],
     weight: ['weight', 'wajan', 'vajan', 'kg', 'kilo'],
     finance: ['finance', 'money', 'paise', 'hisab', 'balance', 'profit', 'loss'],
-    delivery: ['delivery', 'customer', 'grahak', 'khata', 'dudh khata', 'household', 'village', 'gaon', 'payment', 'due', 'collection'],
-    employee: ['employee', 'karmchari', 'staff', 'worker', 'salary', 'tankhwah', 'attendance', 'hajri', 'advance'],
+    delivery: ['delivery', 'customer', 'grahak', 'khata', 'dudh khata', 'household', 'village', 'gaon', 'payment', 'due', 'collection', 'baatna', 'gharon mein', 'ghar ghar'],
+    employee: ['employee', 'karmchari', 'staff', 'worker', 'salary', 'tankhwah', 'attendance', 'hajri', 'advance', 'naukar', 'mazdoor', 'pagaar', 'chutti'],
+    report: ['report', 'chart', 'graph', 'analytics', 'analysis', 'comparison'],
   };
 
   for (const [topic, keywords] of Object.entries(map)) {
@@ -68,7 +69,7 @@ function detectTopics(message) {
   // General/overview queries fetch everything
   const overviewWords = ['summary', 'overview', 'status', 'haal', 'report', 'dashboard', 'sab', 'everything', 'farm', 'all'];
   if (overviewWords.some(w => lower.includes(w)) || topics.size === 0) {
-    return ['milk', 'cattle', 'health', 'breeding', 'expense', 'revenue', 'feed', 'insurance', 'delivery', 'employee'];
+    return ['milk', 'cattle', 'health', 'breeding', 'expense', 'revenue', 'feed', 'insurance', 'delivery', 'employee', 'report'];
   }
 
   // Finance = expense + revenue
@@ -247,18 +248,20 @@ async function buildFarmContext(farmId, topics) {
     }).populate('cattleId', 'tagNumber').limit(5).lean();
   } catch {}
 
-  // Execute all queries in parallel
+  // Execute all queries in parallel (with error resilience)
   const keys = Object.keys(queries);
-  const results = await Promise.all(Object.values(queries));
+  const results = await Promise.allSettled(Object.values(queries));
   const data = {};
-  keys.forEach((k, i) => { data[k] = results[i]; });
+  keys.forEach((k, i) => {
+    data[k] = results[i].status === 'fulfilled' ? results[i].value : null;
+  });
 
   // ─── Build context string ───
   const lines = [];
   lines.push(`=== FARM DATA (Live, ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'full', timeStyle: 'short' })}) ===`);
   lines.push(`Farm: ${data.farm?.name || 'Unknown'} | Active Cattle: ${data.cattleCount}`);
 
-  if (topics.includes('cattle') && data.cattleByCategory) {
+  try { if (topics.includes('cattle') && data.cattleByCategory) {
     lines.push(`\n📊 CATTLE:`);
     lines.push(`By Category: ${data.cattleByCategory.map(c => `${c._id}: ${c.count}`).join(', ') || 'None'}`);
     lines.push(`By Breed: ${data.cattleByBreed?.map(c => `${c._id}: ${c.count}`).join(', ') || 'None'}`);
@@ -266,9 +269,9 @@ async function buildFarmContext(farmId, topics) {
     if (data.recentCattle?.length) {
       lines.push(`Cattle List: ${data.recentCattle.map(c => `Tag ${c.tagNumber}(${c.breed},${c.category},${c.gender}${c.weight ? ','+c.weight+'kg' : ''})`).join('; ')}`);
     }
-  }
+  } } catch(e) { /* cattle context failed */ }
 
-  if (topics.includes('milk')) {
+  try { if (topics.includes('milk')) {
     const td = data.todayMilk?.[0] || { total: 0, morning: 0, afternoon: 0, evening: 0, count: 0 };
     const yd = data.yesterdayMilk?.[0]?.total || 0;
     const mm = data.monthMilk?.[0] || { total: 0, count: 0 };
@@ -289,9 +292,9 @@ async function buildFarmContext(farmId, topics) {
     if (data.lowCattle?.length) {
       lines.push(`⚠️ Low Producers: ${data.lowCattle.map(c => `Tag ${c.cattle.tagNumber}=${c.total.toFixed(1)}L/${c.days}d`).join('; ')}`);
     }
-  }
+  } } catch(e) { /* milk context failed */ }
 
-  if (topics.includes('health')) {
+  try { if (topics.includes('health')) {
     lines.push(`\n💉 HEALTH:`);
     if (data.monthHealthCount?.length) {
       lines.push(`This Month: ${data.monthHealthCount.map(h => `${h._id}: ${h.count} (₹${h.totalCost})`).join(', ')}`);
@@ -304,9 +307,9 @@ async function buildFarmContext(farmId, topics) {
     } else {
       lines.push(`No upcoming vaccinations ✅`);
     }
-  }
+  } } catch(e) { /* health context failed */ }
 
-  if (topics.includes('breeding')) {
+  try { if (topics.includes('breeding')) {
     lines.push(`\n🐣 BREEDING:`);
     if (data.breedingStats?.length) {
       lines.push(`Year Stats: ${data.breedingStats.map(b => `${b._id}: ${b.count}`).join(', ')}`);
@@ -320,28 +323,28 @@ async function buildFarmContext(farmId, topics) {
     if (data.activeBreeding?.length) {
       lines.push(`Active: ${data.activeBreeding.map(b => `Tag ${b.cattleId?.tagNumber}(${b.method},${b.status})`).join('; ')}`);
     }
-  }
+  } } catch(e) { /* breeding context failed */ }
 
-  if (topics.includes('expense') || topics.includes('revenue')) {
-    const totalExp = data.monthExpenses?.reduce((s, e) => s + e.total, 0) || 0;
-    const totalRev = data.monthRevenue?.reduce((s, r) => s + r.total, 0) || 0;
+  try { if (topics.includes('expense') || topics.includes('revenue')) {
+    const totalExpF = data.monthExpenses?.reduce((s, e) => s + e.total, 0) || 0;
+    const totalRevF = data.monthRevenue?.reduce((s, r) => s + r.total, 0) || 0;
     const prevExp = data.prevMonthExpenses?.[0]?.total || 0;
     const prevRev = data.prevMonthRevenue?.[0]?.total || 0;
-    const profit = totalRev - totalExp;
+    const profit = totalRevF - totalExpF;
 
     lines.push(`\n💰 FINANCE (This Month):`);
-    lines.push(`Revenue: ₹${totalRev.toLocaleString('en-IN')} (last month: ₹${prevRev.toLocaleString('en-IN')})`);
+    lines.push(`Revenue: ₹${totalRevF.toLocaleString('en-IN')} (last month: ₹${prevRev.toLocaleString('en-IN')})`);
     if (data.monthRevenue?.length) lines.push(`  Sources: ${data.monthRevenue.map(r => `${r._id.replace('_', ' ')}: ₹${r.total.toLocaleString('en-IN')}`).join(', ')}`);
-    lines.push(`Expense: ₹${totalExp.toLocaleString('en-IN')} (last month: ₹${prevExp.toLocaleString('en-IN')})`);
+    lines.push(`Expense: ₹${totalExpF.toLocaleString('en-IN')} (last month: ₹${prevExp.toLocaleString('en-IN')})`);
     if (data.monthExpenses?.length) lines.push(`  Breakdown: ${data.monthExpenses.map(e => `${e._id}: ₹${e.total.toLocaleString('en-IN')}(${e.count})`).join(', ')}`);
     lines.push(`Net Profit: ₹${profit.toLocaleString('en-IN')} ${profit >= 0 ? '📈' : '📉'}`);
-  }
+  } } catch(e) { /* finance context failed */ }
 
-  if (topics.includes('feed') && data.monthFeed?.length) {
-    const totalFeedCost = data.monthFeed.reduce((s, f) => s + f.totalCost, 0);
-    lines.push(`\n🌾 FEED (This Month): Total ₹${totalFeedCost.toLocaleString('en-IN')}`);
+  try { if (topics.includes('feed') && data.monthFeed?.length) {
+    const totalFeedCostF = data.monthFeed.reduce((s, f) => s + f.totalCost, 0);
+    lines.push(`\n🌾 FEED (This Month): Total ₹${totalFeedCostF.toLocaleString('en-IN')}`);
     lines.push(`Types: ${data.monthFeed.map(f => `${f._id}: ${f.totalQty}kg, ₹${f.totalCost.toLocaleString('en-IN')}`).join('; ')}`);
-  }
+  } } catch(e) { /* feed context failed */ }
 
   // ─── Smart alerts ───
   const alerts = [];
@@ -359,26 +362,77 @@ async function buildFarmContext(farmId, topics) {
   const attAbsent = (data.todayAttendance || []).find(a => a._id === 'absent')?.count || 0;
   if (attAbsent > 0) alerts.push(`👷 ${attAbsent} employee(s) absent today`);
 
+  // ─── Trend detection & anomaly alerts ───
+  const weeklyTrend = data.weeklyTrend || [];
+  if (weeklyTrend.length >= 3) {
+    const last3 = weeklyTrend.slice(-3);
+    if (last3[0].total > last3[1].total && last3[1].total > last3[2].total) {
+      alerts.push('📉 Milk production declining for 3 consecutive days — investigate feed/health');
+    }
+  }
+
+  const totalFeedCost = data.monthFeed?.reduce((s, f) => s + f.totalCost, 0) || 0;
+  if (totalFeedCost > 0 && totalRev > 0 && totalFeedCost / totalRev > 0.4) {
+    alerts.push(`⚠️ Feed cost is ${(totalFeedCost/totalRev*100).toFixed(0)}% of revenue — optimize feed mix`);
+  }
+
+  if (data.expiringInsurance?.length) {
+    alerts.push(`🛡️ ${data.expiringInsurance.length} insurance policy expiring within 30 days — renew soon`);
+  }
+
   if (alerts.length) {
     lines.push(`\n⚡ ALERTS: ${alerts.join(' | ')}`);
   }
 
-  // Milk Delivery context
-  if (topics.includes('delivery') && (data.activeCustomers > 0 || data.monthDeliveries?.[0])) {
-    const custDue = data.totalCustomerDue?.[0] || { totalBalance: 0, totalDailyQty: 0 };
-    const mDel = data.monthDeliveries?.[0] || { totalQty: 0, totalAmt: 0, count: 0 };
+  // ─── Computed analytics ───
+  try {
+    const activeCattle = data.cattleCount || 0;
+    const monthMilkTotal = data.monthMilk?.[0]?.total || 0;
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const daysElapsed = Math.max(today.getDate(), 1);
+    const milkingCattle = data.topCattle?.length || activeCattle || 1;
+    const mDel = data.monthDeliveries?.[0] || { totalAmt: 0 };
     const mPay = data.monthCustPayments?.[0] || { totalPaid: 0 };
+    const totalSalary = data.totalSalaryBill?.[0]?.totalSalary || 0;
+
+    const avgMilkPerCow = milkingCattle > 0 ? (monthMilkTotal / milkingCattle / daysElapsed).toFixed(1) : 'N/A';
+    const feedCostPerLiter = monthMilkTotal > 0 ? (totalFeedCost / monthMilkTotal).toFixed(1) : 'N/A';
+    const revenuePerCow = activeCattle > 0 ? Math.round(totalRev / activeCattle) : 'N/A';
+    const expensePerCowDay = activeCattle > 0 ? (totalExp / activeCattle / daysElapsed).toFixed(1) : 'N/A';
+    const collectionEff = mDel.totalAmt > 0 ? ((mPay.totalPaid / mDel.totalAmt) * 100).toFixed(1) : 'N/A';
+    const salaryToRevenue = totalRev > 0 ? ((totalSalary / totalRev) * 100).toFixed(1) : 'N/A';
+    const avgDailyMilk = daysElapsed > 0 ? monthMilkTotal / daysElapsed : 0;
+    const projectedMonthMilk = (avgDailyMilk * daysInMonth).toFixed(0);
+    const dailyAvgRevenue = daysElapsed > 0 ? (totalRev / daysElapsed).toFixed(0) : 0;
+    const dailyAvgExpense = daysElapsed > 0 ? (totalExp / daysElapsed).toFixed(0) : 0;
+    const projectedProfit = Math.round((dailyAvgRevenue - dailyAvgExpense) * daysInMonth);
+
+    lines.push(`\n📈 COMPUTED ANALYTICS:`);
+    lines.push(`Avg Milk Per Cow/Day: ${avgMilkPerCow}L | Feed Cost Per Liter: ₹${feedCostPerLiter}`);
+    lines.push(`Revenue Per Cow/Month: ₹${revenuePerCow} | Expense Per Cow/Day: ₹${expensePerCowDay}`);
+    lines.push(`Collection Efficiency: ${collectionEff}% | Salary-to-Revenue: ${salaryToRevenue}%`);
+    lines.push(`Projected Month Milk: ${projectedMonthMilk}L | Projected Month Profit: ₹${projectedProfit.toLocaleString('en-IN')}`);
+    lines.push(`Daily Avg Revenue: ₹${Number(dailyAvgRevenue).toLocaleString('en-IN')} | Daily Avg Expense: ₹${Number(dailyAvgExpense).toLocaleString('en-IN')}`);
+  } catch (e) {
+    // Analytics computation failed silently
+  }
+
+  // Milk Delivery context
+  try { if (topics.includes('delivery') && (data.activeCustomers > 0 || data.monthDeliveries?.[0])) {
+    const custDueD = data.totalCustomerDue?.[0] || { totalBalance: 0, totalDailyQty: 0 };
+    const mDelD = data.monthDeliveries?.[0] || { totalQty: 0, totalAmt: 0, count: 0 };
+    const mPayD = data.monthCustPayments?.[0] || { totalPaid: 0 };
     lines.push(`\n🏘️ DUDH KHATA (Milk Delivery):`);
-    lines.push(`Active Customers: ${data.activeCustomers || 0} | Daily Delivery: ${custDue.totalDailyQty.toFixed(1)}L`);
-    lines.push(`This Month: ${mDel.totalQty.toFixed(1)}L delivered | ₹${mDel.totalAmt.toFixed(0)} billed | ₹${mPay.totalPaid.toFixed(0)} collected`);
-    lines.push(`Outstanding Due: ₹${custDue.totalBalance.toFixed(0)}`);
+    lines.push(`Active Customers: ${data.activeCustomers || 0} | Daily Delivery: ${custDueD.totalDailyQty.toFixed(1)}L`);
+    lines.push(`This Month: ${mDelD.totalQty.toFixed(1)}L delivered | ₹${mDelD.totalAmt.toFixed(0)} billed | ₹${mPayD.totalPaid.toFixed(0)} collected`);
+    lines.push(`Outstanding Due: ₹${custDueD.totalBalance.toFixed(0)}`);
     if (data.topDueCustomers?.length) {
       lines.push(`Top Dues: ${data.topDueCustomers.map(c => `${c.name}: ₹${c.balance.toFixed(0)}`).join(', ')}`);
     }
-  }
+  } } catch(e) { /* delivery context failed */ }
 
   // Employee context
-  if (topics.includes('employee') && (data.activeEmployees > 0)) {
+  try { if (topics.includes('employee') && (data.activeEmployees > 0)) {
     const sal = data.totalSalaryBill?.[0] || { totalSalary: 0, totalAdvance: 0 };
     const attMap = {};
     (data.todayAttendance || []).forEach(a => { attMap[a._id] = a.count; });
@@ -388,16 +442,16 @@ async function buildFarmContext(farmId, topics) {
     if (data.employeeRoles?.length) {
       lines.push(`Roles: ${data.employeeRoles.map(r => `${r._id}: ${r.count} (avg ₹${Math.round(r.avgSalary)})`).join(', ')}`);
     }
-  }
+  } } catch(e) { /* employee context failed */ }
 
   // Insurance context
-  if (data.activeInsurance > 0 || data.expiringInsurance?.length) {
+  try { if (data.activeInsurance > 0 || data.expiringInsurance?.length) {
     lines.push(`\n🛡️ INSURANCE:`);
     lines.push(`Active Policies: ${data.activeInsurance || 0}`);
     if (data.expiringInsurance?.length) {
       lines.push(`⚠️ Expiring Soon: ${data.expiringInsurance.map(i => `Tag ${i.cattleId?.tagNumber}: expires ${new Date(i.endDate).toLocaleDateString('en-IN')}`).join('; ')}`);
     }
-  }
+  } } catch(e) { /* insurance context failed */ }
 
   lines.push(`=== END ===`);
   const contextStr = lines.join('\n');
@@ -414,125 +468,40 @@ async function askGemini(message, history, farmContext) {
 
   const systemPrompt = `You are "DairyPro AI" 🐄 — a smart, fast dairy farm assistant for Indian farmers.
 
-RULES:
-- Answer using REAL farm data below. Be specific (tag numbers, exact ₹ amounts, dates).
-- Support Hindi & English — reply in whatever language the farmer uses. Mix is OK (Hinglish).
-- Be concise: use bullet points, bold numbers. No long paragraphs.
-- For actionable alerts: use ⚠️🚨✅ emojis to highlight urgency.
-- Give practical Indian dairy farming advice when asked.
-- Compare with last month's data when available to show trends.
-- If data is empty/zero, suggest the farmer to add records from the relevant app section.
-- For health issues: always recommend consulting a veterinarian for serious concerns.
-- Always give exact numbers, percentages, and comparisons — never vague answers.
-- When recommending actions, be step-by-step and practical for rural Indian dairy farmers.
+CORE RULES:
+- Use REAL farm data below. Be specific: tag numbers, exact ₹ amounts, dates, percentages.
+- Support Hindi, English, Hinglish — reply in the farmer's language. If Hindi, use English numbers/units.
+- Be concise: bullet points, bold numbers. No long paragraphs.
+- Use ⚠️🚨✅ emojis for urgency. Compare with last month when available.
+- If data is empty/zero, suggest adding records from the relevant app section.
+- For health issues: always recommend consulting a veterinarian.
+- Proactively calculate ratios and per-unit metrics (per cow, per liter, per day).
 
-APP MODULES (12 total — guide users to the right section):
-1. 🐄 Cattle Management — Add/edit cattle with tag, breed, category, gender, weight, DOB. Full profiles with photo, lineage.
-2. 🥛 Milk Records — Morning/afternoon/evening yield, fat%, SNF%. Per-animal tracking with CSV/PDF export.
-3. 💉 Health & Vaccination — Record vaccinations, treatments, checkups, deworming. Set next due dates with auto-alerts.
-4. 🐣 Breeding — AI/natural insemination, pregnancy tracking, expected delivery, heat prediction (21-day cycle).
-5. 💰 Finance — Revenue (milk sales, cattle sales, govt subsidy) and Expenses (feed, medicine, labor, equipment). Profit/loss analysis.
-6. 🌾 Feed Management — Feed types, quantities, costs per entry. Monthly analytics by feed type.
-7. 🏘️ Dudh Khata (दूध खाता) — Milk delivery to households: customer ledgers, daily delivery, payment collection, outstanding dues, rate management.
-8. 👷 Employees — Staff records with roles, salary, attendance (present/absent/half-day/leave), advance payments, performance tracking.
-9. 🛡️ Insurance — Cattle insurance policies, premiums, coverage dates, expiry alerts. Info on govt schemes (Pashu Dhan Bima Yojana, DEDS).
-10. 📊 Reports — 10+ dashboards: Milk trends, health analytics, breeding status, feed costs, employee performance, customer analytics, revenue breakdown. All with interactive charts.
-11. 🤖 AI Assistant — That's you! Real-time farm data analysis, recommendations, alerts.
-12. ⚙️ Settings — Farm profile, data backup/restore, theme, notification preferences.
+RESPONSE FORMAT RULES:
+- When user asks for analysis: provide structured report with sections — Summary, Key Metrics, Trends, Recommendations.
+- Use tables (markdown) for comparisons. Use bullet points for lists.
+- For financial queries: ALWAYS show Revenue, Expense, Profit, and month-over-month change %.
+- When data shows a problem: suggest 3 actionable steps to fix it.
 
-NEW PLATFORM FEATURES:
-1. **Custom Plan Builder** — Users can build their own subscription plan by selecting only the modules they need. Price auto-calculates based on selected modules with a minimum monthly price. Available on the landing page. Admin configures module prices.
+APP MODULES: 12 modules — Cattle, Milk Records, Health/Vaccination, Breeding, Finance, Feed, Dudh Khata (milk delivery), Employees, Insurance, Reports (10+ dashboards), AI Assistant (you), Settings.
+Features: Custom Plan Builder, Razorpay payments (UPI/cards/wallets), data export, admin panel, dynamic branding.
 
-2. **Per-User Settings** — Admin can configure individual user settings (enable/disable modules, set usage limits like max cattle/employees/customers, chatbot bubble toggle) from Admin Panel → User Detail → User Settings.
-
-3. **Farm Module Toggles** — Admin can enable/disable specific modules globally from App Config. Users won't see disabled modules in their sidebar.
-
-4. **Personal Farm Toggle** — Admin users can disable their own farm management features from Settings → Profile if they only manage the platform.
-
-5. **Input Validation** — All inputs are now validated with Zod (proper error messages for invalid data).
-
-6. **Admin Broadcast Notifications** — Admin can send announcements/notifications to all users or selected users from Admin Panel → Broadcast tab.
-
-7. **Support/Contact System** — Users can submit support requests from within the app. Admin manages them from Admin Panel → Support tab (view, reply, mark resolved).
-
-8. **Platform Data Export** — Admin can export all platform data (users, payments, subscriptions) as PDF or CSV from Admin Panel → Export tab.
-
-9. **Admin User Impersonation** — Admin can temporarily login as any user for debugging (1-hour token) from Admin Panel → User Detail → Impersonate.
-
-10. **Admin Farm Data Preview** — Admin can view any user's complete farm data summary (cattle, milk, health, breeding counts) from Admin Panel → User Detail.
-
-11. **Fully Dynamic Landing Page** — Admin can manage ALL landing page sections from Admin Panel → Website tab (8 sub-tabs: General, Features, Modules, Why Us, Steps, Plan Features, FAQs, Sections). Add/edit/delete/reorder any card. Toggle section visibility.
-
-12. **Dynamic App Branding** — Admin can change app name, logo, tagline from Admin Panel → App Config → Branding. Changes reflect everywhere (navbar, login, register, install prompt, page title).
-
-13. **Dynamic Chatbot Configuration** — Admin can customize chatbot name, welcome message, suggestion chips, and all quick action buttons from Admin Panel → App Config → Chatbot section.
-
-14. **Seed & Delete Dummy Data** — Admin can populate the farm with realistic dummy data (10 cattle, milk records, health, breeding, feed, expenses, revenue, employees, customers, deliveries, insurance) or clean it up from Admin Panel → Export tab.
-
-15. **Vertical Scroll Containment** — All data-heavy sections (tables, card lists) now have scroll containment (max-height with overflow scroll) on both desktop and mobile to prevent endless page scrolling.
-
-16. **Employee Desktop Table View** — Employee overview now shows a proper table layout on desktop (like Dudh Khata's ledger) with totals row, while keeping cards on mobile.
-
-SUBSCRIPTION & PAYMENTS:
-- Free trial available (admin-configurable days).
-- Plans: Monthly, Half Yearly (monthly × 6), Yearly (monthly × 12) (prices set by admin, dynamic).
-- Custom Plan option: users can pick specific modules and pay only for what they use with minimum price enforced (admin-configurable).
-- Payment via Razorpay: UPI, QR code, debit/credit cards, Paytm, PhonePe, wallets, net banking, EMI, Pay Later.
-- Subscription activates instantly after payment.
-- If user asks about payment/subscription, guide them to the Subscription page.
-
-SMART FEATURES you should proactively do:
-- 📊 Spot trends (milk going up/down, expenses increasing)
-- ⚠️ Flag problems (low yield cattle, overdue vaccinations, losses, high customer dues)
-- 💡 Give tips (feed optimization, breeding timing, cost reduction, collection reminders)
-- 🏆 Highlight top milk producers and best-performing employees
-- 📈 Compare month-over-month when data available
-- 🔔 Remind about upcoming events (deliveries, vaccinations, insurance expiry)
-- 🐄 Lactation analysis — track days in milk (DIM), predict dry-off dates (305-day standard)
-- 🔥 Heat detection — predict next heat based on 21-day cycle from last breeding
-- ⚖️ Weight tracking — flag underweight or overweight cattle
-- 🛡️ Insurance awareness — remind about expiring policies, suggest govt schemes
-- 💰 Milk rate calculation — help with fat/SNF based payment (cooperative formula: quantity × fat% × rate per fat)
-- 📋 Data backup — remind farmers to periodically backup from Settings page
-- 🏘️ Dudh Khata analysis — track customer deliveries, outstanding dues, collection rate, suggest payment reminders
-- 👷 Employee insights — attendance patterns, salary bills, absenteeism trends, role distribution
-- 💸 Payment collection — flag customers with high outstanding dues, suggest collection strategy
-
-NAVIGATION HELP (when users ask "where" or "how"):
-- "How to add cattle?" → Go to Cattle section → Click + Add Cattle
-- "Where to see reports?" → Go to Reports from sidebar — 10 tabs available
-- "How to record milk?" → Go to Milk Records → Add today's entry per animal
-- "How to add customer?" → Go to Dudh Khata → Add Customer
-- "How to mark attendance?" → Go to Employees → Attendance tab → Select date → Mark status → Save
-- "How to pay/subscribe?" → Go to Subscription page → Choose plan → Pay via Razorpay
-- "How to build custom plan?" → Visit landing page → Scroll to 'Build Your Own Plan' → Select modules → Choose period
-- "How to change my settings?" → Go to Settings → Profile tab → Toggle chatbot bubble, farm modules
-- "How to export data?" → Each section has Export CSV/PDF buttons with date range filters
-- "How to backup?" → Go to Settings → Backup section
-- "How to contact support?" → Use the Support/Contact feature in the app to submit a request — admin will review and reply
-- "How to see salary?" → Go to Employees → Salary tab → Select month → View/pay individual salaries
-- "How to give advance?" → Go to Employees → Click on employee → Advance button → Enter amount
-- "How to record delivery?" → Go to Dudh Khata → Deliveries tab → Select date → Mark quantities → Save
-- "How to collect payment?" → Go to Dudh Khata → Customer → Payments tab → Record payment
-
-ADVANCED ANALYTICS YOU CAN PROVIDE:
-- **Milk Yield Per Cow Per Day (MYPD)** — Calculate and compare individual cattle efficiency
-- **Feed Cost Per Liter** — Total feed cost ÷ total milk production = cost efficiency
-- **Revenue Per Cow** — Total revenue ÷ active cattle = profitability per animal
-- **Conception Rate** — Successful breedings ÷ total attempts × 100
-- **Collection Efficiency** — Amount collected ÷ amount billed × 100 (Dudh Khata)
-- **Salary-to-Revenue Ratio** — Total salary bill ÷ total revenue × 100 (labor cost analysis)
-- **Break-even Analysis** — Total expenses ÷ milk price per liter = liters needed to break even
-- **Seasonal Comparison** — Compare same month last year vs this year for trends
-- **Cost Per Animal Per Day** — (Feed + Health + Insurance) ÷ total cattle ÷ days
+NAVIGATION (guide users): Cattle→+Add, Milk Records→Add entry, Health→Add record, Breeding→Track, Finance→Revenue/Expense, Feed→Add, Dudh Khata→Customers/Deliveries/Payments, Employees→Attendance/Salary, Insurance→Add policy, Reports→10 tabs, Settings→Backup/Profile, Subscription→Plans/Pay.
 
 INDIAN DAIRY EXPERTISE:
-- Know common Indian breeds: Gir, Sahiwal, Murrah, HF, Jersey, Crossbred and their typical yields
-- Know Indian dairy cooperative systems (Amul model, fat/SNF pricing)
-- Know govt schemes: DEDS, NDP, Rashtriya Gokul Mission, Pashu Dhan Bima, KCC (Kisan Credit Card for dairy)
-- Know seasonal patterns: summer heat stress, monsoon fodder, winter peak milk
-- Know common diseases: FMD, HS, BQ, Mastitis, Theileriosis and their vaccination schedules
-- Know feed: green fodder (Napier, Berseem, Lucerne), dry fodder, concentrates, mineral mix ratios
+- Breeds: Gir, Sahiwal, Murrah, HF, Jersey, Crossbred (know typical yields)
+- Cooperative systems (Amul model, fat/SNF pricing: qty × fat% × rate)
+- Govt schemes: DEDS, NDP, Rashtriya Gokul Mission, Pashu Dhan Bima, KCC
+- Seasons: summer heat stress, monsoon fodder, winter peak milk
+- Diseases: FMD, HS, BQ, Mastitis, Theileriosis (vaccination schedules)
+- Feed: Napier, Berseem, Lucerne, dry fodder, concentrates, mineral mix
+
+SMART BEHAVIOR:
+- Spot trends, flag problems, give tips, highlight top producers
+- Lactation analysis (DIM, 305-day standard), heat prediction (21-day cycle)
+- Break-even analysis, seasonal comparison, cost per animal per day
+- Dudh Khata: collection rate, payment reminders, customer strategy
+- Employee: attendance patterns, salary analysis, absenteeism trends
 
 ${farmContext}`;
 
@@ -550,40 +519,60 @@ ${farmContext}`;
 
   contents.push({ role: 'user', parts: [{ text: message }] });
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemPrompt }] },
-        contents,
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 3000,
-          topP: 0.9,
-          topK: 40,
-        },
-        safetySettings: [
-          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-        ],
-      }),
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  const startTime = Date.now();
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents,
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 3000,
+            topP: 0.9,
+            topK: 40,
+          },
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+          ],
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.error('Gemini error:', response.status, err.slice(0, 200));
+      throw new Error(`Gemini API error (${response.status})`);
     }
-  );
 
-  if (!response.ok) {
-    const err = await response.text();
-    console.error('Gemini error:', response.status, err.slice(0, 200));
-    throw new Error(`Gemini API error (${response.status})`);
+    const respData = await response.json();
+    const reply = respData.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!reply) throw new Error('Empty AI response');
+
+    const elapsed = Date.now() - startTime;
+    console.log(`[DairyPro AI] Query processed in ${elapsed}ms`);
+
+    return reply;
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      const elapsed = Date.now() - startTime;
+      console.warn(`[DairyPro AI] Request timed out after ${elapsed}ms`);
+      throw new Error('AI response timed out — please try a simpler question');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const data = await response.json();
-  const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!reply) throw new Error('Empty AI response');
-  return reply;
 }
 
 // ─── Quick commands (instant, no AI call) ───
@@ -707,6 +696,7 @@ router.post('/ask', async (req, res, next) => {
     const { message, history } = req.body;
     if (!message) return res.status(400).json({ success: false, message: 'Message required' });
 
+    const reqStart = Date.now();
     const farmId = req.user.farmId;
     const topics = detectTopics(message);
     const farmContext = await buildFarmContext(farmId, topics);
@@ -714,11 +704,13 @@ router.post('/ask', async (req, res, next) => {
     // Try quick commands first (instant response)
     const quickReply = handleQuickCommand(message, farmContext);
     if (quickReply) {
+      console.log(`[DairyPro AI] Quick command in ${Date.now() - reqStart}ms`);
       return res.json({ success: true, data: { reply: quickReply } });
     }
 
     // AI response
     const reply = await askGemini(message, history || [], farmContext);
+    console.log(`[DairyPro AI] Total request in ${Date.now() - reqStart}ms`);
     res.json({ success: true, data: { reply } });
   } catch (err) {
     console.error('Chatbot error:', err.message);
