@@ -176,7 +176,7 @@ export default function HealthRecords() {
         ) : (
           <>
             {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto max-h-[60vh] overflow-y-auto">
               <table className="w-full text-sm">
                 <thead><tr className="bg-gray-50 dark:bg-gray-800 border-b text-xs text-gray-500 uppercase">
                   <th className="px-4 py-2 text-left">Date</th>

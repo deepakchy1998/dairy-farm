@@ -359,7 +359,7 @@ export default function MilkRecords() {
         </div>
 
         {/* Mobile Cards */}
-        <div className="md:hidden space-y-3">
+        <div className="md:hidden space-y-3 max-h-[60vh] overflow-y-auto">
           {bulkEntries.map((e, i) => {
             const total = (parseFloat(e.morningYield) || 0) + (parseFloat(e.eveningYield) || 0);
             return (

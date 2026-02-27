@@ -2157,30 +2157,32 @@ export default function AdminPanel() {
       {/* ═══ SEED DUMMY DATA (inside Export tab) ═══ */}
       {tab === 'export' && (
         <div className="card mt-4 border-2 border-dashed border-amber-300 dark:border-amber-700">
-          <h3 className="font-semibold text-sm mb-2">🌱 Seed Dummy Data</h3>
-          <p className="text-sm text-gray-500 mb-3">Add 7-10 realistic dummy records to every farm module (cattle, milk, health, breeding, feed, finance, employees, customers, deliveries, insurance). Safe to run multiple times — skips duplicates.</p>
-          <button onClick={async () => {
-            if (!window.confirm('This will add dummy data to your farm. Continue?')) return;
-            try {
-              toast.loading('Seeding data...', { id: 'seed' });
-              const r = await api.post('/admin/seed-dummy-data');
-              const d = r.data.data;
-              toast.success(`Seeded! 🐄${d.cattle} 🥛${d.milkRecords} 💉${d.healthRecords} 🐣${d.breedingRecords} 🌾${d.feedRecords} 💸${d.expenses} 💰${d.revenue} 👷${d.employees} 🏘️${d.customers} 🚚${d.milkDeliveries} 🛡️${d.insurance}`, { id: 'seed', duration: 8000 });
-            } catch (err) { toast.error(err.response?.data?.message || 'Seed failed', { id: 'seed' }); }
-          }} className="bg-amber-500 hover:bg-amber-600 text-white py-2.5 px-6 rounded-xl font-semibold text-sm flex items-center gap-2 transition">
-            🌱 Seed Dummy Data
-          </button>
-          <button onClick={async () => {
-            if (!window.confirm('This will DELETE all dummy data from your farm. Your real data will NOT be affected. Continue?')) return;
-            try {
-              toast.loading('Deleting dummy data...', { id: 'seed-del' });
-              const r = await api.delete('/admin/seed-dummy-data');
-              const dd = r.data.data;
-              toast.success(`Deleted! 🐄${dd.cattle} 🥛${dd.milkRecords} 💉${dd.healthRecords} 🐣${dd.breedingRecords} 🌾${dd.feedRecords} 💸${dd.expenses} 💰${dd.revenue} 👷${dd.employees} 🏘️${dd.customers} 🚚${dd.milkDeliveries} 🛡️${dd.insurance}`, { id: 'seed-del', duration: 8000 });
-            } catch (err) { toast.error(err.response?.data?.message || 'Delete failed', { id: 'seed-del' }); }
-          }} className="bg-red-500 hover:bg-red-600 text-white py-2.5 px-6 rounded-xl font-semibold text-sm flex items-center gap-2 transition ml-3">
-            🗑️ Delete Dummy Data
-          </button>
+          <h3 className="font-semibold text-sm mb-2">🌱 Seed & Manage Dummy Data</h3>
+          <p className="text-sm text-gray-500 mb-4">Add 7-10 realistic dummy records to every farm module. Safe to run multiple times — skips duplicates. Delete removes only the known dummy records.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button onClick={async () => {
+              if (!window.confirm('This will add dummy data to your farm. Continue?')) return;
+              try {
+                toast.loading('Seeding data...', { id: 'seed' });
+                const r = await api.post('/admin/seed-dummy-data');
+                const d = r.data.data;
+                toast.success(`Seeded! 🐄${d.cattle} 🥛${d.milkRecords} 💉${d.healthRecords} 🐣${d.breedingRecords} 🌾${d.feedRecords} 💸${d.expenses} 💰${d.revenue} 👷${d.employees} 🏘️${d.customers} 🚚${d.milkDeliveries} 🛡️${d.insurance}`, { id: 'seed', duration: 8000 });
+              } catch (err) { toast.error(err.response?.data?.message || 'Seed failed', { id: 'seed' }); }
+            }} className="bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition">
+              🌱 Seed Dummy Data
+            </button>
+            <button onClick={async () => {
+              if (!window.confirm('This will DELETE all dummy data from your farm. Your real data will NOT be affected. Continue?')) return;
+              try {
+                toast.loading('Deleting dummy data...', { id: 'seed-del' });
+                const r = await api.delete('/admin/seed-dummy-data');
+                const dd = r.data.data;
+                toast.success(`Deleted! 🐄${dd.cattle} 🥛${dd.milkRecords} 💉${dd.healthRecords} 🐣${dd.breedingRecords} 🌾${dd.feedRecords} 💸${dd.expenses} 💰${dd.revenue} 👷${dd.employees} 🏘️${dd.customers} 🚚${dd.milkDeliveries} 🛡️${dd.insurance}`, { id: 'seed-del', duration: 8000 });
+              } catch (err) { toast.error(err.response?.data?.message || 'Delete failed', { id: 'seed-del' }); }
+            }} className="bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition">
+              🗑️ Delete Dummy Data
+            </button>
+          </div>
         </div>
       )}
 

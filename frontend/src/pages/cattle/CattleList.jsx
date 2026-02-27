@@ -227,8 +227,8 @@ export default function CattleList() {
                       <td className="py-3 px-4"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.source === 'purchased' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>{c.source === 'purchased' ? '🛒 Purchased' : '🏠 Farm'}</span></td>
                       <td className="py-3 px-4">{c.generation ? <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${genBadge[c.generation] || 'bg-teal-100 text-teal-700'}`}>{c.generation}</span> : <span className="text-gray-300">-</span>}</td>
                       <td className="py-3 px-4">{c.gender === 'female' && c.lactationNumber > 0 ? <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400">L-{c.lactationNumber}</span> : <span className="text-gray-300 dark:text-gray-600">-</span>}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex gap-1.5">
+                      <td className="py-3 px-4 text-center">
+                        <div className="flex gap-1.5 justify-center">
                           <button onClick={() => setDetailModal(c)} className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors" title="View"><FiEye size={15} /></button>
                           <button onClick={() => handleEdit(c)} className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors" title="Edit"><FiEdit2 size={15} /></button>
                           <button onClick={() => handleDownloadPdf(c._id, c.tagNumber)} className="p-1.5 rounded-lg text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors" title="PDF"><FiDownload size={15} /></button>
