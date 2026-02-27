@@ -19,15 +19,9 @@ import Expense from '../models/Expense.js';
 import Customer from '../models/Customer.js';
 import MilkDelivery from '../models/MilkDelivery.js';
 import Insurance from '../models/Insurance.js';
-import Customer from '../models/Customer.js';
 import Plan from '../models/Plan.js';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import BreedingRecord from '../models/BreedingRecord.js';
-import FeedRecord from '../models/FeedRecord.js';
-import Expense from '../models/Expense.js';
-import Insurance from '../models/Insurance.js';
-import MilkDelivery from '../models/MilkDelivery.js';
 import ContactMessage from '../models/ContactMessage.js';
 import Notification from '../models/Notification.js';
 
