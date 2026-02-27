@@ -23,7 +23,6 @@ export default function ChatBubble() {
   const endRef = useRef(null);
   const inputRef = useRef(null);
   const { user } = useAuth();
-  const appConfig = useAppConfig();
 
   // If chatbot bubble is disabled globally by admin OR by the user personally, don't render
   if (appConfig.chatBubbleEnabled === false) return null;
