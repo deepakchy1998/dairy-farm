@@ -2154,6 +2154,25 @@ export default function AdminPanel() {
         </div>
       )}
 
+      {/* ═══ SEED DUMMY DATA (inside Export tab) ═══ */}
+      {tab === 'export' && (
+        <div className="card mt-4 border-2 border-dashed border-amber-300 dark:border-amber-700">
+          <h3 className="font-semibold text-sm mb-2">🌱 Seed Dummy Data</h3>
+          <p className="text-sm text-gray-500 mb-3">Add 7-10 realistic dummy records to every farm module (cattle, milk, health, breeding, feed, finance, employees, customers, deliveries, insurance). Safe to run multiple times — skips duplicates.</p>
+          <button onClick={async () => {
+            if (!window.confirm('This will add dummy data to your farm. Continue?')) return;
+            try {
+              toast.loading('Seeding data...', { id: 'seed' });
+              const r = await api.post('/admin/seed-dummy-data');
+              const d = r.data.data;
+              toast.success(`Seeded! 🐄${d.cattle} 🥛${d.milkRecords} 💉${d.healthRecords} 🐣${d.breedingRecords} 🌾${d.feedRecords} 💸${d.expenses} 💰${d.revenue} 👷${d.employees} 🏘️${d.customers} 🚚${d.milkDeliveries} 🛡️${d.insurance}`, { id: 'seed', duration: 8000 });
+            } catch (err) { toast.error(err.response?.data?.message || 'Seed failed', { id: 'seed' }); }
+          }} className="bg-amber-500 hover:bg-amber-600 text-white py-2.5 px-6 rounded-xl font-semibold text-sm flex items-center gap-2 transition">
+            🌱 Seed Dummy Data
+          </button>
+        </div>
+      )}
+
       {/* ═══ SETTINGS ═══ */}
 
 
