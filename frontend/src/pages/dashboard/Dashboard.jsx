@@ -428,7 +428,7 @@ export default function Dashboard() {
             </div>
           </div>
           {stats.topCattle?.length > 0 ? (
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
               {stats.topCattle.map((c, i) => {
                 const maxYield = stats.topCattle[0]?.totalYield || 1;
                 const pct = ((c.totalYield / maxYield) * 100).toFixed(0);
