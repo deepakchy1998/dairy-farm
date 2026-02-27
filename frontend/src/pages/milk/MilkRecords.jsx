@@ -473,7 +473,7 @@ export default function MilkRecords() {
               </div>
 
               {/* Mobile Cards */}
-              <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+              <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 max-h-[60vh] overflow-y-auto">
                 {history.map(r => (
                   <div key={r._id} className="p-3 hover:bg-gray-50 dark:hover:bg-gray-800/30">
                     <div className="flex items-center justify-between mb-2">
@@ -687,7 +687,7 @@ export default function MilkRecords() {
               </div>
 
               {/* Mobile Cards */}
-              <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+              <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 max-h-[60vh] overflow-y-auto">
                 {filteredRecords.map(r => (
                   <div key={r._id} className="p-3 hover:bg-gray-50 dark:hover:bg-gray-800/30">
                     <div className="flex items-center justify-between mb-1">
@@ -873,7 +873,7 @@ export default function MilkRecords() {
           </div>
 
           {/* Mobile Cards */}
-          <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+          <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800 max-h-[60vh] overflow-y-auto">
             {milkCattle.map(c => {
               const rec = lastRecords[c._id];
               const hasToday = !!rec;

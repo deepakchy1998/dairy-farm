@@ -244,7 +244,7 @@ export default function CattleList() {
           </div>
 
           {/* Mobile Cards */}
-          <div className="md:hidden space-y-3">
+          <div className="md:hidden space-y-3 max-h-[60vh] overflow-y-auto">
             {cattle.map(c => (
               <div key={c._id} className="card !p-4 hover:shadow-md transition">
                 <div className="flex items-start justify-between mb-3">

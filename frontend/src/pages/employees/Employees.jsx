@@ -328,7 +328,7 @@ export default function Employees() {
                 </table>
               </div>
               {/* Mobile Cards */}
-              <div className="md:hidden divide-y dark:divide-gray-800">
+              <div className="md:hidden divide-y dark:divide-gray-800 max-h-[60vh] overflow-y-auto">
                 {empHistory.records.map(r => {
                   const colors = { present: 'emerald', absent: 'red', 'half-day': 'amber', leave: 'blue', holiday: 'purple' };
                   const c = colors[r.status] || 'gray';
@@ -543,7 +543,7 @@ export default function Employees() {
               </div>
 
               {/* Mobile Cards */}
-              <div className="md:hidden divide-y dark:divide-gray-800">
+              <div className="md:hidden divide-y dark:divide-gray-800 max-h-[60vh] overflow-y-auto">
                 {employees.map(e => (
                   <div key={e._id} className="p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/30" onClick={() => openEmpDetail(e)}>
                     <div className="flex items-start justify-between mb-2">
@@ -649,7 +649,7 @@ export default function Employees() {
                 </div>
 
                 {/* Mobile */}
-                <div className="md:hidden divide-y dark:divide-gray-800">
+                <div className="md:hidden divide-y dark:divide-gray-800 max-h-[60vh] overflow-y-auto">
                   {attSheet.map((s, i) => (
                     <div key={s.employeeId} className="p-3 space-y-2">
                       <div className="flex items-center justify-between">
@@ -761,7 +761,7 @@ export default function Employees() {
                 </div>
 
                 {/* Mobile */}
-                <div className="md:hidden divide-y dark:divide-gray-800">
+                <div className="md:hidden divide-y dark:divide-gray-800 max-h-[60vh] overflow-y-auto">
                   {salaryData.salaries.map((s, i) => (
                     <div key={s.employeeId || i} className="p-3">
                       <div className="flex items-center justify-between mb-2">

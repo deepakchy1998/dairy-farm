@@ -196,7 +196,7 @@ export default function FeedRecords() {
             </div>
 
             {/* Mobile */}
-            <div className="md:hidden divide-y dark:divide-gray-800">
+            <div className="md:hidden divide-y dark:divide-gray-800 max-h-[60vh] overflow-y-auto">
               {records.map((r, i) => (
                 <div key={r._id} className="p-3 space-y-2">
                   <div className="flex items-start justify-between">

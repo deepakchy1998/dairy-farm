@@ -197,7 +197,7 @@ export default function Insurance() {
             </div>
 
             {/* Mobile */}
-            <div className="md:hidden divide-y dark:divide-gray-800">
+            <div className="md:hidden divide-y dark:divide-gray-800 max-h-[60vh] overflow-y-auto">
               {records.map((r, i) => {
                 const daysLeft = Math.ceil((new Date(r.endDate) - new Date()) / 86400000);
                 const statusColor = { active: 'bg-green-100 text-green-700', expired: 'bg-red-100 text-red-700', claimed: 'bg-blue-100 text-blue-700', cancelled: 'bg-gray-100 text-gray-700' };

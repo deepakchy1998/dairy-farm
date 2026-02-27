@@ -337,7 +337,7 @@ export default function MilkDelivery() {
                   </tbody>
                 </table>
               </div>
-              <div className="md:hidden divide-y dark:divide-gray-800">
+              <div className="md:hidden divide-y dark:divide-gray-800 max-h-[60vh] overflow-y-auto">
                 {custHistory.deliveries.map(d => (
                   <div key={d._id} className="p-3 flex items-center justify-between">
                     <div>
@@ -506,7 +506,7 @@ export default function MilkDelivery() {
                 </div>
 
                 {/* Mobile Cards */}
-                <div className="md:hidden divide-y dark:divide-gray-800">
+                <div className="md:hidden divide-y dark:divide-gray-800 max-h-[60vh] overflow-y-auto">
                   {sheet.map((s, i) => {
                     const amt = (Number(s._qty) || 0) * s.ratePerLiter;
                     return (
@@ -576,7 +576,7 @@ export default function MilkDelivery() {
               <button onClick={openAddCustomer} className="btn-primary text-sm"><FiPlus size={14} className="inline mr-1" /> Add Customer</button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[70vh] overflow-y-auto pr-1">
               {customers.map(c => (
                 <div key={c._id} className="card !p-4 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => openCustomerDetail(c)}>
                   <div className="flex items-start justify-between mb-3">
@@ -721,7 +721,7 @@ export default function MilkDelivery() {
                 </div>
 
                 {/* Mobile Cards */}
-                <div className="md:hidden divide-y dark:divide-gray-800">
+                <div className="md:hidden divide-y dark:divide-gray-800 max-h-[60vh] overflow-y-auto">
                   {ledger.ledger.map(c => (
                     <div key={c._id} className="p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/30" onClick={() => openCustomerDetail(c)}>
                       <div className="flex items-center justify-between mb-2">

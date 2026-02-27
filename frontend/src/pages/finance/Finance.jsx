@@ -261,7 +261,7 @@ export default function Finance() {
             </div>
 
             {/* Mobile Cards */}
-            <div className="md:hidden divide-y dark:divide-gray-800">
+            <div className="md:hidden divide-y dark:divide-gray-800 max-h-[60vh] overflow-y-auto">
               {records.map((r, i) => (
                 <div key={r._id} className="p-3">
                   <div className="flex items-center justify-between mb-2">
