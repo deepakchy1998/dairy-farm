@@ -842,10 +842,24 @@ router.get('/users/:id/farm-data', async (req, res, next) => {
 //  PLATFORM EXPORT
 // ════════════════════════════════════════
 
+// Helper: convert array of objects to CSV string
+function arrayToCSV(data, columns) {
+  if (!data.length) return columns.map(c => c.label).join(',') + '\n';
+  const header = columns.map(c => `"${c.label}"`).join(',');
+  const rows = data.map(row => columns.map(c => {
+    let val = typeof c.key === 'function' ? c.key(row) : (row[c.key] ?? '');
+    if (val instanceof Date) val = val.toISOString();
+    if (typeof val === 'object') val = JSON.stringify(val);
+    return `"${String(val).replace(/"/g, '""')}"`;
+  }).join(','));
+  return [header, ...rows].join('\n');
+}
+
 router.get('/export', async (req, res, next) => {
   try {
+    const { format } = req.query; // 'csv' | 'pdf' | default json
     const [users, payments, subscriptions, revenueAgg] = await Promise.all([
-      User.find().select('-password -profilePhoto').lean(),
+      User.find().select('-password -profilePhoto').populate('farmId', 'name city state').lean(),
       Payment.find().populate('userId', 'name email').sort('-createdAt').lean(),
       Subscription.find().populate('userId', 'name email').sort('-endDate').lean(),
       Payment.aggregate([
@@ -854,6 +868,121 @@ router.get('/export', async (req, res, next) => {
       ]),
     ]);
 
+    const dateStr = new Date().toISOString().slice(0, 10);
+
+    // ── CSV Export ──
+    if (format === 'csv') {
+      const userCols = [
+        { label: 'Name', key: 'name' },
+        { label: 'Email', key: 'email' },
+        { label: 'Phone', key: 'phone' },
+        { label: 'Role', key: 'role' },
+        { label: 'Blocked', key: r => r.isBlocked ? 'Yes' : 'No' },
+        { label: 'Farm', key: r => r.farmId?.name || '' },
+        { label: 'City', key: r => r.farmId?.city || '' },
+        { label: 'State', key: r => r.farmId?.state || '' },
+        { label: 'Registered', key: r => r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN') : '' },
+        { label: 'Last Login', key: r => r.lastLogin ? new Date(r.lastLogin).toLocaleDateString('en-IN') : 'Never' },
+      ];
+      const paymentCols = [
+        { label: 'User', key: r => r.userId?.name || '' },
+        { label: 'Email', key: r => r.userId?.email || '' },
+        { label: 'Plan', key: 'plan' },
+        { label: 'Amount (₹)', key: 'amount' },
+        { label: 'Status', key: 'status' },
+        { label: 'Transaction ID', key: 'upiTransactionId' },
+        { label: 'Payment Method', key: r => r.paymentMethod || 'upi_manual' },
+        { label: 'Date', key: r => r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN') : '' },
+      ];
+      const subCols = [
+        { label: 'User', key: r => r.userId?.name || '' },
+        { label: 'Email', key: r => r.userId?.email || '' },
+        { label: 'Plan', key: 'plan' },
+        { label: 'Active', key: r => r.isActive ? 'Yes' : 'No' },
+        { label: 'Start Date', key: r => r.startDate ? new Date(r.startDate).toLocaleDateString('en-IN') : '' },
+        { label: 'End Date', key: r => r.endDate ? new Date(r.endDate).toLocaleDateString('en-IN') : '' },
+      ];
+
+      const csv = `DAIRYPRO PLATFORM EXPORT - ${dateStr}\n\n` +
+        `=== USERS (${users.length}) ===\n` + arrayToCSV(users, userCols) + '\n\n' +
+        `=== PAYMENTS (${payments.length}) ===\n` + arrayToCSV(payments, paymentCols) + '\n\n' +
+        `=== SUBSCRIPTIONS (${subscriptions.length}) ===\n` + arrayToCSV(subscriptions, subCols) + '\n\n' +
+        `=== REVENUE SUMMARY ===\n` +
+        `"Total Revenue (₹)","${revenueAgg[0]?.total || 0}"\n` +
+        `"Verified Payments","${revenueAgg[0]?.count || 0}"\n`;
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename=dairypro-export-${dateStr}.csv`);
+      return res.send(csv);
+    }
+
+    // ── PDF Export ──
+    if (format === 'pdf') {
+      const PDFDocument = (await import('pdfkit')).default;
+      const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=dairypro-export-${dateStr}.pdf`);
+      doc.pipe(res);
+
+      // Title
+      doc.fontSize(20).font('Helvetica-Bold').text('DairyPro Platform Export', { align: 'center' });
+      doc.fontSize(10).font('Helvetica').text(`Generated: ${new Date().toLocaleString('en-IN')}`, { align: 'center' });
+      doc.moveDown(1);
+
+      // Summary box
+      const totalRevenue = revenueAgg[0]?.total || 0;
+      const totalVerified = revenueAgg[0]?.count || 0;
+      doc.fontSize(12).font('Helvetica-Bold').text('Platform Summary');
+      doc.fontSize(10).font('Helvetica');
+      doc.text(`Total Users: ${users.filter(u => u.role === 'user').length}`);
+      doc.text(`Total Admins: ${users.filter(u => u.role === 'admin').length}`);
+      doc.text(`Total Payments: ${payments.length}`);
+      doc.text(`Active Subscriptions: ${subscriptions.filter(s => s.isActive && new Date(s.endDate) >= new Date()).length}`);
+      doc.text(`Total Revenue: Rs. ${totalRevenue.toLocaleString('en-IN')}`);
+      doc.text(`Verified Payments: ${totalVerified}`);
+      doc.moveDown(1);
+
+      // Users table
+      doc.fontSize(12).font('Helvetica-Bold').text(`Users (${users.length})`);
+      doc.moveDown(0.3);
+      doc.fontSize(8).font('Helvetica');
+      for (const u of users.slice(0, 200)) {
+        if (doc.y > 720) doc.addPage();
+        doc.text(`${u.name} | ${u.email} | ${u.phone || '-'} | ${u.role} | Farm: ${u.farmId?.name || '-'} | ${u.isBlocked ? 'BLOCKED' : 'Active'} | Joined: ${u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-IN') : '-'}`, { width: 520 });
+      }
+      if (users.length > 200) doc.text(`... and ${users.length - 200} more users`);
+      doc.moveDown(1);
+
+      // Payments table
+      if (doc.y > 650) doc.addPage();
+      doc.fontSize(12).font('Helvetica-Bold').text(`Payments (${payments.length})`);
+      doc.moveDown(0.3);
+      doc.fontSize(8).font('Helvetica');
+      for (const p of payments.slice(0, 200)) {
+        if (doc.y > 720) doc.addPage();
+        doc.text(`${p.userId?.name || '-'} | ${p.plan} | Rs.${p.amount} | ${p.status} | TXN: ${p.upiTransactionId || '-'} | ${p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN') : '-'}`, { width: 520 });
+      }
+      if (payments.length > 200) doc.text(`... and ${payments.length - 200} more payments`);
+      doc.moveDown(1);
+
+      // Subscriptions
+      if (doc.y > 650) doc.addPage();
+      doc.fontSize(12).font('Helvetica-Bold').text(`Subscriptions (${subscriptions.length})`);
+      doc.moveDown(0.3);
+      doc.fontSize(8).font('Helvetica');
+      for (const s of subscriptions.slice(0, 200)) {
+        if (doc.y > 720) doc.addPage();
+        const active = s.isActive && new Date(s.endDate) >= new Date();
+        doc.text(`${s.userId?.name || '-'} | ${s.plan} | ${active ? 'ACTIVE' : 'Expired'} | ${s.startDate ? new Date(s.startDate).toLocaleDateString('en-IN') : '-'} to ${s.endDate ? new Date(s.endDate).toLocaleDateString('en-IN') : '-'}`, { width: 520 });
+      }
+      if (subscriptions.length > 200) doc.text(`... and ${subscriptions.length - 200} more subscriptions`);
+
+      doc.end();
+      return;
+    }
+
+    // ── Default: JSON ──
     res.json({
       success: true,
       data: {

@@ -1819,23 +1819,41 @@ export default function AdminPanel() {
         <div className="space-y-4">
           <div className="card">
             <h3 className="font-semibold text-sm mb-4">📦 Export Platform Data</h3>
-            <p className="text-sm text-gray-500 mb-4">Download all platform data including users, payments, subscriptions, and revenue summary as JSON.</p>
-            <button onClick={async () => {
-              try {
-                toast.loading('Exporting...', { id: 'export' });
-                const r = await api.get('/admin/export');
-                const blob = new Blob([JSON.stringify(r.data.data, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `dairypro-export-${new Date().toISOString().slice(0, 10)}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-                toast.success('Export downloaded!', { id: 'export' });
-              } catch { toast.error('Export failed', { id: 'export' }); }
-            }} className="btn-primary w-full py-3 flex items-center justify-center gap-2">
-              <FiDownload size={16} /> Download Platform Export (JSON)
-            </button>
+            <p className="text-sm text-gray-500 mb-4">Download all platform data including users, payments, subscriptions, and revenue summary.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button onClick={async () => {
+                try {
+                  toast.loading('Generating PDF...', { id: 'export' });
+                  const r = await api.get('/admin/export?format=pdf', { responseType: 'blob' });
+                  const blob = new Blob([r.data], { type: 'application/pdf' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `dairypro-export-${new Date().toISOString().slice(0, 10)}.pdf`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  toast.success('PDF downloaded!', { id: 'export' });
+                } catch { toast.error('PDF export failed', { id: 'export' }); }
+              }} className="btn-primary py-3 flex items-center justify-center gap-2">
+                <FiDownload size={16} /> Download PDF
+              </button>
+              <button onClick={async () => {
+                try {
+                  toast.loading('Generating CSV...', { id: 'export' });
+                  const r = await api.get('/admin/export?format=csv', { responseType: 'blob' });
+                  const blob = new Blob([r.data], { type: 'text/csv' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `dairypro-export-${new Date().toISOString().slice(0, 10)}.csv`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  toast.success('CSV downloaded!', { id: 'export' });
+                } catch { toast.error('CSV export failed', { id: 'export' }); }
+              }} className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition">
+                <FiDownload size={16} /> Download CSV
+              </button>
+            </div>
           </div>
         </div>
       )}
