@@ -451,6 +451,28 @@ NEW PLATFORM FEATURES:
 
 5. **Input Validation** — All inputs are now validated with Zod (proper error messages for invalid data).
 
+6. **Admin Broadcast Notifications** — Admin can send announcements/notifications to all users or selected users from Admin Panel → Broadcast tab.
+
+7. **Support/Contact System** — Users can submit support requests from within the app. Admin manages them from Admin Panel → Support tab (view, reply, mark resolved).
+
+8. **Platform Data Export** — Admin can export all platform data (users, payments, subscriptions) as PDF or CSV from Admin Panel → Export tab.
+
+9. **Admin User Impersonation** — Admin can temporarily login as any user for debugging (1-hour token) from Admin Panel → User Detail → Impersonate.
+
+10. **Admin Farm Data Preview** — Admin can view any user's complete farm data summary (cattle, milk, health, breeding counts) from Admin Panel → User Detail.
+
+11. **Fully Dynamic Landing Page** — Admin can manage ALL landing page sections from Admin Panel → Website tab (8 sub-tabs: General, Features, Modules, Why Us, Steps, Plan Features, FAQs, Sections). Add/edit/delete/reorder any card. Toggle section visibility.
+
+12. **Dynamic App Branding** — Admin can change app name, logo, tagline from Admin Panel → App Config → Branding. Changes reflect everywhere (navbar, login, register, install prompt, page title).
+
+13. **Dynamic Chatbot Configuration** — Admin can customize chatbot name, welcome message, suggestion chips, and all quick action buttons from Admin Panel → App Config → Chatbot section.
+
+14. **Seed & Delete Dummy Data** — Admin can populate the farm with realistic dummy data (10 cattle, milk records, health, breeding, feed, expenses, revenue, employees, customers, deliveries, insurance) or clean it up from Admin Panel → Export tab.
+
+15. **Vertical Scroll Containment** — All data-heavy sections (tables, card lists) now have scroll containment (max-height with overflow scroll) on both desktop and mobile to prevent endless page scrolling.
+
+16. **Employee Desktop Table View** — Employee overview now shows a proper table layout on desktop (like Dudh Khata's ledger) with totals row, while keeping cards on mobile.
+
 SUBSCRIPTION & PAYMENTS:
 - Free trial available (admin-configurable days).
 - Plans: Monthly, Half Yearly (monthly × 6), Yearly (monthly × 12) (prices set by admin, dynamic).
@@ -481,12 +503,28 @@ NAVIGATION HELP (when users ask "where" or "how"):
 - "Where to see reports?" → Go to Reports from sidebar — 10 tabs available
 - "How to record milk?" → Go to Milk Records → Add today's entry per animal
 - "How to add customer?" → Go to Dudh Khata → Add Customer
-- "How to mark attendance?" → Go to Employees → Click attendance icon
+- "How to mark attendance?" → Go to Employees → Attendance tab → Select date → Mark status → Save
 - "How to pay/subscribe?" → Go to Subscription page → Choose plan → Pay via Razorpay
 - "How to build custom plan?" → Visit landing page → Scroll to 'Build Your Own Plan' → Select modules → Choose period
 - "How to change my settings?" → Go to Settings → Profile tab → Toggle chatbot bubble, farm modules
 - "How to export data?" → Each section has Export CSV/PDF buttons with date range filters
 - "How to backup?" → Go to Settings → Backup section
+- "How to contact support?" → Use the Support/Contact feature in the app to submit a request — admin will review and reply
+- "How to see salary?" → Go to Employees → Salary tab → Select month → View/pay individual salaries
+- "How to give advance?" → Go to Employees → Click on employee → Advance button → Enter amount
+- "How to record delivery?" → Go to Dudh Khata → Deliveries tab → Select date → Mark quantities → Save
+- "How to collect payment?" → Go to Dudh Khata → Customer → Payments tab → Record payment
+
+ADVANCED ANALYTICS YOU CAN PROVIDE:
+- **Milk Yield Per Cow Per Day (MYPD)** — Calculate and compare individual cattle efficiency
+- **Feed Cost Per Liter** — Total feed cost ÷ total milk production = cost efficiency
+- **Revenue Per Cow** — Total revenue ÷ active cattle = profitability per animal
+- **Conception Rate** — Successful breedings ÷ total attempts × 100
+- **Collection Efficiency** — Amount collected ÷ amount billed × 100 (Dudh Khata)
+- **Salary-to-Revenue Ratio** — Total salary bill ÷ total revenue × 100 (labor cost analysis)
+- **Break-even Analysis** — Total expenses ÷ milk price per liter = liters needed to break even
+- **Seasonal Comparison** — Compare same month last year vs this year for trends
+- **Cost Per Animal Per Day** — (Feed + Health + Insurance) ÷ total cattle ÷ days
 
 INDIAN DAIRY EXPERTISE:
 - Know common Indian breeds: Gir, Sahiwal, Murrah, HF, Jersey, Crossbred and their typical yields
@@ -500,9 +538,9 @@ ${farmContext}`;
 
   const contents = [];
 
-  // Only last 6 messages for speed
+  // Last 10 messages for better context
   if (history?.length) {
-    for (const msg of history.slice(-6)) {
+    for (const msg of history.slice(-10)) {
       contents.push({
         role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: msg.content }],
@@ -521,9 +559,9 @@ ${farmContext}`;
         system_instruction: { parts: [{ text: systemPrompt }] },
         contents,
         generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 2000,
-          topP: 0.85,
+          temperature: 0.4,
+          maxOutputTokens: 3000,
+          topP: 0.9,
           topK: 40,
         },
         safetySettings: [
@@ -556,27 +594,35 @@ function handleQuickCommand(message, farmContext) {
   if (lower === '/help' || lower === 'help') {
     return `🤖 **DairyPro AI Quick Commands:**
 
-**Farm Status:**
-- **/alerts** — View active farm alerts
-- **/milk** — Today's milk production summary  
-- **/staff** — Employee status and attendance
+**📊 Farm Status:**
+- **/alerts** — Active farm alerts & warnings
+- **/milk** — Today's milk production summary
+- **/cattle** — Cattle overview by category & breed
+- **/health** — Health records & vaccination status
+- **/breeding** — Breeding status & upcoming deliveries
+- **/feed** — Feed consumption & costs
+- **/finance** — Revenue, expenses & profit/loss
+- **/staff** — Employee status & attendance
 - **/dues** — Customer outstanding dues (Dudh Khata)
+- **/insurance** — Insurance policy status
 
-**App Modules:**
-- **/modules** — List all 12 app modules with descriptions
+**🔧 App Info:**
+- **/modules** — List all 12 app modules
+- **/help** — This help menu
 
-**What I Can Do:**
-✅ Real-time farm data analysis & insights
-✅ Smart alerts & recommendations  
-✅ Milk production trends & comparisons
-✅ Health & vaccination reminders
-✅ Breeding cycle predictions
-✅ Financial profit/loss analysis
-✅ Employee attendance tracking
-✅ Customer payment collection tips
-✅ Hindi & English support (Hinglish OK!)
+**🧠 What I Can Do:**
+✅ Real-time farm data analysis with exact numbers
+✅ Smart alerts (overdue vaccines, low yield, high dues)
+✅ Milk production trends & per-cow efficiency
+✅ Feed cost per liter calculation
+✅ Revenue per cow & break-even analysis
+✅ Breeding cycle predictions & conception rates
+✅ Employee salary & attendance insights
+✅ Customer payment collection strategy
+✅ Indian govt scheme guidance (DEDS, PMFBY, KCC)
+✅ Hindi, English & Hinglish support
 
-Just ask me anything about your farm in natural language! 🐄`;
+Just ask anything in natural language! 🐄`;
   }
 
   // Modules command - return list of all 12 modules
@@ -616,6 +662,40 @@ Just ask me anything about your farm in natural language! 🐄`;
   if (lower === '/dues' || lower === '/khata') {
     const khataMatch = farmContext.match(/🏘️ DUDH KHATA[^:]*:\n([\s\S]+?)(?:\n[^A-Za-z]|\n⚡|\n===|$)/);
     return khataMatch ? `🏘️ **Dudh Khata:**\n${khataMatch[1].trim()}` : '🏘️ No milk delivery data. Add customers from Dudh Khata section.';
+  }
+
+  if (lower === '/finance' || lower === '/profit' || lower === '/hisab') {
+    const finMatch = farmContext.match(/💰 FINANCE[^:]*:\n([\s\S]+?)(?:\n🌾|\n⚡|\n🏘️|\n👷|\n🛡️|\n===|$)/);
+    return finMatch ? `💰 **Finance:**\n${finMatch[1].trim()}` : '💰 No finance data. Add expenses/revenue from Finance section.';
+  }
+
+  if (lower === '/cattle' || lower === '/pashu') {
+    const cattleMatch = farmContext.match(/📊 CATTLE:\n([\s\S]+?)(?:\n🥛|\n💉|\n⚡|\n===|$)/);
+    return cattleMatch ? `🐄 **Cattle:**\n${cattleMatch[1].trim()}` : '🐄 No cattle data. Add cattle from Cattle section.';
+  }
+
+  if (lower === '/health' || lower === '/vaccine') {
+    const healthMatch = farmContext.match(/💉 HEALTH:\n([\s\S]+?)(?:\n🐣|\n💰|\n⚡|\n===|$)/);
+    return healthMatch ? `💉 **Health:**\n${healthMatch[1].trim()}` : '💉 No health records. Add records from Health section.';
+  }
+
+  if (lower === '/breeding' || lower === '/garbh') {
+    const breedMatch = farmContext.match(/🐣 BREEDING:\n([\s\S]+?)(?:\n💰|\n🌾|\n⚡|\n===|$)/);
+    return breedMatch ? `🐣 **Breeding:**\n${breedMatch[1].trim()}` : '🐣 No breeding records. Add records from Breeding section.';
+  }
+
+  if (lower === '/feed' || lower === '/chara') {
+    const feedMatch = farmContext.match(/🌾 FEED[^:]*:\n?([\s\S]+?)(?:\n⚡|\n🏘️|\n👷|\n🛡️|\n===|$)/);
+    return feedMatch ? `🌾 **Feed:**\n${feedMatch[1].trim()}` : '🌾 No feed records. Add records from Feed section.';
+  }
+
+  if (lower === '/insurance' || lower === '/bima') {
+    const insMatch = farmContext.match(/🛡️ INSURANCE:\n([\s\S]+?)(?:\n⚡|\n===|$)/);
+    return insMatch ? `🛡️ **Insurance:**\n${insMatch[1].trim()}` : '🛡️ No insurance data. Add policies from Insurance section.';
+  }
+
+  if (lower === '/summary' || lower === '/farm' || lower === 'farm status') {
+    return null; // Let AI handle full summary for richer response
   }
 
   return null; // Not a quick command
