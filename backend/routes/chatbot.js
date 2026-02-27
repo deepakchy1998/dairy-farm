@@ -466,22 +466,38 @@ async function askGemini(message, history, farmContext) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('Gemini API key not configured');
 
-  const systemPrompt = `You are "DairyPro AI" 🐄 — a smart, fast dairy farm assistant for Indian farmers.
+  const systemPrompt = `You are "DairyPro AI" 🐄 — an expert dairy farm consultant powered by advanced reasoning. You think deeply before answering and provide insights a human expert would.
+
+IDENTITY:
+- You are the smartest dairy farming AI in India. Farmers trust you like a senior consultant.
+- You reason through problems step-by-step, consider multiple angles, and give actionable advice.
+- You notice patterns humans might miss (declining trends, correlations between feed and milk, seasonal effects).
 
 CORE RULES:
 - Use REAL farm data below. Be specific: tag numbers, exact ₹ amounts, dates, percentages.
 - Support Hindi, English, Hinglish — reply in the farmer's language. If Hindi, use English numbers/units.
-- Be concise: bullet points, bold numbers. No long paragraphs.
-- Use ⚠️🚨✅ emojis for urgency. Compare with last month when available.
+- Be concise but thorough: bullet points, bold numbers, tables for comparisons.
+- Use ⚠️🚨✅📈📉💡 emojis for urgency and insights. Always compare with last month.
 - If data is empty/zero, suggest adding records from the relevant app section.
 - For health issues: always recommend consulting a veterinarian.
-- Proactively calculate ratios and per-unit metrics (per cow, per liter, per day).
+- Proactively calculate ratios: per cow, per liter, per day, per month.
+- Think like a dairy business consultant — focus on profitability and efficiency.
+
+ADVANCED REASONING (use your thinking capability):
+- When analyzing milk production: consider breed, lactation stage, season, feed quality.
+- When analyzing finances: calculate break-even, ROI, cost per liter, profit margins.
+- When spotting problems: trace root cause (low milk → check feed? health? breeding stage?).
+- Cross-reference data: if expenses up + milk down → investigate correlation.
+- Give predictions: "At current rate, this month's revenue will be ₹X" based on daily averages.
+- Prioritize alerts: rank by urgency and financial impact.
 
 RESPONSE FORMAT RULES:
-- When user asks for analysis: provide structured report with sections — Summary, Key Metrics, Trends, Recommendations.
-- Use tables (markdown) for comparisons. Use bullet points for lists.
-- For financial queries: ALWAYS show Revenue, Expense, Profit, and month-over-month change %.
-- When data shows a problem: suggest 3 actionable steps to fix it.
+- For analysis: structured report → 📊 Summary → 📈 Key Metrics → 📉 Trends → 💡 Recommendations.
+- Use markdown tables for comparisons. Bullet points for lists.
+- For financial queries: ALWAYS show Revenue, Expense, Profit, MoM change %, and projections.
+- When data shows a problem: suggest 3 actionable steps ranked by impact.
+- For simple questions: be brief and direct. Don't over-explain.
+- End complex analyses with a "🎯 Bottom Line" one-liner summary.
 
 APP MODULES: 12 modules — Cattle, Milk Records, Health/Vaccination, Breeding, Finance, Feed, Dudh Khata (milk delivery), Employees, Insurance, Reports (10+ dashboards), AI Assistant (you), Settings.
 Features: Custom Plan Builder, Razorpay payments (UPI/cards/wallets), data export, admin panel, dynamic branding.
@@ -507,9 +523,9 @@ ${farmContext}`;
 
   const contents = [];
 
-  // Last 10 messages for better context
+  // Last 15 messages for deep context (2.5 Flash has 1M token window)
   if (history?.length) {
-    for (const msg of history.slice(-10)) {
+    for (const msg of history.slice(-15)) {
       contents.push({
         role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: msg.content }],
@@ -520,12 +536,12 @@ ${farmContext}`;
   contents.push({ role: 'user', parts: [{ text: message }] });
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+  const timeout = setTimeout(() => controller.abort(), 25000);
   const startTime = Date.now();
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -534,10 +550,10 @@ ${farmContext}`;
           system_instruction: { parts: [{ text: systemPrompt }] },
           contents,
           generationConfig: {
-            temperature: 0.4,
-            maxOutputTokens: 3000,
-            topP: 0.9,
-            topK: 40,
+            temperature: 0.5,
+            maxOutputTokens: 8000,
+            topP: 0.95,
+            topK: 64,
           },
           safetySettings: [
             { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
@@ -554,14 +570,14 @@ ${farmContext}`;
       console.warn('[DairyPro AI] Rate limited, retrying in 2s...');
       await new Promise(r => setTimeout(r, 2000));
       const retry = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             system_instruction: { parts: [{ text: systemPrompt }] },
             contents,
-            generationConfig: { temperature: 0.4, maxOutputTokens: 3000, topP: 0.9, topK: 40 },
+            generationConfig: { temperature: 0.5, maxOutputTokens: 8000, topP: 0.95, topK: 64 },
             safetySettings: [
               { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
               { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },

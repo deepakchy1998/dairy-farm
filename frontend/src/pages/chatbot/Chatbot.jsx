@@ -196,7 +196,7 @@ export default function Chatbot() {
                   <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                   <span className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
-                <span className="text-xs text-gray-400 dark:text-gray-500">Analyzing farm data...</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">🧠 Thinking & analyzing farm data...</span>
               </div>
             </div>
           </div>
