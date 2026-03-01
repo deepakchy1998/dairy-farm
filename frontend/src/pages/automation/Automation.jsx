@@ -142,7 +142,7 @@ export default function Automation() {
   const vaccPredictions = predictions.filter(p => p.type === 'vaccination_due');
 
   return (
-    <div className="max-w-[1100px] mx-auto">
+    <div className="max-w-[1100px] mx-auto h-[calc(100vh-8rem)] overflow-y-auto pr-1 scrollbar-thin">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
         <div>
@@ -272,7 +272,7 @@ export default function Automation() {
       {predictions.length > 0 && (
         <>
           <h2 className="text-lg font-bold text-gray-700 dark:text-gray-300 mb-3">🔮 Smart Predictions & Reminders</h2>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden mb-8">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden mb-8 max-h-[50vh] overflow-y-auto scrollbar-thin">
             {/* Heat Predictions */}
             {heatPredictions.length > 0 && (
               <div className="p-4 border-b border-gray-100 dark:border-gray-800">
