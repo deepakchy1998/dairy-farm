@@ -6,7 +6,7 @@ import api from '../utils/api';
 import {
   FiHome, FiMenu, FiX, FiLogOut, FiSettings, FiUser, FiBell,
   FiMessageSquare, FiActivity, FiHeart,
-  FiBarChart2, FiPackage, FiCreditCard, FiUsers, FiShield, FiSun, FiMoon, FiBriefcase,
+  FiBarChart2, FiPackage, FiCreditCard, FiUsers, FiShield, FiSun, FiMoon, FiBriefcase, FiZap,
   FiCheck, FiAlertTriangle, FiAlertCircle, FiInfo,
 } from 'react-icons/fi';
 import { FaIndianRupeeSign } from 'react-icons/fa6';
@@ -29,6 +29,7 @@ const navItems = [
   { path: '/insurance', label: 'Insurance', icon: FiShield, module: 'insurance' },
   { path: '/reports', label: 'Reports', icon: FiBarChart2, module: 'reports' },
   { path: '/subscription', label: 'Subscription', icon: FiCreditCard, module: null },
+  { path: '/automation', label: 'Automation', icon: FiZap, module: null },
   { path: '/chatbot', label: 'Farm Assistant', icon: FiMessageSquare, module: 'chatbot' },
 ];
 

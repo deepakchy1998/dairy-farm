@@ -32,6 +32,7 @@ const Settings = lazy(() => import('./pages/settings/Settings'));
 const MilkDelivery = lazy(() => import('./pages/milkDelivery/MilkDelivery'));
 const Employees = lazy(() => import('./pages/employees/Employees'));
 const Landing = lazy(() => import('./pages/Landing'));
+const Automation = lazy(() => import('./pages/automation/Automation'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
@@ -89,6 +90,7 @@ export default function App() {
           <Route path="/reports" element={<ProtectedLayout><Reports /></ProtectedLayout>} />
           <Route path="/subscription" element={<ProtectedLayout><Subscription /></ProtectedLayout>} />
           <Route path="/chatbot" element={<ProtectedLayout><Chatbot /></ProtectedLayout>} />
+          <Route path="/automation" element={<ProtectedLayout><Automation /></ProtectedLayout>} />
           <Route path="/settings" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
           <Route path="/admin" element={<ProtectedLayout adminOnly><AdminPanel /></ProtectedLayout>} />
           <Route path="/" element={<Landing />} />

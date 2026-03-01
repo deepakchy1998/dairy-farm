@@ -10,7 +10,7 @@ import {
 import { GiCow, GiMilkCarton } from 'react-icons/gi';
 import {
   FiTrendingUp, FiTrendingDown, FiAlertCircle, FiCalendar,
-  FiDownload, FiActivity, FiDroplet, FiHeart, FiStar, FiClock, FiArrowRight, FiList,
+  FiDownload, FiActivity, FiDroplet, FiHeart, FiStar, FiClock, FiArrowRight, FiList, FiZap,
 } from 'react-icons/fi';
 import { FaIndianRupeeSign } from 'react-icons/fa6';
 import { formatDistanceToNow } from 'date-fns';
@@ -195,6 +195,23 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      {/* Quick Automation Banner */}
+      <Link to="/automation"
+        className="flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3 hover:shadow-md transition group">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+            <FiZap className="text-amber-600 dark:text-amber-400" size={18} />
+          </div>
+          <div>
+            <p className="font-semibold text-sm text-gray-800 dark:text-white">Smart Automation</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">One click to fill milk records, attendance & deliveries for today</p>
+          </div>
+        </div>
+        <span className="text-amber-600 dark:text-amber-400 text-sm font-medium group-hover:translate-x-1 transition-transform flex items-center gap-1">
+          Open <FiArrowRight size={14} />
+        </span>
+      </Link>
 
       {/* Date Range Filter */}
       <div className="card !p-4">
