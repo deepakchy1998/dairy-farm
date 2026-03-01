@@ -148,7 +148,13 @@ export default function Layout({ children }) {
     if (userModules[key] === false) effectiveModules[key] = false;
   }
 
-  const filteredNavItems = navItems.filter(item => !item.module || effectiveModules[item.module] !== false);
+  // When admin disables chatBubbleEnabled, also hide chatbot from sidebar
+  const chatbotGloballyDisabled = appConfig.chatBubbleEnabled === false;
+  const filteredNavItems = navItems.filter(item => {
+    if (item.module && effectiveModules[item.module] === false) return false;
+    if (item.module === 'chatbot' && chatbotGloballyDisabled) return false;
+    return true;
+  });
 
   // If user has disabled their personal farm, hide all farm modules
   const personalFarmEnabled = user?.farmEnabled !== false;
@@ -304,9 +310,11 @@ export default function Layout({ children }) {
               )}
             </div>
 
+            {!chatbotGloballyDisabled && effectiveModules.chatbot !== false && (
             <Link to="/chatbot" className="relative p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-gray-800 rounded-lg transition-colors" title="Farm Assistant">
               <FiMessageSquare size={20} />
             </Link>
+            )}
             <Link to="/settings" className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors" title="Settings">
               <FiSettings size={20} />
             </Link>

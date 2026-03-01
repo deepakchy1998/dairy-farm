@@ -61,6 +61,18 @@ export default function Chatbot() {
   const { user } = useAuth();
   const appConfig = useAppConfig();
   const chatbotName = appConfig.chatbotName || 'DairyPro AI';
+
+  // If admin disabled chatbot globally, redirect to dashboard
+  if (appConfig.chatBubbleEnabled === false) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+        <span className="text-5xl mb-4">🤖</span>
+        <h2 className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-2">Farm Assistant is Disabled</h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-4">The admin has temporarily disabled the AI assistant.</p>
+        <button onClick={() => navigate('/dashboard')} className="btn-primary px-6 py-2">Go to Dashboard</button>
+      </div>
+    );
+  }
   const fullWelcome = appConfig.chatbotFullWelcome || DEFAULT_FULL_WELCOME;
   const quickActions = appConfig.chatbotQuickActions?.length
     ? appConfig.chatbotQuickActions.map(a => ({ label: a.label, msg: a.message }))

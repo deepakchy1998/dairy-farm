@@ -761,65 +761,99 @@ function generateLocalResponse(message, farmContext, topics) {
 
   // ─── Summary / Overview / How's my farm ───
   if (['summary', 'overview', 'status', 'haal', 'kaisa', 'farm', 'sab', 'everything', 'all', 'report', 'dashboard'].some(w => lower.includes(w)) || topics.length > 3) {
-    lines.push(`📊 **${farmName} — Farm Status Report**\n`);
-    lines.push(`🐄 **Active Cattle:** ${cattleCount}`);
+    lines.push(`## 📊 ${farmName.trim()} — Farm Status Report\n`);
+    lines.push(`| Metric | Value |`);
+    lines.push(`|--------|-------|`);
+    lines.push(`| 🐄 Active Cattle | **${cattleCount}** |`);
 
     const milkData = extractSection('🥛', 'MILK');
     if (milkData) {
-      const todayMatch = milkData.match(/Today: ([^\n]+)/);
-      const monthMatch = milkData.match(/This Month: ([^\n]+)/);
-      if (todayMatch) lines.push(`🥛 **Today's Milk:** ${todayMatch[1]}`);
-      if (monthMatch) lines.push(`📅 **Monthly Milk:** ${monthMatch[1]}`);
+      const todayMatch = milkData.match(/Today: ([\d.]+)L/);
+      const morningMatch = milkData.match(/M:([\d.]+)/);
+      const eveningMatch = milkData.match(/E:([\d.]+)/);
+      const monthMatch = milkData.match(/This Month: ([\d.]+)L/);
+      if (todayMatch) lines.push(`| 🥛 Today's Milk | **${todayMatch[1]}L** (M: ${morningMatch?.[1] || '0'}L, E: ${eveningMatch?.[1] || '0'}L) |`);
+      if (monthMatch) lines.push(`| 📅 This Month | **${monthMatch[1]}L** |`);
     }
 
     const finData = extractSection('💰', 'FINANCE');
     if (finData) {
-      finData.split('\n').forEach(l => { if (l.trim()) lines.push(`💰 ${l.trim()}`); });
+      const revMatch = finData.match(/Revenue: (₹[\d,]+)/);
+      const expMatch = finData.match(/Expense: (₹[\d,]+)/);
+      const profitMatch = finData.match(/Net Profit: (₹[\d,-]+)/);
+      if (revMatch) lines.push(`| 💰 Revenue | **${revMatch[1]}** |`);
+      if (expMatch) lines.push(`| 💸 Expense | **${expMatch[1]}** |`);
+      if (profitMatch) lines.push(`| 📈 Net Profit | **${profitMatch[1]}** |`);
     }
+
+    lines.push('');
 
     const healthData = extractSection('💉', 'HEALTH');
     if (healthData) {
       const overdue = healthData.match(/🚨 OVERDUE: (.+)/);
       const upcoming = healthData.match(/Upcoming[^:]*: (.+)/);
-      if (overdue) lines.push(`🚨 **Overdue:** ${overdue[1]}`);
-      else if (upcoming) lines.push(`💉 **Upcoming:** ${upcoming[1]}`);
-      else lines.push(`💉 No upcoming vaccinations ✅`);
+      if (overdue) lines.push(`### 🚨 Overdue Vaccinations\n${overdue[1].split(';').map(a => `- ${a.trim()}`).join('\n')}\n`);
+      else if (upcoming) lines.push(`### 💉 Upcoming Vaccinations\n${upcoming[1].split(';').map(a => `- ${a.trim()}`).join('\n')}\n`);
+      else lines.push(`✅ No upcoming vaccinations\n`);
     }
 
     const deliveryData = extractSection('🏘️', 'DUDH KHATA');
     if (deliveryData) {
-      deliveryData.split('\n').slice(0, 3).forEach(l => { if (l.trim()) lines.push(`🏘️ ${l.trim()}`); });
+      lines.push(`### 🏘️ Dudh Khata`);
+      deliveryData.split('\n').slice(0, 3).forEach(l => { if (l.trim()) lines.push(`- ${l.trim()}`); });
+      lines.push('');
     }
 
     const empData = extractSection('👷', 'EMPLOYEES');
     if (empData) {
       const staffLine = empData.match(/Active Staff: [^\n]+/);
-      if (staffLine) lines.push(`👷 ${staffLine[0]}`);
+      if (staffLine) lines.push(`👷 ${staffLine[0]}\n`);
     }
 
     const alertData = extractValue(/⚡ ALERTS: (.+)/);
     if (alertData) {
-      lines.push(`\n⚡ **Alerts:**`);
+      lines.push(`### ⚡ Active Alerts`);
       alertData.split(' | ').forEach(a => lines.push(`- ${a}`));
+      lines.push('');
     }
 
     const analytics = extractSection('📈', 'COMPUTED');
     if (analytics) {
-      lines.push(`\n📈 **Key Metrics:**`);
-      analytics.split('\n').slice(0, 6).forEach(l => { if (l.trim() && l.includes(':')) lines.push(l.trim()); });
+      lines.push(`### 📈 Key Metrics`);
+      analytics.split('\n').forEach(l => { if (l.trim() && l.includes(':')) lines.push(`- ${l.trim()}`); });
     }
 
     matched = true;
   }
 
+  // Helper: format section data as bullet points
+  const formatAsBullets = (data) => {
+    if (!data) return [];
+    return data.split('\n').filter(l => l.trim()).map(l => {
+      const trimmed = l.trim();
+      // Convert semicolon-separated lists into sub-bullets
+      if (trimmed.includes(';') && trimmed.length > 80) {
+        const parts = trimmed.split(';').map(p => p.trim()).filter(Boolean);
+        const header = trimmed.match(/^([^:]+):/)?.[1];
+        if (header && parts.length > 1) {
+          return `**${header}:**\n${parts.map(p => `  - ${p.replace(/^[^:]+:\s*/, '')}`).join('\n')}`;
+        }
+      }
+      return `- ${trimmed}`;
+    });
+  };
+
   // ─── Milk specific ───
   if (!matched && topics.includes('milk')) {
     const milkData = extractSection('🥛', 'MILK');
     if (milkData) {
-      lines.push(`🥛 **Milk Production Report:**\n`);
-      milkData.split('\n').forEach(l => { if (l.trim()) lines.push(l.trim()); });
+      lines.push(`## 🥛 Milk Production Report\n`);
+      formatAsBullets(milkData).forEach(l => lines.push(l));
+      // Add tips based on data
+      const trendMatch = milkData.match(/declining/i);
+      if (trendMatch) lines.push(`\n💡 **Tip:** Check feed quality and cattle health if production is declining.`);
     } else {
-      lines.push(`🥛 No milk records found. Go to **Milk Records** → Add today's entry per animal.`);
+      lines.push(`🥛 No milk records found.\n\n**How to add:** Go to **Milk Records** → tap **+ Add** → select cattle → enter yield.`);
     }
     matched = true;
   }
@@ -828,11 +862,11 @@ function generateLocalResponse(message, farmContext, topics) {
   if (!matched && topics.includes('cattle')) {
     const cattleData = extractSection('📊', 'CATTLE');
     if (cattleData) {
-      lines.push(`🐄 **Cattle Report:**\n`);
-      lines.push(`Active Cattle: **${cattleCount}**`);
-      cattleData.split('\n').forEach(l => { if (l.trim()) lines.push(l.trim()); });
+      lines.push(`## 🐄 Cattle Report\n`);
+      lines.push(`**Total Active:** ${cattleCount}\n`);
+      formatAsBullets(cattleData).forEach(l => lines.push(l));
     } else {
-      lines.push(`🐄 No cattle data. Go to **Cattle** → Click **+ Add Cattle** to get started.`);
+      lines.push(`🐄 No cattle data.\n\n**How to add:** Go to **Cattle** → tap **+ Add Cattle** → fill details.`);
     }
     matched = true;
   }
@@ -841,10 +875,11 @@ function generateLocalResponse(message, farmContext, topics) {
   if (!matched && topics.includes('health')) {
     const healthData = extractSection('💉', 'HEALTH');
     if (healthData) {
-      lines.push(`💉 **Health & Vaccination Report:**\n`);
-      healthData.split('\n').forEach(l => { if (l.trim()) lines.push(l.trim()); });
+      lines.push(`## 💉 Health & Vaccination Report\n`);
+      formatAsBullets(healthData).forEach(l => lines.push(l));
+      lines.push(`\n⚕️ *Always consult your veterinarian for treatment decisions.*`);
     } else {
-      lines.push(`💉 No health records. Go to **Health** → Add vaccination/treatment records.`);
+      lines.push(`💉 No health records.\n\n**How to add:** Go to **Health** → tap **+ Add Record** → select type & cattle.`);
     }
     matched = true;
   }
@@ -853,10 +888,10 @@ function generateLocalResponse(message, farmContext, topics) {
   if (!matched && topics.includes('breeding')) {
     const breedData = extractSection('🐣', 'BREEDING');
     if (breedData) {
-      lines.push(`🐣 **Breeding Report:**\n`);
-      breedData.split('\n').forEach(l => { if (l.trim()) lines.push(l.trim()); });
+      lines.push(`## 🐣 Breeding Report\n`);
+      formatAsBullets(breedData).forEach(l => lines.push(l));
     } else {
-      lines.push(`🐣 No breeding records. Go to **Breeding** → Record insemination/pregnancy.`);
+      lines.push(`🐣 No breeding records.\n\n**How to add:** Go to **Breeding** → tap **+ Add** → record insemination or pregnancy.`);
     }
     matched = true;
   }
@@ -865,10 +900,10 @@ function generateLocalResponse(message, farmContext, topics) {
   if (!matched && (topics.includes('expense') || topics.includes('revenue'))) {
     const finData = extractSection('💰', 'FINANCE');
     if (finData) {
-      lines.push(`💰 **Finance Report:**\n`);
-      finData.split('\n').forEach(l => { if (l.trim()) lines.push(l.trim()); });
+      lines.push(`## 💰 Finance Report\n`);
+      formatAsBullets(finData).forEach(l => lines.push(l));
     } else {
-      lines.push(`💰 No finance data. Go to **Finance** → Add revenue/expense records.`);
+      lines.push(`💰 No finance data.\n\n**How to add:** Go to **Finance** → add revenue or expense entries.`);
     }
     matched = true;
   }
@@ -877,10 +912,10 @@ function generateLocalResponse(message, farmContext, topics) {
   if (!matched && topics.includes('feed')) {
     const feedData = extractSection('🌾', 'FEED');
     if (feedData) {
-      lines.push(`🌾 **Feed Report:**\n`);
-      feedData.split('\n').forEach(l => { if (l.trim()) lines.push(l.trim()); });
+      lines.push(`## 🌾 Feed Report\n`);
+      formatAsBullets(feedData).forEach(l => lines.push(l));
     } else {
-      lines.push(`🌾 No feed records. Go to **Feed** → Add feed entries.`);
+      lines.push(`🌾 No feed records.\n\n**How to add:** Go to **Feed** → tap **+ Add** → enter feed type, quantity & cost.`);
     }
     matched = true;
   }
@@ -889,10 +924,10 @@ function generateLocalResponse(message, farmContext, topics) {
   if (!matched && topics.includes('delivery')) {
     const delData = extractSection('🏘️', 'DUDH KHATA');
     if (delData) {
-      lines.push(`🏘️ **Dudh Khata Report:**\n`);
-      delData.split('\n').forEach(l => { if (l.trim()) lines.push(l.trim()); });
+      lines.push(`## 🏘️ Dudh Khata (Milk Delivery)\n`);
+      formatAsBullets(delData).forEach(l => lines.push(l));
     } else {
-      lines.push(`🏘️ No delivery data. Go to **Dudh Khata** → Add customers.`);
+      lines.push(`🏘️ No delivery data.\n\n**How to add:** Go to **Dudh Khata** → add customers → record deliveries.`);
     }
     matched = true;
   }
@@ -901,10 +936,10 @@ function generateLocalResponse(message, farmContext, topics) {
   if (!matched && topics.includes('employee')) {
     const empData = extractSection('👷', 'EMPLOYEES');
     if (empData) {
-      lines.push(`👷 **Employee Report:**\n`);
-      empData.split('\n').forEach(l => { if (l.trim()) lines.push(l.trim()); });
+      lines.push(`## 👷 Employee Report\n`);
+      formatAsBullets(empData).forEach(l => lines.push(l));
     } else {
-      lines.push(`👷 No employee data. Go to **Employees** → Add staff records.`);
+      lines.push(`👷 No employee data.\n\n**How to add:** Go to **Employees** → tap **+ Add** → enter staff details.`);
     }
     matched = true;
   }
@@ -913,10 +948,10 @@ function generateLocalResponse(message, farmContext, topics) {
   if (!matched && topics.includes('insurance')) {
     const insData = extractSection('🛡️', 'INSURANCE');
     if (insData) {
-      lines.push(`🛡️ **Insurance Report:**\n`);
-      insData.split('\n').forEach(l => { if (l.trim()) lines.push(l.trim()); });
+      lines.push(`## 🛡️ Insurance Report\n`);
+      formatAsBullets(insData).forEach(l => lines.push(l));
     } else {
-      lines.push(`🛡️ No insurance data. Go to **Insurance** → Add cattle policies.`);
+      lines.push(`🛡️ No insurance data.\n\n**How to add:** Go to **Insurance** → tap **+ Add Policy** → link to cattle.`);
     }
     matched = true;
   }
@@ -925,53 +960,53 @@ function generateLocalResponse(message, farmContext, topics) {
   if (!matched && lower.includes('alert')) {
     const alertData = extractValue(/⚡ ALERTS: (.+)/);
     if (alertData) {
-      lines.push(`⚡ **Active Alerts:**\n`);
+      lines.push(`## ⚡ Active Alerts\n`);
       alertData.split(' | ').forEach(a => lines.push(`- ${a}`));
     } else {
-      lines.push(`✅ No active alerts! Your farm is running smoothly.`);
+      lines.push(`✅ **No active alerts!** Your farm is running smoothly.`);
     }
     matched = true;
   }
 
-  // ─── Generic fallback — show full farm context as structured report ───
+  // ─── Generic fallback — structured report ───
   if (!matched) {
-    lines.push(`📊 **${farmName} — Complete Farm Data:**\n`);
-    lines.push(`🐄 Active Cattle: **${cattleCount}**\n`);
+    lines.push(`## 📊 ${farmName.trim()} — Farm Report\n`);
+    lines.push(`🐄 **Active Cattle:** ${cattleCount}\n`);
 
-    // Extract all sections and display
     const sections = [
-      ['🥛', 'MILK'], ['📊', 'CATTLE'], ['💉', 'HEALTH'], ['🐣', 'BREEDING'],
-      ['💰', 'FINANCE'], ['🌾', 'FEED'], ['🏘️', 'DUDH KHATA'],
-      ['👷', 'EMPLOYEES'], ['🛡️', 'INSURANCE']
+      ['🥛', 'MILK', 'Milk Production'], ['📊', 'CATTLE', 'Cattle Overview'],
+      ['💉', 'HEALTH', 'Health & Vaccination'], ['🐣', 'BREEDING', 'Breeding'],
+      ['💰', 'FINANCE', 'Finance'], ['🌾', 'FEED', 'Feed'],
+      ['🏘️', 'DUDH KHATA', 'Dudh Khata'], ['👷', 'EMPLOYEES', 'Employees'],
+      ['🛡️', 'INSURANCE', 'Insurance']
     ];
 
-    for (const [emoji, name] of sections) {
-      const data = extractSection(emoji, name);
+    for (const [emoji, key, title] of sections) {
+      const data = extractSection(emoji, key);
       if (data) {
-        lines.push(`**${emoji} ${name}:**`);
-        data.split('\n').slice(0, 4).forEach(l => { if (l.trim()) lines.push(l.trim()); });
+        lines.push(`### ${emoji} ${title}`);
+        data.split('\n').filter(l => l.trim()).slice(0, 4).forEach(l => lines.push(`- ${l.trim()}`));
         lines.push('');
       }
     }
 
     const alertData = extractValue(/⚡ ALERTS: (.+)/);
     if (alertData) {
-      lines.push(`**⚡ ALERTS:**`);
+      lines.push(`### ⚡ Alerts`);
       alertData.split(' | ').forEach(a => lines.push(`- ${a}`));
+      lines.push('');
     }
 
     const analytics = extractSection('📈', 'COMPUTED');
     if (analytics) {
-      lines.push(`\n**📈 KEY METRICS:**`);
-      analytics.split('\n').slice(0, 5).forEach(l => { if (l.trim()) lines.push(l.trim()); });
+      lines.push(`### 📈 Key Metrics`);
+      analytics.split('\n').filter(l => l.trim()).forEach(l => lines.push(`- ${l.trim()}`));
     }
   }
 
-  // Add footer
+  // Add footer — clean and minimal
   lines.push(`\n---`);
-  lines.push(`📡 *Data sourced directly from your farm database (real-time)*`);
-  lines.push(`💡 *AI reasoning is currently unavailable. Showing data reports. Try again later for AI analysis.*`);
-  lines.push(`⚡ *Quick commands always work: /help /milk /cattle /finance /health /breeding /staff /dues /alerts*`);
+  lines.push(`📡 *Live farm data* • ⚡ *Quick commands: /help /milk /cattle /finance /health /alerts*`);
 
   return lines.join('\n');
 }
