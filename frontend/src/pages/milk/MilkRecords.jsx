@@ -264,7 +264,7 @@ export default function MilkRecords() {
   const openBulkEntry = () => {
     setBulkEntries(milkCattle.map(c => ({
       cattleId: c._id, tagNumber: c.tagNumber, breed: c.breed,
-      morningYield: '', morningFat: '', eveningYield: '', eveningFat: '',
+      morningYield: '', morningFat: '', morningSNF: '', eveningYield: '', eveningFat: '', eveningSNF: '',
     })));
     setBulkDate(todayStr());
     setBulkMode(true);
@@ -283,8 +283,8 @@ export default function MilkRecords() {
       try {
         await api.post('/milk', {
           cattleId: e.cattleId, date: bulkDate,
-          morningYield: e.morningYield || '', morningFat: e.morningFat || '',
-          eveningYield: e.eveningYield || '', eveningFat: e.eveningFat || '',
+          morningYield: e.morningYield || '', morningFat: e.morningFat || '', morningSNF: e.morningSNF || '',
+          eveningYield: e.eveningYield || '', eveningFat: e.eveningFat || '', eveningSNF: e.eveningSNF || '',
         });
         saved++;
       } catch { failed++; }
@@ -333,9 +333,11 @@ export default function MilkRecords() {
                 <th className="px-3 py-2 text-left">Tag No</th>
                 <th className="px-3 py-2 text-left">Breed</th>
                 <th className="px-2 py-2 text-center bg-blue-50 dark:bg-blue-900/20 text-blue-600">Morning (L)</th>
-                <th className="px-2 py-2 text-center bg-blue-50 dark:bg-blue-900/20 text-blue-600">Morning Fat%</th>
+                <th className="px-2 py-2 text-center bg-blue-50 dark:bg-blue-900/20 text-blue-600">M. Fat%</th>
+                <th className="px-2 py-2 text-center bg-blue-50 dark:bg-blue-900/20 text-blue-600">M. SNF%</th>
                 <th className="px-2 py-2 text-center bg-orange-50 dark:bg-orange-900/20 text-orange-600">Evening (L)</th>
-                <th className="px-2 py-2 text-center bg-orange-50 dark:bg-orange-900/20 text-orange-600">Evening Fat%</th>
+                <th className="px-2 py-2 text-center bg-orange-50 dark:bg-orange-900/20 text-orange-600">E. Fat%</th>
+                <th className="px-2 py-2 text-center bg-orange-50 dark:bg-orange-900/20 text-orange-600">E. SNF%</th>
                 <th className="px-3 py-2 text-center text-emerald-600">Total</th>
               </tr>
             </thead>
@@ -348,8 +350,10 @@ export default function MilkRecords() {
                     <td className="px-3 py-2 text-gray-500 text-xs">{e.breed}</td>
                     <td className="px-2 py-1"><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="0" value={e.morningYield} onChange={ev => updateBulkEntry(i, 'morningYield', ev.target.value)} /></td>
                     <td className="px-2 py-1"><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="3.5" value={e.morningFat} onChange={ev => updateBulkEntry(i, 'morningFat', ev.target.value)} /></td>
+                    <td className="px-2 py-1"><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="8.5" value={e.morningSNF} onChange={ev => updateBulkEntry(i, 'morningSNF', ev.target.value)} /></td>
                     <td className="px-2 py-1"><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="0" value={e.eveningYield} onChange={ev => updateBulkEntry(i, 'eveningYield', ev.target.value)} /></td>
                     <td className="px-2 py-1"><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="3.5" value={e.eveningFat} onChange={ev => updateBulkEntry(i, 'eveningFat', ev.target.value)} /></td>
+                    <td className="px-2 py-1"><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="8.5" value={e.eveningSNF} onChange={ev => updateBulkEntry(i, 'eveningSNF', ev.target.value)} /></td>
                     <td className="px-3 py-2 text-center font-bold text-emerald-600">{total > 0 ? total.toFixed(1) + 'L' : '-'}</td>
                   </tr>
                 );
@@ -374,16 +378,18 @@ export default function MilkRecords() {
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-blue-50 dark:bg-blue-900/10 rounded-lg p-2">
                     <p className="text-[10px] text-blue-500 font-medium mb-1">☀️ Morning</p>
-                    <div className="grid grid-cols-2 gap-1">
+                    <div className="grid grid-cols-3 gap-1">
                       <div><label className="text-[10px] text-gray-400">Liters</label><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="0" value={e.morningYield} onChange={ev => updateBulkEntry(i, 'morningYield', ev.target.value)} /></div>
                       <div><label className="text-[10px] text-gray-400">Fat%</label><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="3.5" value={e.morningFat} onChange={ev => updateBulkEntry(i, 'morningFat', ev.target.value)} /></div>
+                      <div><label className="text-[10px] text-gray-400">SNF%</label><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="8.5" value={e.morningSNF} onChange={ev => updateBulkEntry(i, 'morningSNF', ev.target.value)} /></div>
                     </div>
                   </div>
                   <div className="bg-orange-50 dark:bg-orange-900/10 rounded-lg p-2">
                     <p className="text-[10px] text-orange-500 font-medium mb-1">🌙 Evening</p>
-                    <div className="grid grid-cols-2 gap-1">
+                    <div className="grid grid-cols-3 gap-1">
                       <div><label className="text-[10px] text-gray-400">Liters</label><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="0" value={e.eveningYield} onChange={ev => updateBulkEntry(i, 'eveningYield', ev.target.value)} /></div>
                       <div><label className="text-[10px] text-gray-400">Fat%</label><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="3.5" value={e.eveningFat} onChange={ev => updateBulkEntry(i, 'eveningFat', ev.target.value)} /></div>
+                      <div><label className="text-[10px] text-gray-400">SNF%</label><input type="number" step="0.1" className="input text-center text-sm !py-1" placeholder="8.5" value={e.eveningSNF} onChange={ev => updateBulkEntry(i, 'eveningSNF', ev.target.value)} /></div>
                     </div>
                   </div>
                 </div>
